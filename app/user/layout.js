@@ -1,10 +1,9 @@
+// app/user/layout.js
 "use client";
 
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
-import Header from "@/components/ui/Header";
-import Footer from "@/components/ui/Footer";
 import { motion } from "framer-motion";
 import { Toaster } from "react-hot-toast";
 import {
@@ -12,15 +11,9 @@ import {
   PiSignOut,
   PiUserCircle,
   PiBuilding,
-  PiBus,
-  PiForkKnife,
-  PiHouse,
   PiTicket,
   PiPlusCircle,
   PiListChecks,
-  PiMegaphone,
-  PiPlus,
-  PiNewspaper,
   PiCurrencyDollar,
   PiWallet,
   PiCaretDown
@@ -39,10 +32,11 @@ export default function UserLayout({ children }) {
   return (
     <div className="min-h-screen">
 
-      {/* هدر (fixed) */}
-      <Header />
+      {/* 
+        ✅ Header حذف شد چون در app/layout.js هست (Navbar)
+        ✅ به جای آن، فاصله pt-20 برای fixed navbar
+      */}
 
-      {/* فاصله برای جلوگیری از همپوشانی با هدر fixed */}
       <div className="pt-20 md:pt-24 lg:pt-28">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
           <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 md:gap-8">
@@ -112,25 +106,6 @@ export default function UserLayout({ children }) {
                       </div>
                     </div>
 
-                    {/* Dropdown آگهی ها */}
-                    {/* <div className="relative group">
-                      <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-gray-700 hover:bg-gray-50 hover:text-[#D4B06A] transition-all duration-300 cursor-pointer text-sm sm:text-base">
-                        <PiMegaphone className="w-4 h-4 sm:w-5 sm:h-5" />
-                        <span className="flex-1">آگهی ها</span>
-                        <PiCaretDown className="w-3 h-3 sm:w-4 sm:h-4 group-hover:rotate-180 transition-transform" />
-                      </div>
-                      <div className="mr-6 sm:mr-8 mt-1 space-y-1 overflow-hidden max-h-0 group-hover:max-h-48 transition-all duration-300">
-                        <Link href="/user/ads/create" className="flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm text-gray-600 hover:text-[#D4B06A] hover:bg-gray-50 rounded-lg transition-colors">
-                          <PiPlus className="w-3 h-3 sm:w-4 sm:h-4" />
-                          ایجاد آگهی جدید
-                        </Link>
-                        <Link href="/user/ads" className="flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm text-gray-600 hover:text-[#D4B06A] hover:bg-gray-50 rounded-lg transition-colors">
-                          <PiNewspaper className="w-3 h-3 sm:w-4 sm:h-4" />
-                          همه آگهی ها
-                        </Link>
-                      </div>
-                    </div> */}
-
                     {/* Dropdown امور مالی */}
                     <div className="relative group">
                       <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-gray-700 hover:bg-gray-50 hover:text-[#D4B06A] transition-all duration-300 cursor-pointer text-sm sm:text-base">
@@ -177,6 +152,7 @@ export default function UserLayout({ children }) {
 
           </div>
         </div>
+
         <Toaster
           position="top-right"
           toastOptions={{
@@ -189,7 +165,6 @@ export default function UserLayout({ children }) {
               borderRadius: "10px",
               boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
               fontSize: "14px",
-
             },
             success: {
               iconTheme: {
@@ -207,7 +182,9 @@ export default function UserLayout({ children }) {
         />
       </div>
 
-      {/* <Footer /> */}
+      {/* 
+        ✅ Footer حذف شد چون در app/layout.js هست
+      */}
     </div>
   );
 }
