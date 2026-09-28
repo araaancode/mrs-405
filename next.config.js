@@ -1,4 +1,17 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {}
+const nextConfig = {
+    images: {
+        // ✅ هر URL معتبری را قبول کن (سریع‌ترین راه‌حل)
+        unoptimized: true,
 
-module.exports = nextConfig
+        // ✅ این دامنه‌ها هم مجاز باشند (برای بعداً اگر بهینه‌سازی خواستید)
+        remotePatterns: [
+            { protocol: "https", hostname: "**" },
+            { protocol: "http", hostname: "**" },
+        ],
+    },
+
+    reactStrictMode: true,
+};
+
+module.exports = nextConfig;

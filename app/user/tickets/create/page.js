@@ -3,56 +3,139 @@
 import { useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import toast from "react-hot-toast";
+import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
+import toast, { Toaster } from "react-hot-toast";
+import {
+    PiTicket,
+    PiChatCircleDots,
+    PiPencilSimpleLine,
+    PiPaperPlaneTilt,
+    PiSpinnerGap,
+    PiArrowLeft,
+    PiCheckCircle,
+    PiWarningCircle,
+    PiInfo,
+    PiLightbulb,
+    PiUser,
+} from "react-icons/pi";
 
+/* ============================================================
+   Priority Config
+   ============================================================ */
+const PRIORITIES = [
+    {
+        value: "low",
+        label: "کم",
+        icon: PiCheckCircle,
+        activeBg: "bg-emerald-50",
+        activeBorder: "border-emerald-400",
+        activeText: "text-emerald-700",
+        hoverBorder: "hover:border-emerald-200",
+        desc: "برای سوالات و پیشنهادات",
+    },
+    {
+        value: "medium",
+        label: "متوسط",
+        icon: PiWarningCircle,
+        activeBg: "bg-amber-50",
+        activeBorder: "border-amber-400",
+        activeText: "text-amber-700",
+        hoverBorder: "hover:border-amber-200",
+        desc: "برای مشکلات معمولی",
+    },
+    {
+        value: "high",
+        label: "زیاد",
+        icon: PiWarningCircle,
+        activeBg: "bg-rose-50",
+        activeBorder: "border-rose-400",
+        activeText: "text-rose-700",
+        hoverBorder: "hover:border-rose-200",
+        desc: "بررسی سریع‌تر",
+    },
+];
+
+/* ============================================================
+   Page
+   ============================================================ */
 export default function UserCreateTicketPage() {
     const router = useRouter();
 
     const [form, setForm] = useState({
         subject: "",
         description: "",
-        priority: "medium"
+        priority: "medium",
     });
 
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
+    const [errors, setErrors] = useState({});
 
+    /* ============================================================
+       تغییرات فرم
+       ============================================================ */
     const handleChange = (e) => {
-        setForm({
-            ...form,
-            [e.target.name]: e.target.value
-        });
-        setError("");
+        const { name, value } = e.target;
+        setForm((prev) => ({ ...prev, [name]: value }));
+        if (errors[name]) {
+            setErrors((prev) => ({ ...prev, [name]: "" }));
+        }
     };
 
+    /* ============================================================
+       اعتبارسنجی
+       ============================================================ */
+    const validate = () => {
+        const e = {};
+
+        if (!form.subject.trim()) {
+            e.subject = "موضوع تیکت الزامی است";
+        } else if (form.subject.trim().length < 5) {
+            e.subject = "موضوع باید حداقل ۵ کاراکتر باشد";
+        } else if (form.subject.length > 100) {
+            e.subject = "موضوع نمی‌تواند بیشتر از ۱۰۰ کاراکتر باشد";
+        }
+
+        if (!form.description.trim()) {
+            e.description = "توضیحات تیکت الزامی است";
+        } else if (form.description.trim().length < 10) {
+            e.description = "توضیحات باید حداقل ۱۰ کاراکتر باشد";
+        } else if (form.description.length > 2000) {
+            e.description = "توضیحات نمی‌تواند بیشتر از ۲۰۰۰ کاراکتر باشد";
+        }
+
+        setErrors(e);
+        return Object.keys(e).length === 0;
+    };
+
+    /* ============================================================
+       Submit
+       ============================================================ */
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError("");
 
-        if (!form.subject || !form.description) {
-            toast.error("لطفاً موضوع و توضیحات تیکت را وارد کنید");
-        }
-
-        if (form.subject.length < 5) {
-            toast.error("موضوع تیکت باید حداقل ۵ کاراکتر باشد");
-        }
-
-        if (form.description.length < 10) {
-            toast.error("توضیحات تیکت باید حداقل ۱۰ کاراکتر باشد");
+        // ✅ FIX: به‌جای toast های پراکنده، اعتبارسنجی متمرکز
+        if (!validate()) {
+            toast.error("لطفاً خطاهای فرم را برطرف کنید");
+            return;
         }
 
         try {
             setLoading(true);
 
             await axios.post("/api/user/tickets", {
-                subject: form.subject,
-                description: form.description,
-                priority: form.priority
+                subject: form.subject.trim(),
+                description: form.description.trim(),
+                priority: form.priority,
             });
 
-            router.push("/user/tickets");
+            toast.success("تیکت شما با موفقیت ثبت شد", {
+                duration: 2500,
+                position: "top-center",
+                iconTheme: { primary: "#C6A14C", secondary: "#ffffff" },
+            });
 
+            setTimeout(() => router.push("/user/tickets"), 800);
         } catch (err) {
             toast.error(err.response?.data?.message || "خطا در ایجاد تیکت");
         } finally {
@@ -60,239 +143,356 @@ export default function UserCreateTicketPage() {
         }
     };
 
+    /* ============================================================
+       Render
+       ============================================================ */
     return (
-        <div className="create-ticket-page px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 max-w-7xl mx-auto">
-            {/* هدر صفحه */}
-            <div className="mb-6 sm:mb-8">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-2">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-gradient-to-r from-[#D4B06A]/10 to-[#B8922E]/10 rounded-xl flex-shrink-0">
-                            <svg className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-[#D4B06A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-                            </svg>
-                        </div>
-                        <div>
-                            <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-[#2C2418]">
-                                ایجاد تیکت جدید
-                            </h2>
-                            <p className="text-gray-500 text-xs sm:text-sm mt-0.5 sm:mt-1">
-                                تیکت پشتیبانی خود را ثبت کنید، کارشناسان ما در اسرع وقت پاسخگو خواهند بود
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                <div className="w-16 sm:w-20 h-1 bg-gradient-to-r from-[#D4B06A] to-[#B8922E] rounded-full mt-2" />
-            </div>
+        <div dir="rtl" className="w-full">
+            <Toaster />
 
-            {/* فرم ایجاد تیکت */}
+            {/* ==================== Header ==================== */}
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="max-w-full sm:max-w-2xl lg:max-w-3xl"
+                transition={{ duration: 0.35 }}
+                className="mb-6"
             >
-                <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5 lg:space-y-6">
-
-                    {/* موضوع تیکت */}
-                    <div>
-                        <label className="block text-[#2C2418] text-xs sm:text-sm font-bold mb-1.5 sm:mb-2">
-                            موضوع تیکت
-                            <span className="text-red-500 mr-1">*</span>
-                        </label>
-                        <div className="relative group">
-                            <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:pr-3 pointer-events-none">
-                                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-focus-within:text-[#D4B06A] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                                </svg>
-                            </div>
-                            <input
-                                type="text"
-                                name="subject"
-                                value={form.subject}
-                                onChange={handleChange}
-                                placeholder="مثلاً: مشکل در ثبت تالار"
-                                className="w-full pr-8 sm:pr-10 px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border-2 border-gray-200 rounded-xl 
-                                       text-[#2C2418] placeholder-gray-400 text-xs sm:text-sm
-                                       focus:outline-none focus:border-[#D4B06A] focus:ring-2 focus:ring-[#D4B06A]/20
-                                       transition-all duration-300"
-                                required
-                                minLength={5}
-                                maxLength={100}
-                            />
-                        </div>
-                        <div className="flex flex-col sm:flex-row justify-between gap-1 mt-1">
-                            <p className="text-xs text-gray-400">
-                                حداقل ۵ و حداکثر ۱۰۰ کاراکتر
-                            </p>
-                            <p className="text-xs text-gray-400">
-                                {form.subject.length}/100
-                            </p>
-                        </div>
+                <div className="flex items-start gap-3">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center shadow-lg shadow-gold-500/25 flex-shrink-0">
+                        <PiTicket className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                     </div>
-
-                    {/* اولویت */}
-                    <div>
-                        <label className="block text-[#2C2418] text-xs sm:text-sm font-bold mb-1.5 sm:mb-2">
-                            سطح اولویت
-                        </label>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
-                            <button
-                                type="button"
-                                onClick={() => setForm({ ...form, priority: "low" })}
-                                className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl font-medium text-xs sm:text-sm
-                                    transition-all duration-300 border-2
-                                    ${form.priority === "low"
-                                        ? 'border-green-500 bg-green-50 text-green-700'
-                                        : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300'
-                                    }`}
-                            >
-                                <span>✓</span>
-                                <span>کم</span>
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => setForm({ ...form, priority: "medium" })}
-                                className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl font-medium text-xs sm:text-sm
-                                    transition-all duration-300 border-2
-                                    ${form.priority === "medium"
-                                        ? 'border-yellow-500 bg-yellow-50 text-yellow-700'
-                                        : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300'
-                                    }`}
-                            >
-                                <span>!!</span>
-                                <span>متوسط</span>
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => setForm({ ...form, priority: "high" })}
-                                className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl font-medium text-xs sm:text-sm
-                                    transition-all duration-300 border-2
-                                    ${form.priority === "high"
-                                        ? 'border-red-500 bg-red-50 text-red-700'
-                                        : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300'
-                                    }`}
-                            >
-                                <span>⚠️</span>
-                                <span>زیاد</span>
-                            </button>
-                        </div>
-                        <p className="text-xs text-gray-400 mt-1.5 sm:mt-2">
-                            {form.priority === "high" && "⚠️ تیکت‌های با اولویت بالا سریع‌تر بررسی می‌شوند"}
-                            {form.priority === "medium" && "ℹ️ اولویت متوسط برای مشکلات معمولی"}
-                            {form.priority === "low" && "✓ اولویت کم برای سوالات و پیشنهادات"}
+                    <div className="flex-1 min-w-0">
+                        <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
+                            ایجاد تیکت جدید
+                        </h1>
+                        <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                            تیکت خود را ثبت کنید، کارشناسان ما در اسرع وقت پاسخگو خواهند بود
                         </p>
                     </div>
+                </div>
+            </motion.div>
 
-                    {/* توضیحات */}
-                    <div>
-                        <label className="block text-[#2C2418] text-xs sm:text-sm font-bold mb-1.5 sm:mb-2">
-                            توضیحات کامل
-                            <span className="text-red-500 mr-1">*</span>
-                        </label>
-                        <div className="relative group">
-                            <div className="absolute top-2.5 sm:top-3 right-2 sm:right-3 pointer-events-none">
-                                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-focus-within:text-[#D4B06A] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                            </div>
-                            <textarea
-                                name="description"
-                                value={form.description}
-                                onChange={handleChange}
-                                className="w-full pr-8 sm:pr-10 px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border-2 border-gray-200 rounded-xl 
-                                       text-[#2C2418] placeholder-gray-400 text-xs sm:text-sm
-                                       focus:outline-none focus:border-[#D4B06A] focus:ring-2 focus:ring-[#D4B06A]/20
-                                       transition-all duration-300 resize-none"
-                                placeholder="مشکل خود را کامل توضیح دهید..."
-                                rows="5 sm:rows-6"
-                                required
-                                minLength={10}
-                            />
-                        </div>
-                        <div className="flex flex-col sm:flex-row justify-between gap-1 mt-1">
-                            <p className="text-xs text-gray-400">
-                                حداقل ۱۰ کاراکتر
-                            </p>
-                            <p className="text-xs text-gray-400">
-                                {form.description.length} کاراکتر
-                            </p>
-                        </div>
+            {/* ==================== فرم ==================== */}
+            <motion.form
+                onSubmit={handleSubmit}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: 0.05 }}
+                className="max-w-3xl space-y-6"
+            >
+                {/* ============ موضوع ============ */}
+                <div>
+                    <label
+                        htmlFor="subject"
+                        className="block text-[13px] font-medium text-slate-700 mb-1.5"
+                    >
+                        موضوع تیکت <span className="text-rose-500">*</span>
+                    </label>
+
+                    <div className="relative group">
+                        <PiChatCircleDots
+                            className="
+                absolute right-3.5 top-1/2 -translate-y-1/2
+                w-4 h-4 pointer-events-none
+                text-slate-400
+                group-focus-within:text-gold-500
+                transition-colors duration-200
+              "
+                        />
+                        <input
+                            id="subject"
+                            type="text"
+                            name="subject"
+                            value={form.subject}
+                            onChange={handleChange}
+                            placeholder="مثلاً: مشکل در ثبت رزرو"
+                            maxLength={100}
+                            aria-invalid={!!errors.subject}
+                            aria-describedby={errors.subject ? "subject-error" : undefined}
+                            className={`
+                w-full pr-11 pl-3.5 py-2.5
+                bg-white border rounded-xl
+                text-sm text-slate-900
+                placeholder:text-slate-400
+                focus:outline-none focus:ring-4
+                transition-all duration-200
+                ${errors.subject
+                                    ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500/10"
+                                    : "border-slate-200 hover:border-gold-300 focus:border-gold-500 focus:ring-gold-500/10"
+                                }
+              `}
+                        />
                     </div>
 
-                    {/* نمایش خطا */}
-                    {error && (
-                        <motion.div
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="flex items-center gap-2 p-2.5 sm:p-3 bg-red-50 border border-red-200 rounded-xl"
-                        >
-                            <span className="text-red-500 text-base sm:text-lg flex-shrink-0">⚠️</span>
-                            <p className="text-red-600 text-xs sm:text-sm font-medium">
-                                {error}
+                    {/* راهنما / شمارنده / خطا */}
+                    <div className="flex items-center justify-between gap-2 mt-1.5">
+                        {errors.subject ? (
+                            <p
+                                id="subject-error"
+                                className="text-[11px] text-rose-600 flex items-center gap-1"
+                            >
+                                <PiWarningCircle className="w-3.5 h-3.5" />
+                                {errors.subject}
                             </p>
-                        </motion.div>
-                    )}
-
-                    {/* دکمه‌های اقدام */}
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 pt-3 sm:pt-4">
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="group relative flex items-center justify-center gap-2 bg-gradient-to-r from-[#D4B06A] to-[#B8922E] text-white px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl font-bold text-sm sm:text-base shadow-md hover:shadow-xl transition-all duration-300 disabled:opacity-70 w-full sm:w-auto"
+                        ) : (
+                            <p className="text-[11px] text-slate-400">
+                                حداقل ۵ و حداکثر ۱۰۰ کاراکتر
+                            </p>
+                        )}
+                        <span
+                            className={`
+                text-[10.5px] font-mono
+                ${form.subject.length > 90
+                                    ? "text-rose-500"
+                                    : "text-slate-400"
+                                }
+              `}
                         >
-                            {loading ? (
-                                <>
-                                    <svg className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                    </svg>
-                                    در حال ارسال...
-                                </>
-                            ) : (
-                                <>
-                                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                                    </svg>
-                                    ثبت تیکت
-                                </>
-                            )}
-                        </button>
+                            {form.subject.length}/100
+                        </span>
+                    </div>
+                </div>
 
-                        <button
-                            type="button"
-                            onClick={() => router.back()}
-                            className="flex items-center justify-center gap-2 px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl font-medium text-xs sm:text-sm border-2 border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50 transition-all duration-300 w-full sm:w-auto"
-                        >
-                            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                            </svg>
-                            بازگشت
-                        </button>
+                {/* ============ اولویت ============ */}
+                <div>
+                    <label className="block text-[13px] font-medium text-slate-700 mb-1.5">
+                        سطح اولویت
+                    </label>
+
+                    <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                        {PRIORITIES.map((p) => {
+                            const Icon = p.icon;
+                            const isActive = form.priority === p.value;
+
+                            return (
+                                <button
+                                    key={p.value}
+                                    type="button"
+                                    onClick={() =>
+                                        setForm((prev) => ({ ...prev, priority: p.value }))
+                                    }
+                                    aria-pressed={isActive}
+                                    className={`
+                    relative flex flex-col items-center justify-center gap-1.5
+                    px-3 py-3 sm:py-4 rounded-xl
+                    border-2 transition-all duration-200
+                    ${isActive
+                                            ? `${p.activeBg} ${p.activeBorder} ${p.activeText} shadow-sm`
+                                            : `bg-white border-slate-200 text-slate-600 ${p.hoverBorder} hover:bg-slate-50`
+                                        }
+                  `}
+                                >
+                                    <Icon
+                                        className={`w-4 h-4 ${isActive ? "" : "text-slate-400"}`}
+                                    />
+                                    <span className="text-[12px] font-bold">{p.label}</span>
+
+                                    {isActive && (
+                                        <motion.span
+                                            layoutId="priorityIndicator"
+                                            className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-white shadow-md ring-1 ring-current flex items-center justify-center"
+                                        >
+                                            <PiCheckCircle className="w-3 h-3" />
+                                        </motion.span>
+                                    )}
+                                </button>
+                            );
+                        })}
                     </div>
 
-                    {/* راهنمای تکمیل تیکت */}
-                    <div className="mt-6 sm:mt-8 p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
-                        <div className="flex items-start gap-2.5 sm:gap-3">
-                            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <span className="text-blue-600 text-base sm:text-lg">✓</span>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <h4 className="font-bold text-blue-800 text-xs sm:text-sm mb-0.5 sm:mb-1">
-                                    نکات مهم در ثبت تیکت
-                                </h4>
-                                <ul className="text-xs text-blue-700 space-y-0.5 sm:space-y-1">
-                                    <li className="break-words">• موضوع تیکت را دقیق و مختصر انتخاب کنید</li>
-                                    <li className="break-words">• توضیحات کامل و واضح بنویسید</li>
-                                    <li className="break-words">• در صورت نیاز، تصاویر یا مستندات ضمیمه کنید</li>
-                                    <li className="break-words">• پاسخ تیکت در بخش "همه تیکت‌ها" قابل مشاهده است</li>
-                                </ul>
-                            </div>
-                        </div>
+                    {/* توضیح اولویت فعال */}
+                    <p className="text-[11px] text-slate-400 mt-2 flex items-center gap-1">
+                        <PiInfo className="w-3.5 h-3.5" />
+                        {PRIORITIES.find((p) => p.value === form.priority)?.desc}
+                    </p>
+                </div>
+
+                {/* ============ توضیحات ============ */}
+                <div>
+                    <label
+                        htmlFor="description"
+                        className="block text-[13px] font-medium text-slate-700 mb-1.5"
+                    >
+                        توضیحات کامل <span className="text-rose-500">*</span>
+                    </label>
+
+                    <div className="relative group">
+                        <PiPencilSimpleLine
+                            className="
+                absolute right-3.5 top-3
+                w-4 h-4 pointer-events-none
+                text-slate-400
+                group-focus-within:text-gold-500
+                transition-colors duration-200
+              "
+                        />
+                        <textarea
+                            id="description"
+                            name="description"
+                            value={form.description}
+                            onChange={handleChange}
+                            placeholder="مشکل یا سوال خود را کامل و واضح توضیح دهید..."
+                            rows={6}
+                            maxLength={2000}
+                            aria-invalid={!!errors.description}
+                            aria-describedby={
+                                errors.description ? "description-error" : undefined
+                            }
+                            className={`
+                w-full pr-11 pl-3.5 py-3
+                bg-white border rounded-xl
+                text-sm text-slate-900
+                placeholder:text-slate-400
+                resize-none
+                focus:outline-none focus:ring-4
+                transition-all duration-200
+                ${errors.description
+                                    ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500/10"
+                                    : "border-slate-200 hover:border-gold-300 focus:border-gold-500 focus:ring-gold-500/10"
+                                }
+              `}
+                        />
                     </div>
 
-                </form>
+                    <div className="flex items-center justify-between gap-2 mt-1.5">
+                        {errors.description ? (
+                            <p
+                                id="description-error"
+                                className="text-[11px] text-rose-600 flex items-center gap-1"
+                            >
+                                <PiWarningCircle className="w-3.5 h-3.5" />
+                                {errors.description}
+                            </p>
+                        ) : (
+                            <p className="text-[11px] text-slate-400">
+                                هرچه دقیق‌تر بنویسید، پاسخ سریع‌تر خواهد بود
+                            </p>
+                        )}
+                        <span
+                            className={`
+                text-[10.5px] font-mono
+                ${form.description.length > 1800
+                                    ? "text-rose-500"
+                                    : "text-slate-400"
+                                }
+              `}
+                        >
+                            {form.description.length}/2000
+                        </span>
+                    </div>
+                </div>
+
+                {/* ============ Action Bar ============ */}
+                <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-3 pt-3 border-t border-slate-100">
+                    <button
+                        type="button"
+                        onClick={() => router.back()}
+                        disabled={loading}
+                        className="
+              inline-flex items-center justify-center gap-2
+              px-5 py-2.5 rounded-xl
+              text-[13px] font-medium
+              text-slate-700 bg-white
+              border border-slate-200
+              hover:bg-gold-50 hover:border-gold-300 hover:text-gold-700
+              active:scale-95
+              disabled:opacity-50 disabled:cursor-not-allowed
+              transition-all duration-200
+            "
+                    >
+                        <PiArrowLeft className="w-4 h-4" />
+                        بازگشت
+                    </button>
+
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="
+              flex-1 sm:flex-none sm:min-w-[180px]
+              inline-flex items-center justify-center gap-2
+              px-6 py-3 rounded-xl
+              text-sm font-bold text-white
+              bg-gradient-to-b from-gold-400 to-gold-600
+              hover:from-gold-500 hover:to-gold-700
+              shadow-md shadow-gold-500/25
+              hover:shadow-lg hover:shadow-gold-500/40
+              hover:-translate-y-0.5
+              focus:outline-none focus:ring-4 focus:ring-gold-500/25
+              disabled:opacity-60 disabled:cursor-not-allowed
+              disabled:hover:translate-y-0 disabled:hover:shadow-md
+              active:scale-95
+              transition-all duration-200
+            "
+                    >
+                        {loading ? (
+                            <>
+                                <PiSpinnerGap className="w-4 h-4 animate-spin" />
+                                در حال ارسال...
+                            </>
+                        ) : (
+                            <>
+                                <PiPaperPlaneTilt className="w-4 h-4" />
+                                ثبت تیکت
+                            </>
+                        )}
+                    </button>
+                </div>
+            </motion.form>
+
+            {/* ==================== راهنمای کناری ==================== */}
+            <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: 0.15 }}
+                className="
+          mt-8 max-w-3xl
+          p-5 rounded-2xl
+          bg-gradient-to-br from-gold-50/60 via-white to-white
+          border border-gold-100
+        "
+            >
+                <div className="flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-gold-100 flex items-center justify-center flex-shrink-0">
+                        <PiLightbulb className="w-4 h-4 text-gold-600" />
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                        <h4 className="text-[13px] font-bold text-slate-800 mb-2">
+                            نکات مهم برای ثبت تیکت مؤثر
+                        </h4>
+
+                        <ul className="space-y-1.5 text-[12px] text-slate-600">
+                            <li className="flex items-start gap-2">
+                                <PiCheckCircle
+                                    className="w-3.5 h-3.5 text-gold-500 mt-0.5 flex-shrink-0"
+                                    strokeWidth={3}
+                                />
+                                موضوع تیکت را دقیق و مختصر انتخاب کنید
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <PiCheckCircle
+                                    className="w-3.5 h-3.5 text-gold-500 mt-0.5 flex-shrink-0"
+                                    strokeWidth={3}
+                                />
+                                مراحل بروز مشکل را گام‌به‌گام توضیح دهید
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <PiCheckCircle
+                                    className="w-3.5 h-3.5 text-gold-500 mt-0.5 flex-shrink-0"
+                                    strokeWidth={3}
+                                />
+                                پیام‌های قبلی تیکت را در بخش "همه تیکت‌ها" پیگیری کنید
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <PiCheckCircle
+                                    className="w-3.5 h-3.5 text-gold-500 mt-0.5 flex-shrink-0"
+                                    strokeWidth={3}
+                                />
+                                برای مشکلات فوری، اولویت «زیاد» را انتخاب کنید
+                            </li>
+                        </ul>
+                    </div>
+                </div>
             </motion.div>
         </div>
     );

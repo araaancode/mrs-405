@@ -1,204 +1,346 @@
-'use client'
+// components/landing/AdvancedSearch.jsx
+"use client";
 
-import { useState, useCallback, useMemo, lazy, Suspense } from 'react'
-import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
+import {
+    useState,
+    useEffect,
+    useCallback,
+    useMemo,
+    lazy,
+    Suspense,
+} from "react";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 
-// Lazy load heavy icons
-const PiMagnifyingGlass = lazy(() => import('react-icons/pi').then(mod => ({ default: mod.PiMagnifyingGlass })))
-const PiBuilding = lazy(() => import('react-icons/pi').then(mod => ({ default: mod.PiBuilding })))
-const PiMapPinFill = lazy(() => import('react-icons/pi').then(mod => ({ default: mod.PiMapPinFill })))
-const PiCalendarBlank = lazy(() => import('react-icons/pi').then(mod => ({ default: mod.PiCalendarBlank })))
-const PiArrowRight = lazy(() => import('react-icons/pi').then(mod => ({ default: mod.PiArrowRight })))
-const PiSpinner = lazy(() => import('react-icons/pi').then(mod => ({ default: mod.PiSpinner })))
+/* ============================================================
+   Lazy Load Icons
+   ============================================================ */
+const PiMagnifyingGlass = lazy(() =>
+    import("react-icons/pi").then((mod) => ({
+        default: mod.PiMagnifyingGlass,
+    }))
+);
+const PiBuildings = lazy(() =>
+    import("react-icons/pi").then((mod) => ({ default: mod.PiBuildings }))
+);
+const PiMapPin = lazy(() =>
+    import("react-icons/pi").then((mod) => ({ default: mod.PiMapPin }))
+);
+const PiSparkle = lazy(() =>
+    import("react-icons/pi").then((mod) => ({ default: mod.PiSparkle }))
+);
+const PiCalendarBlank = lazy(() =>
+    import("react-icons/pi").then((mod) => ({
+        default: mod.PiCalendarBlank,
+    }))
+);
+const PiArrowLeft = lazy(() =>
+    import("react-icons/pi").then((mod) => ({ default: mod.PiArrowLeft }))
+);
+const PiSpinnerGap = lazy(() =>
+    import("react-icons/pi").then((mod) => ({ default: mod.PiSpinnerGap }))
+);
 
-// Lazy load heavy date picker with no SSR
-const DatePicker = lazy(() => import('react-multi-date-picker').then(mod => ({ default: mod.default })))
+/* ============================================================
+   Static Data
+   ============================================================ */
+const EVENT_TYPES = [
+    "تولد",
+    "عروسی",
+    "عزاداری",
+    "تجلیل",
+    "همایش",
+    "جشن",
+    "دیگر",
+];
 
-// Static data moved outside component to prevent recreation
-const eventTypes = ["تولد", "عروسی", "عزاداری", "تجلیل", "همایش", "جشن", "دیگر"]
-const hallTypes = ["سربسته", "روباز", "باغ", "تراس", "سالن سرپوشیده", "دیگر"]
+const HALL_TYPES = [
+    "سربسته",
+    "روباز",
+    "باغ",
+    "تراس",
+    "سالن سرپوشیده",
+    "دیگر",
+];
 
-const provinces = [
-    "آذربایجان شرقی", "آذربایجان غربی", "اردبیل", "اصفهان", "البرز", "ایلام", "بوشهر",
-    "تهران", "چهارمحال و بختیاری", "خراسان جنوبی", "خراسان رضوی", "خراسان شمالی",
-    "خوزستان", "زنجان", "سمنان", "سیستان و بلوچستان", "فارس", "قزوین", "قم", "کردستان",
-    "کرمان", "کرمانشاه", "کهگیلویه و بویراحمد", "گلستان", "گیلان", "لرستان",
-    "مازندران", "مرکزی", "هرمزگان", "همدان", "یزد"
-]
+const PROVINCES = [
+    "آذربایجان شرقی",
+    "آذربایجان غربی",
+    "اردبیل",
+    "اصفهان",
+    "البرز",
+    "ایلام",
+    "بوشهر",
+    "تهران",
+    "چهارمحال و بختیاری",
+    "خراسان جنوبی",
+    "خراسان رضوی",
+    "خراسان شمالی",
+    "خوزستان",
+    "زنجان",
+    "سمنان",
+    "سیستان و بلوچستان",
+    "فارس",
+    "قزوین",
+    "قم",
+    "کردستان",
+    "کرمان",
+    "کرمانشاه",
+    "کهگیلویه و بویراحمد",
+    "گلستان",
+    "گیلان",
+    "لرستان",
+    "مازندران",
+    "مرکزی",
+    "هرمزگان",
+    "همدان",
+    "یزد",
+];
 
-export default function AdvancedSearch() {
-    const router = useRouter()
-    const [loading, setLoading] = useState(false)
+/* ============================================================
+   Field Wrapper — کامپوننت داخلی برای هر فیلد
+   ============================================================ */
+function Field({ icon: Icon, children }) {
+    return (
+        <div className="relative flex-1 w-full min-w-0">
+            {Icon && (
+                <div className="absolute right-3.5 top-1/2 -translate-y-1/2 z-10 pointer-events-none">
+                    <Suspense fallback={<div className="w-4 h-4" />}>
+                        <Icon className="w-4 h-4 text-gold-500" />
+                    </Suspense>
+                </div>
+            )}
+            {children}
+        </div>
+    );
+}
+
+/* ============================================================
+   AdvancedSearch
+   ============================================================ */
+export default function AdvancedSearch({ onSearch }) {
+    const router = useRouter();
+    const [loading, setLoading] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
     const [filters, setFilters] = useState({
-        province: '',
-        city: '',
-        event_type: '',
-        hall_type: '',
-    })
-    const [isMounted, setIsMounted] = useState(false)
+        province: "",
+        city: "",
+        event_type: "",
+        hall_type: "",
+    });
 
-    // Mark component as mounted for client-side features
-    useState(() => {
-        setIsMounted(true)
-    }, [])
+    /* -------- Mount -------- */
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
-    // Optimized handler with useCallback
+    /* -------- Change handler -------- */
     const handleChange = useCallback((name, value) => {
-        setFilters((prev) => ({ ...prev, [name]: value }))
-    }, [])
+        setFilters((prev) => ({ ...prev, [name]: value }));
+    }, []);
 
-    // Optimized search handler
-    const handleSearch = useCallback((e) => {
-        e.preventDefault()
-        setLoading(true)
+    /* -------- Submit -------- */
+    const handleSearch = useCallback(
+        (e) => {
+            e.preventDefault();
+            setLoading(true);
 
-        const params = new URLSearchParams()
+            const params = new URLSearchParams();
+            Object.entries(filters).forEach(([key, value]) => {
+                if (value) params.append(key, value);
+            });
 
-        // Use for...of for better performance
-        const entries = Object.entries(filters)
-        for (let i = 0; i < entries.length; i++) {
-            const [key, value] = entries[i]
-            if (value) params.append(key, value)
-        }
+            const queryString = params.toString();
 
-        // Use replace instead of push for better memory management
-        router.replace(`/search?${params.toString()}`)
-    }, [filters, router])
+            /* فراخوانی callback اختیاری */
+            onSearch?.(filters);
 
-    // Memoized select options to prevent recreation
-    const provinceOptions = useMemo(() =>
-        provinces.map((province) => (
-            <option key={province} value={province}>
-                {province}
-            </option>
-        )), []
-    )
+            /* navigate */
+            router.push(queryString ? `/halls?${queryString}` : "/halls");
+        },
+        [filters, router, onSearch]
+    );
 
-    const eventTypeOptions = useMemo(() =>
-        eventTypes.map((item) => (
-            <option key={item} value={item}>
-                {item}
-            </option>
-        )), []
-    )
+    /* -------- Options -------- */
+    const provinceOptions = useMemo(
+        () =>
+            PROVINCES.map((province) => (
+                <option key={province} value={province}>
+                    {province}
+                </option>
+            )),
+        []
+    );
 
-    const hallTypeOptions = useMemo(() =>
-        hallTypes.map((item) => (
-            <option key={item} value={item}>
-                {item}
-            </option>
-        )), []
-    )
+    const eventTypeOptions = useMemo(
+        () =>
+            EVENT_TYPES.map((item) => (
+                <option key={item} value={item}>
+                    {item}
+                </option>
+            )),
+        []
+    );
 
-    // Icon wrapper component for consistent lazy loading
-    const IconWrapper = ({ icon: Icon, className, fallback }) => (
-        <Suspense fallback={<div className={className || "w-5 h-5"} />}>
-            <Icon className={className} />
-        </Suspense>
-    )
+    const hallTypeOptions = useMemo(
+        () =>
+            HALL_TYPES.map((item) => (
+                <option key={item} value={item}>
+                    {item}
+                </option>
+            )),
+        []
+    );
 
+    /* -------- input classes -------- */
+    const inputClass = `
+    w-full
+    py-3.5 pr-11 pl-3.5
+    bg-white
+    border-2 border-slate-200
+    rounded-xl
+    text-[13.5px] text-slate-900
+    placeholder:text-slate-400
+    hover:border-gold-300
+    focus:outline-none
+    focus:border-gold-500
+    focus:ring-4 focus:ring-gold-500/10
+    transition-all duration-200
+  `;
+
+    const selectClass = `
+    ${inputClass}
+    appearance-none
+    cursor-pointer
+    bg-no-repeat
+  `;
+
+    /* ============================================================
+       Render
+       ============================================================ */
     return (
         <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }} // Optimize viewport detection
-            transition={{ duration: 0.5, ease: "easeOut" }} // Reduced duration
-            className="w-full max-w-4xl mx-auto px-4 -mt-24 relative z-20"
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="w-full max-w-4xl mx-auto px-3 sm:px-4 -mt-20 sm:-mt-24 relative z-20"
         >
             <form
                 onSubmit={handleSearch}
-                className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100"
+                className="
+          bg-white/95 backdrop-blur-sm
+          rounded-3xl
+          ring-1 ring-slate-100
+          shadow-[0_20px_50px_-15px_rgba(15,23,42,0.15)]
+          overflow-hidden
+        "
             >
-                {/* Header - simplified animation */}
-                <div className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-100 px-6 py-4">
+                {/* ==================== Header ==================== */}
+                <div className="bg-gradient-to-l from-gold-50/60 via-white to-white border-b border-slate-100 px-5 py-4">
                     <div className="flex items-center justify-center gap-2">
-                        <Suspense fallback={<div className="w-5 h-5 bg-gray-200 rounded" />}>
-                            <PiBuilding className="w-5 h-5 text-[#D4B06A]" />
-                        </Suspense>
-                        <span className="font-bold text-gray-800">جستجوی تالار</span>
+
+                        <span className="font-bold text-[14px] text-slate-800">
+                            جستجوی هوشمند تالار
+                        </span>
                     </div>
                 </div>
 
-                <div className="p-4 md:p-6"> {/* Reduced padding on mobile */}
-                    <div className="flex flex-col md:flex-row gap-3 items-end">
-                        {/* Province select */}
-                        <div className="relative flex-1 w-full">
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2 z-10 pointer-events-none">
-                                <Suspense fallback={<div className="w-5 h-5" />}>
-                                    <PiMapPinFill className="w-5 h-5 text-[#D4B06A]" />
-                                </Suspense>
-                            </div>
+                {/* ==================== Fields ==================== */}
+                <div className="p-4 sm:p-5 md:p-6">
+                    <div className="flex flex-col md:flex-row gap-3 items-stretch">
+                        {/* استان */}
+                        <Field icon={PiMapPin}>
                             <select
                                 value={filters.province}
-                                onChange={(e) => handleChange('province', e.target.value)}
-                                className="w-full p-3.5 pr-12 border-2 border-gray-200 rounded-xl bg-white text-[#2C2418] focus:border-[#D4B06A] focus:shadow-lg focus:shadow-[#D4B06A]/10 outline-none appearance-none cursor-pointer transition-all duration-200"
+                                onChange={(e) => handleChange("province", e.target.value)}
+                                className={selectClass}
+                                aria-label="استان"
                             >
                                 <option value="">انتخاب استان</option>
                                 {provinceOptions}
                             </select>
-                        </div>
+                        </Field>
 
-                        {/* City input */}
-                        <div className="relative flex-1 w-full">
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2 z-10 pointer-events-none">
-                                <Suspense fallback={<div className="w-5 h-5" />}>
-                                    <PiMapPinFill className="w-5 h-5 text-[#D4B06A]" />
-                                </Suspense>
-                            </div>
+                        {/* شهر */}
+                        <Field icon={PiMapPin}>
                             <input
                                 type="text"
                                 placeholder="نام شهر"
                                 value={filters.city}
-                                onChange={(e) => handleChange('city', e.target.value)}
-                                className="w-full p-3.5 pr-12 border-2 border-gray-200 rounded-xl bg-white text-[#2C2418] placeholder:text-gray-400 focus:border-[#D4B06A] focus:shadow-lg focus:shadow-[#D4B06A]/10 outline-none transition-all duration-200"
+                                onChange={(e) => handleChange("city", e.target.value)}
+                                className={inputClass}
+                                aria-label="شهر"
                                 enterKeyHint="search"
                             />
-                        </div>
+                        </Field>
 
-                        {/* Event type select */}
-                        <div className="relative flex-1 w-full">
+                        {/* نوع مراسم */}
+                        <Field icon={PiCalendarBlank}>
                             <select
                                 value={filters.event_type}
-                                onChange={(e) => handleChange('event_type', e.target.value)}
-                                className="w-full p-3.5 border-2 border-gray-200 rounded-xl bg-white outline-none focus:border-[#D4B06A] focus:shadow-lg focus:shadow-[#D4B06A]/10 transition-all duration-200 cursor-pointer"
+                                onChange={(e) =>
+                                    handleChange("event_type", e.target.value)
+                                }
+                                className={selectClass}
+                                aria-label="نوع مراسم"
                             >
                                 <option value="">نوع مراسم</option>
                                 {eventTypeOptions}
                             </select>
-                        </div>
+                        </Field>
 
-                        {/* Hall type select */}
-                        <div className="relative flex-1 w-full">
+                        {/* نوع تالار */}
+                        <Field icon={PiSparkle}>
                             <select
                                 value={filters.hall_type}
-                                onChange={(e) => handleChange('hall_type', e.target.value)}
-                                className="w-full p-3.5 border-2 border-gray-200 rounded-xl bg-white outline-none focus:border-[#D4B06A] focus:shadow-lg focus:shadow-[#D4B06A]/10 transition-all duration-200 cursor-pointer"
+                                onChange={(e) =>
+                                    handleChange("hall_type", e.target.value)
+                                }
+                                className={selectClass}
+                                aria-label="نوع تالار"
                             >
                                 <option value="">نوع تالار</option>
                                 {hallTypeOptions}
                             </select>
-                        </div>
+                        </Field>
 
-                        {/* Search button - removed framer-motion for better performance */}
+                        {/* دکمه جستجو */}
                         <button
                             type="submit"
                             disabled={loading}
-                            className="group flex items-center justify-center gap-2 bg-gradient-to-r from-[#D4B06A] to-[#B8922E] text-white px-8 py-3.5 rounded-xl font-bold shadow-md hover:shadow-xl disabled:opacity-70 min-w-[120px] transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed"
+                            className="
+                group flex items-center justify-center gap-2
+                px-6 sm:px-8 py-3.5
+                rounded-xl
+                text-sm font-bold text-white
+                bg-gradient-to-b from-gold-400 to-gold-600
+                hover:from-gold-500 hover:to-gold-700
+                shadow-md shadow-gold-500/25
+                hover:shadow-lg hover:shadow-gold-500/40
+                hover:-translate-y-0.5
+                active:scale-95
+                focus:outline-none focus:ring-4 focus:ring-gold-500/25
+                disabled:opacity-70 disabled:cursor-not-allowed
+                disabled:hover:translate-y-0 disabled:hover:shadow-md
+                min-w-[120px]
+                transition-all duration-200
+                flex-shrink-0
+              "
                         >
                             {loading ? (
-                                <Suspense fallback={<div className="w-5 h-5 animate-spin border-2 border-white rounded-full" />}>
-                                    <PiSpinner className="w-5 h-5 animate-spin" />
-                                </Suspense>
+                                <>
+                                    <Suspense fallback={<div className="w-5 h-5" />}>
+                                        <PiSpinnerGap className="w-5 h-5 animate-spin" />
+                                    </Suspense>
+                                    <span>در حال جستجو...</span>
+                                </>
                             ) : (
                                 <>
                                     <Suspense fallback={<div className="w-5 h-5" />}>
                                         <PiMagnifyingGlass className="w-5 h-5" />
                                     </Suspense>
                                     <span>جستجو</span>
-                                    <Suspense fallback={<div className="w-4 h-4" />}>
-                                        <PiArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
-                                    </Suspense>
                                 </>
                             )}
                         </button>
@@ -206,5 +348,5 @@ export default function AdvancedSearch() {
                 </div>
             </form>
         </motion.div>
-    )
+    );
 }

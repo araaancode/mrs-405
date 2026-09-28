@@ -7,90 +7,284 @@ import {
     PiMapPin,
     PiInstagramLogo,
     PiTelegramLogo,
-    PiWhatsappLogo
+    PiWhatsappLogo,
+    PiArrowUpRight,
+    PiHeart,
 } from "react-icons/pi";
 
+/* ============================================================
+   داده‌ها
+   ============================================================ */
+const QUICK_LINKS = [
+    { href: "/", label: "خانه" },
+    { href: "/halls", label: "تالارها" },
+    { href: "/about", label: "درباره ما" },
+    { href: "/contact", label: "تماس با ما" },
+];
+
+const SERVICES = [
+    { href: "/halls", label: "رزرو تالار" },
+    { href: "/user/tickets", label: "پشتیبانی" },
+    { href: "/faq", label: "سوالات متداول" },
+    { href: "/terms", label: "قوانین و مقررات" },
+];
+
+const SOCIALS = [
+    {
+        href: "https://instagram.com",
+        label: "اینستاگرام",
+        icon: PiInstagramLogo,
+        hoverColor: "hover:bg-gradient-to-br hover:from-pink-500 hover:to-purple-600",
+    },
+    {
+        href: "https://t.me",
+        label: "تلگرام",
+        icon: PiTelegramLogo,
+        hoverColor: "hover:bg-gradient-to-br hover:from-sky-400 hover:to-sky-600",
+    },
+    {
+        href: "https://wa.me",
+        label: "واتساپ",
+        icon: PiWhatsappLogo,
+        hoverColor: "hover:bg-gradient-to-br hover:from-emerald-400 hover:to-emerald-600",
+    },
+];
+
+const CONTACT = [
+    {
+        icon: PiPhone,
+        value: "۰۲۱-۱۲۳۴۵۶۷۸",
+        href: "tel:+982112345678",
+        dir: "rtl",
+    },
+    {
+        icon: PiEnvelope,
+        value: "info@mrsapp.com",
+        href: "mailto:info@mrsapp.com",
+        dir: "ltr",
+    },
+    {
+        icon: PiMapPin,
+        value: "تهران، خیابان ولیعصر",
+        href: null,
+    },
+];
+
+/* ============================================================
+   Sub-components
+   ============================================================ */
+
+/** لینک ستون‌های فوتر */
+function FooterLink({ href, children }) {
+    return (
+        <Link
+            href={href}
+            className="
+        group inline-flex items-center gap-1
+        text-slate-400 hover:text-gold-400
+        transition-colors duration-200
+      "
+        >
+            <span>{children}</span>
+            <PiArrowUpRight
+                className="
+          w-3 h-3 opacity-0 -translate-x-1
+          group-hover:opacity-100 group-hover:translate-x-0
+          transition-all duration-200
+        "
+            />
+        </Link>
+    );
+}
+
+/** عنوان ستون */
+function ColumnTitle({ children }) {
+    return (
+        <h3 className="relative inline-block font-bold text-[13px] text-gold-400 mb-4 pb-2">
+            {children}
+            <span className="absolute bottom-0 right-0 w-8 h-0.5 rounded-full bg-gradient-to-r from-gold-400 to-gold-600" />
+        </h3>
+    );
+}
+
+/* ============================================================
+   Footer
+   ============================================================ */
 export default function Footer() {
-    const currentYear = new Date().toLocaleDateString('fa-IR', { year: 'numeric' });
+    const currentYear = new Date().toLocaleDateString("fa-IR", {
+        year: "numeric",
+    });
 
     return (
-        <footer className="bg-gradient-to-br from-[#2C2418] to-[#1a1510] text-white mt-12">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <footer className="relative bg-gradient-to-br from-[#2C2418] via-[#221c13] to-[#1a1510] text-white mt-16 overflow-hidden">
+            {/* الگوی تزئینی پس‌زمینه */}
+            <div
+                className="absolute inset-0 pointer-events-none opacity-30"
+                style={{
+                    backgroundImage: `
+            radial-gradient(circle at 15% 20%, rgba(198,161,76,0.08) 0%, transparent 45%),
+            radial-gradient(circle at 85% 75%, rgba(198,161,76,0.06) 0%, transparent 45%)
+          `,
+                }}
+            />
 
-                    {/* درباره */}
-                    <div>
-                        <div className="flex items-center gap-2 mb-4">
-                            <div className="w-10 h-10 bg-gradient-to-br from-[#D4B06A] to-[#B8922E] rounded-xl flex items-center justify-center">
+            {/* خط طلایی بالا */}
+            <div className="h-1 bg-gradient-to-r from-transparent via-gold-500 to-transparent relative" />
+
+            <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-14">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10">
+
+                    {/* ==================== درباره ==================== */}
+                    <div className="sm:col-span-2 lg:col-span-1">
+                        <Link
+                            href="/"
+                            className="inline-flex items-center gap-2.5 mb-4 group"
+                        >
+                            <div
+                                className="
+                  w-11 h-11 rounded-xl
+                  bg-gradient-to-br from-gold-400 to-gold-600
+                  flex items-center justify-center
+                  shadow-lg shadow-gold-500/25
+                  group-hover:shadow-xl group-hover:shadow-gold-500/40
+                  group-hover:scale-105
+                  transition-all duration-300
+                "
+                            >
                                 <PiBuildings className="w-5 h-5 text-white" />
                             </div>
-                            <span className="font-black text-lg">رزرو تالار</span>
-                        </div>
-                        <p className="text-sm text-gray-400 leading-relaxed">
-                            سیستم جامع رزرو آنلاین تالارهای عروسی، همایش و مراسم با پرداخت امن و آسان.
+                            <span className="font-black text-lg text-white tracking-tight">
+                                رزرو تالار
+                            </span>
+                        </Link>
+
+                        <p className="text-[13px] text-slate-400 leading-relaxed mb-5">
+                            سیستم جامع رزرو آنلاین تالارهای عروسی، همایش و مراسم با پرداخت
+                            امن و آسان در سراسر ایران.
                         </p>
-                    </div>
-
-                    {/* لینک‌های سریع */}
-                    <div>
-                        <h3 className="font-bold text-[#D4B06A] mb-4">دسترسی سریع</h3>
-                        <ul className="space-y-2 text-sm text-gray-400">
-                            <li><Link href="/" className="hover:text-[#D4B06A] transition">خانه</Link></li>
-                            <li><Link href="/halls" className="hover:text-[#D4B06A] transition">تالارها</Link></li>
-                            <li><Link href="/reservations" className="hover:text-[#D4B06A] transition">رزروهای من</Link></li>
-                            <li><Link href="/about" className="hover:text-[#D4B06A] transition">درباره ما</Link></li>
-                        </ul>
-                    </div>
-
-                    {/* خدمات */}
-                    <div>
-                        <h3 className="font-bold text-[#D4B06A] mb-4">خدمات</h3>
-                        <ul className="space-y-2 text-sm text-gray-400">
-                            <li><Link href="/halls" className="hover:text-[#D4B06A] transition">رزرو تالار</Link></li>
-                            <li><Link href="/support" className="hover:text-[#D4B06A] transition">پشتیبانی</Link></li>
-                            <li><Link href="/faq" className="hover:text-[#D4B06A] transition">سوالات متداول</Link></li>
-                            <li><Link href="/terms" className="hover:text-[#D4B06A] transition">قوانین و مقررات</Link></li>
-                        </ul>
-                    </div>
-
-                    {/* تماس */}
-                    <div>
-                        <h3 className="font-bold text-[#D4B06A] mb-4">تماس با ما</h3>
-                        <ul className="space-y-3 text-sm text-gray-400">
-                            <li className="flex items-center gap-2">
-                                <PiPhone className="w-4 h-4 text-[#D4B06A]" />
-                                <span dir="ltr">۰۲۱-۱۲۳۴۵۶۷۸</span>
-                            </li>
-                            <li className="flex items-center gap-2">
-                                <PiEnvelope className="w-4 h-4 text-[#D4B06A]" />
-                                <span>info@mrsapp.com</span>
-                            </li>
-                            <li className="flex items-start gap-2">
-                                <PiMapPin className="w-4 h-4 text-[#D4B06A] mt-0.5" />
-                                <span>تهران، خیابان ولیعصر</span>
-                            </li>
-                        </ul>
 
                         {/* شبکه‌های اجتماعی */}
-                        <div className="flex items-center gap-3 mt-4">
-                            <a href="#" className="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center hover:bg-[#D4B06A] transition">
-                                <PiInstagramLogo className="w-4 h-4" />
-                            </a>
-                            <a href="#" className="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center hover:bg-[#D4B06A] transition">
-                                <PiTelegramLogo className="w-4 h-4" />
-                            </a>
-                            <a href="#" className="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center hover:bg-[#D4B06A] transition">
-                                <PiWhatsappLogo className="w-4 h-4" />
-                            </a>
+                        <div className="flex items-center gap-2.5">
+                            {SOCIALS.map((social) => {
+                                const Icon = social.icon;
+                                return (
+                                    <a
+                                        key={social.label}
+                                        href={social.href}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        aria-label={social.label}
+                                        title={social.label}
+                                        className={`
+                      w-10 h-10 rounded-xl
+                      flex items-center justify-center
+                      bg-white/5
+                      ring-1 ring-white/10
+                      text-slate-300 hover:text-white
+                      hover:scale-110 active:scale-95
+                      hover:ring-transparent
+                      shadow-sm hover:shadow-lg
+                      transition-all duration-300
+                      ${social.hoverColor}
+                    `}
+                                    >
+                                        <Icon className="w-[18px] h-[18px]" />
+                                    </a>
+                                );
+                            })}
                         </div>
+                    </div>
+
+                    {/* ==================== دسترسی سریع ==================== */}
+                    <div>
+                        <ColumnTitle>دسترسی سریع</ColumnTitle>
+                        <ul className="space-y-3 text-[13px]">
+                            {QUICK_LINKS.map((link) => (
+                                <li key={link.href}>
+                                    <FooterLink href={link.href}>{link.label}</FooterLink>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    {/* ==================== خدمات ==================== */}
+                    <div>
+                        <ColumnTitle>خدمات</ColumnTitle>
+                        <ul className="space-y-3 text-[13px]">
+                            {SERVICES.map((link) => (
+                                <li key={link.href}>
+                                    <FooterLink href={link.href}>{link.label}</FooterLink>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    {/* ==================== تماس ==================== */}
+                    <div>
+                        <ColumnTitle>تماس با ما</ColumnTitle>
+                        <ul className="space-y-3 text-[13px]">
+                            {CONTACT.map((item, i) => {
+                                const Icon = item.icon;
+                                const content = (
+                                    <>
+                                        <span
+                                            className="
+                        w-8 h-8 rounded-lg flex-shrink-0
+                        bg-gold-500/10 ring-1 ring-gold-500/20
+                        flex items-center justify-center
+                        group-hover/item:bg-gold-500 group-hover/item:ring-gold-500
+                        transition-all duration-200
+                      "
+                                        >
+                                            <Icon className="w-4 h-4 text-gold-400 group-hover/item:text-white transition-colors" />
+                                        </span>
+                                        <span
+                                            className="text-slate-400 group-hover/item:text-gold-300 transition-colors"
+                                            dir={item.dir || "rtl"}
+                                        >
+                                            {item.value}
+                                        </span>
+                                    </>
+                                );
+
+                                return (
+                                    <li key={i}>
+                                        {item.href ? (
+                                            <a
+                                                href={item.href}
+                                                className="group/item flex items-center gap-2.5 hover:translate-x-[-2px] transition-transform duration-200"
+                                            >
+                                                {content}
+                                            </a>
+                                        ) : (
+                                            <div className="group/item flex items-center gap-2.5">
+                                                {content}
+                                            </div>
+                                        )}
+                                    </li>
+                                );
+                            })}
+                        </ul>
                     </div>
                 </div>
 
-                {/* خط جداکننده */}
-                <div className="border-t border-white/10 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
-                    <p>© {currentYear} سیستم رزرو تالار. تمامی حقوق محفوظ است.</p>
-                    <p>
-                        طراحی و توسعه با ❤️ در ایران
+                {/* ==================== خط جداکننده ==================== */}
+                <div className="my-8 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
+                {/* ==================== پایین فوتر ==================== */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-[12px]">
+                    <p className="text-slate-500 text-center sm:text-right">
+                        © {currentYear}{" "}
+                        <span className="text-slate-300 font-medium">
+                            سیستم رزرو تالار
+                        </span>
+                        . تمامی حقوق محفوظ است.
+                    </p>
+
+                    <p className="inline-flex items-center gap-1.5 text-slate-500">
+                        <span>طراحی و توسعه با</span>
+                        <PiHeart className="w-3.5 h-3.5 text-rose-500 fill-rose-500 animate-pulse" />
+                        <span>در ایران</span>
                     </p>
                 </div>
             </div>

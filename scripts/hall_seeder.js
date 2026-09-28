@@ -53,7 +53,7 @@ const iranLocations = {
     "یزد": ["یزد", "میبد", "اردکان", "بافق"]
 };
 
-const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/mrsapp";
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/mrsapp";
 
 function generateValidNationalCode() {
     const digits = [];
@@ -114,7 +114,7 @@ function getRandomFutureDates(count = 3) {
 
 async function seed() {
     try {
-        await mongoose.connect(MONGO_URI);
+        await mongoose.connect(MONGODB_URI);
         console.log(" MongoDB Connected");
 
         // پاک کردن داده‌های قبلی
@@ -240,3 +240,4 @@ async function seed() {
 }
 
 seed();
+
