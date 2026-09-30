@@ -6,8 +6,48 @@ import persian_fa from "react-date-object/locales/persian_fa";
 import "react-multi-date-picker/styles/colors/teal.css";
 import { useRef } from "react";
 
+/* ============================================================
+   تابع کمکی — تبدیل هر نوع مقدار به Date معتبر
+   ============================================================ */
+function toValidDate(value) {
+    if (!value) return null;
+
+    // 1. اگر از قبل Date است
+    if (value instanceof Date) {
+        return isNaN(value.getTime()) ? null : value;
+    }
+
+    // 2. اگر DateObject از react-multi-date-picker یا react-date-object است
+    if (typeof value === "object" && typeof value.toDate === "function") {
+        try {
+            const d = value.toDate();
+            return d instanceof Date && !isNaN(d.getTime()) ? d : null;
+        } catch {
+            return null;
+        }
+    }
+
+    // 3. اگر رشته ISO است (مثلاً "1990-05-14" یا "1990-05-14T00:00:00")
+    if (typeof value === "string") {
+        const d = new Date(value);
+        return isNaN(d.getTime()) ? null : d;
+    }
+
+    // 4. اگر timestamp عددی است
+    if (typeof value === "number") {
+        const d = new Date(value);
+        return isNaN(d.getTime()) ? null : d;
+    }
+
+    return null;
+}
+
+/* ============================================================
+   BirthDatePicker — انتخاب تاریخ تولد شمسی
+   ============================================================ */
 export function BirthDatePicker({ value, onChange, error }) {
     const ref = useRef(null);
+    const safeValue = toValidDate(value);
 
     return (
         <div className="flex flex-col gap-1.5">
@@ -20,7 +60,7 @@ export function BirthDatePicker({ value, onChange, error }) {
                     ref={ref}
                     calendar={persian}
                     locale={persian_fa}
-                    value={value}
+                    value={safeValue}
                     onChange={onChange}
                     format="YYYY/MM/DD"
                     calendarPosition="bottom-right"
@@ -63,11 +103,11 @@ export function BirthDatePicker({ value, onChange, error }) {
 
             {error ? (
                 <p className="text-xs text-rose-600">{error}</p>
-            ) : value ? (
+            ) : safeValue ? (
                 <p className="text-xs text-slate-500">
                     تاریخ انتخاب‌شده:{" "}
                     <span className="text-slate-700 font-medium">
-                        {value.toLocaleDateString("fa-IR")}
+                        {safeValue.toLocaleDateString("fa-IR")}
                     </span>
                 </p>
             ) : null}
