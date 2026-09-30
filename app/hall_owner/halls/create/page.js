@@ -2,1351 +2,1259 @@
 
 import { useState } from "react";
 import axios from "axios";
+import { motion } from "framer-motion";
 import DatePicker from "react-multi-date-picker";
 import persian from "react-date-object/calendars/persian";
 import persian_fa from "react-date-object/locales/persian_fa";
 import "react-multi-date-picker/styles/colors/teal.css";
-import toast, { Toaster } from "react-hot-toast";
+import { toast } from "react-toastify";
+import {
+  PiBuildings,
+  PiUser,
+  PiWrench,
+  PiCurrencyCircleDollar,
+  PiShieldCheck,
+  PiCalendarBlank,
+  PiImage,
+  PiFilePdf,
+  PiPlusCircle,
+  PiX,
+  PiFloppyDisk,
+  PiSpinnerGap,
+  PiMapPin,
+  PiPhone,
+  PiEnvelopeSimple,
+  PiRuler,
+  PiUsersThree,
+  PiCarProfile,
+  PiNote,
+  PiPercent,
+} from "react-icons/pi";
+import { notify } from "@/lib/toast";
 
-export default function CreateHallPage() {
+/* ============================================================
+   Static Data
+   ============================================================ */
+const EVENT_TYPES = [
+  "تولد",
+  "عروسی",
+  "عزاداری",
+  "تجلیل",
+  "همایش",
+  "جشن",
+  "دیگر",
+];
 
-    const [form, setForm] = useState({
-        title: "",
-        province: "",
-        city: "",
-        address: "",
-        lat: "",
-        lng: "",
-        postal_code: "",
-        hall_phone: "",
-        hall_owner_name: "",
-        hall_owner_phone: "",
-        hall_measure: "",
-        description: "",
-        year: "",
-        hall_roles: "",
-        capacity: "",
-        duration: "",
-        entrance_rolls: "",
-        hall_type: "",
-        host_type: "",
-        event_type: "",
-        properties: "",
-        parking_count: "",
-        roof_count: "",
-        has_sans: false,
-        sans_price: "",
-        sans_discount: "",
-        licensee_number: "",
-        cancel_rolls: "",
-        camera_capacities: "",
-        reservation_rolls: ""
-    });
+const HALL_TYPES = [
+  "سربسته",
+  "روباز",
+  "باغ",
+  "تراس",
+  "سالن سرپوشیده",
+  "دیگر",
+];
 
-    const [images, setImages] = useState([]);
-    const [documents, setDocuments] = useState([]);
-    const [selectedDates, setSelectedDates] = useState([]);
-    const [loading, setLoading] = useState(false);
+const HOST_TYPES = [
+  "فول",
+  "نوشیدنی",
+  "شام",
+  "ناهار",
+  "صبحانه",
+  "بدون پذیرایی",
+  "دیگر",
+];
 
-    // تابع تبدیل تاریخ شمسی به میلادی
-    const convertToGregorian = (dateObject) => {
-        if (!dateObject) return null;
-        const gregorianDate = dateObject.toDate();
-        return gregorianDate.toISOString().split('T')[0];
-    };
+/* ============================================================
+   Helpers
+   ============================================================ */
+const toArray = (str) => {
+  if (!str) return [];
+  return str
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+};
 
-    const handleChange = (e) => {
-        const { name, value, type, checked } = e.target;
-        setForm({
-            ...form,
-            [name]: type === "checkbox" ? checked : value
-        });
-    };
+const toNumber = (value) => {
+  if (value === "" || value === null || value === undefined) return undefined;
+  const n = Number(value);
+  return isNaN(n) ? undefined : n;
+};
 
-    const convertToBase64 = (file) => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = reject;
-        });
-    };
+const convertToBase64 = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+  });
 
-    const handleImages = async (e) => {
-        const files = Array.from(e.target.files);
+const convertToGregorian = (dateObject) => {
+  if (!dateObject) return null;
+  return dateObject.toDate().toISOString().split("T")[0];
+};
 
-        if (files.length > 0) {
-            toast.loading("در حال بارگذاری تصاویر...", {
-                duration: 2000,
-                position: "top-right"
-            });
-        }
+/* ============================================================
+   FormSection
+   ============================================================ */
+function FormSection({ icon: Icon, title, description, children, index = 0 }) {
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay: index * 0.05 }}
+      className="
+        py-6 sm:py-7
+        border-b border-slate-100 last:border-b-0
+      "
+    >
+      <div className="flex items-start gap-3 pb-3 border-b border-slate-100 mb-5">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gold-50 to-gold-100/60 text-gold-600 flex items-center justify-center flex-shrink-0 ring-1 ring-gold-200/60">
+          <Icon className="w-5 h-5" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-[15px] font-bold text-slate-900">{title}</h3>
+          {description && (
+            <p className="text-[12px] text-slate-500 mt-0.5">
+              {description}
+            </p>
+          )}
+        </div>
+      </div>
+      {children}
+    </motion.section>
+  );
+}
 
-        const base64 = await Promise.all(files.map(convertToBase64));
-        setImages(base64);
+/* ============================================================
+   InputField
+   ============================================================ */
+function InputField({
+  label,
+  name,
+  icon: Icon,
+  type = "text",
+  value,
+  onChange,
+  placeholder,
+  dir = "rtl",
+  required,
+  inputMode,
+  step,
+  error,
+  hint,
+}) {
+  return (
+    <div>
+      <label className="block text-[13px] font-medium text-slate-700 mb-1.5">
+        {label}
+        {required && <span className="text-rose-500 mr-1">*</span>}
+      </label>
 
-        if (files.length > 0) {
-            toast.success(`${files.length} تصویر با موفقیت بارگذاری شد`, {
-                duration: 3000,
-                position: "top-right",
-                icon: "",
-                style: {
-                    background: "#fff",
-                    color: "#166534",
-                    borderRadius: "12px",
-                    padding: "12px 20px",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    border: "1px solid #86EFAC",
-                    boxShadow: "0 4px 15px rgba(0,0,0,0.08)"
-                }
-            });
-        }
-    };
-
-    const handleDocs = async (e) => {
-        const files = Array.from(e.target.files);
-
-        if (files.length > 0) {
-            toast.loading("در حال بارگذاری مدارک...", {
-                duration: 2000,
-                position: "top-right"
-            });
-        }
-
-        const base64 = await Promise.all(files.map(convertToBase64));
-        setDocuments(base64);
-
-        if (files.length > 0) {
-            toast.success(`${files.length} مدرک با موفقیت بارگذاری شد`, {
-                duration: 3000,
-                position: "top-right",
-                icon: "",
-                style: {
-                    background: "#fff",
-                    color: "#166534",
-                    borderRadius: "12px",
-                    padding: "12px 20px",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    border: "1px solid #86EFAC",
-                    boxShadow: "0 4px 15px rgba(0,0,0,0.08)"
-                }
-            });
-        }
-    };
-
-    // اضافه کردن تاریخ
-    const addDate = (dateObject) => {
-        if (!dateObject) return;
-
-        const gregorianDate = convertToGregorian(dateObject);
-
-        if (!selectedDates.includes(gregorianDate)) {
-            setSelectedDates([...selectedDates, gregorianDate]);
-            toast.success("تاریخ با موفقیت اضافه شد", {
-                duration: 2000,
-                position: "top-right",
-                icon: "",
-                style: {
-                    background: "#EFF6FF",
-                    color: "#1E40AF",
-                    borderRadius: "12px",
-                    padding: "12px 20px",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    border: "1px solid #93C5FD",
-                    boxShadow: "0 4px 15px rgba(0,0,0,0.08)"
-                }
-            });
-        } else {
-            toast.error("این تاریخ قبلاً اضافه شده است", {
-                duration: 3000,
-                position: "top-right",
-                icon: "",
-                style: {
-                    background: "#FEF2F2",
-                    color: "#991B1B",
-                    borderRadius: "12px",
-                    padding: "12px 20px",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    border: "1px solid #FCA5A5",
-                    boxShadow: "0 4px 15px rgba(0,0,0,0.08)"
-                }
-            });
-        }
-    };
-
-    const removeDate = (date) => {
-        setSelectedDates(selectedDates.filter(d => d !== date));
-        toast("تاریخ حذف شد", {
-            duration: 2000,
-            position: "top-right",
-            icon: "",
-            style: {
-                background: "#FEF2F2",
-                color: "#991B1B",
-                borderRadius: "12px",
-                padding: "12px 20px",
-                fontSize: "14px",
-                fontWeight: "500",
-                border: "1px solid #FCA5A5",
-                boxShadow: "0 4px 15px rgba(0,0,0,0.08)"
+      <div className="relative group">
+        {Icon && (
+          <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none z-10">
+            <Icon className="w-4 h-4 text-gold-500 group-focus-within:text-gold-600 transition-colors" />
+          </div>
+        )}
+        <input
+          type={type}
+          name={name}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          dir={dir}
+          required={required}
+          inputMode={inputMode}
+          step={step}
+          className={`
+            w-full
+            ${Icon ? "pr-10" : "pr-3.5"} pl-3.5
+            py-2.5
+            bg-white border rounded-xl
+            text-[13.5px] text-slate-900
+            placeholder:text-slate-400
+            transition-all duration-200
+            focus:outline-none focus:ring-4
+            ${
+              error
+                ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500/10"
+                : "border-slate-200 hover:border-gold-300 focus:border-gold-500 focus:ring-gold-500/10"
             }
+            ${dir === "ltr" ? "text-left" : "text-right"}
+          `}
+        />
+      </div>
+
+      {error ? (
+        <p className="text-[11px] text-rose-600 mt-1.5">{error}</p>
+      ) : hint ? (
+        <p className="text-[11px] text-slate-400 mt-1.5">{hint}</p>
+      ) : null}
+    </div>
+  );
+}
+
+/* ============================================================
+   SelectField
+   ============================================================ */
+function SelectField({
+  label,
+  name,
+  icon: Icon,
+  value,
+  onChange,
+  options,
+  placeholder = "انتخاب کنید",
+  required,
+  error,
+}) {
+  return (
+    <div>
+      <label className="block text-[13px] font-medium text-slate-700 mb-1.5">
+        {label}
+        {required && <span className="text-rose-500 mr-1">*</span>}
+      </label>
+
+      <div className="relative group">
+        {Icon && (
+          <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none z-10">
+            <Icon className="w-4 h-4 text-gold-500 group-focus-within:text-gold-600 transition-colors" />
+          </div>
+        )}
+        <select
+          name={name}
+          value={value}
+          onChange={onChange}
+          required={required}
+          className={`
+            w-full
+            ${Icon ? "pr-10" : "pr-3.5"} pl-3.5
+            py-2.5
+            bg-white border rounded-xl
+            text-[13.5px] text-slate-900
+            cursor-pointer
+            transition-all duration-200
+            focus:outline-none focus:ring-4
+            ${
+              error
+                ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500/10"
+                : "border-slate-200 hover:border-gold-300 focus:border-gold-500 focus:ring-gold-500/10"
+            }
+          `}
+        >
+          <option value="">{placeholder}</option>
+          {options.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {error && <p className="text-[11px] text-rose-600 mt-1.5">{error}</p>}
+    </div>
+  );
+}
+
+/* ============================================================
+   TextareaField
+   ============================================================ */
+function TextareaField({
+  label,
+  name,
+  value,
+  onChange,
+  placeholder,
+  required,
+  error,
+  hint,
+  rows = 4,
+}) {
+  return (
+    <div>
+      <label className="block text-[13px] font-medium text-slate-700 mb-1.5">
+        {label}
+        {required && <span className="text-rose-500 mr-1">*</span>}
+      </label>
+
+      <textarea
+        name={name}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        required={required}
+        rows={rows}
+        className={`
+          w-full px-3.5 py-3
+          bg-white border rounded-xl
+          text-[13.5px] text-slate-900
+          placeholder:text-slate-400
+          resize-none
+          transition-all duration-200
+          focus:outline-none focus:ring-4
+          ${
+            error
+              ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500/10"
+              : "border-slate-200 hover:border-gold-300 focus:border-gold-500 focus:ring-gold-500/10"
+          }
+        `}
+      />
+
+      {error ? (
+        <p className="text-[11px] text-rose-600 mt-1.5">{error}</p>
+      ) : hint ? (
+        <p className="text-[11px] text-slate-400 mt-1.5">{hint}</p>
+      ) : null}
+    </div>
+  );
+}
+
+/* ============================================================
+   UploadBox
+   ============================================================ */
+function UploadBox({
+  id,
+  accept,
+  multiple = true,
+  onChange,
+  title,
+  hint,
+  icon: Icon,
+}) {
+  return (
+    <div className="relative group rounded-2xl border-2 border-dashed border-slate-200 hover:border-gold-400 bg-slate-50/50 hover:bg-gold-50/40 transition-all duration-300 overflow-hidden">
+      <input
+        id={id}
+        type="file"
+        accept={accept}
+        multiple={multiple}
+        onChange={onChange}
+        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+      />
+      <label
+        htmlFor={id}
+        className="flex flex-col items-center justify-center gap-2 py-8 sm:py-10 px-4 cursor-pointer"
+      >
+        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gold-50 to-gold-100/60 text-gold-600 flex items-center justify-center ring-1 ring-gold-200/60 group-hover:scale-110 transition-transform">
+          <Icon className="w-6 h-6" />
+        </div>
+        <p className="text-[13.5px] font-bold text-slate-800">{title}</p>
+        <p className="text-[11px] text-slate-400">{hint}</p>
+      </label>
+    </div>
+  );
+}
+
+/* ============================================================
+   Page
+   ============================================================ */
+export default function CreateHallPage() {
+  const [form, setForm] = useState({
+    title: "",
+    province: "",
+    city: "",
+    address: "",
+    lat: "",
+    lng: "",
+    postal_code: "",
+    hall_phone: "",
+    hall_owner_name: "",
+    hall_owner_phone: "",
+    hall_measure: "",
+    description: "",
+    year: "",
+    hall_roles: "",
+    capacity: "",
+    duration: "",
+    entrance_rolls: "",
+    hall_type: "",
+    host_type: "",
+    event_type: "",
+    properties: "",
+    parking_count: "",
+    roof_count: "",
+    has_sans: false,
+    sans_price: "",
+    sans_discount: "",
+    licensee_number: "",
+    cancel_rolls: "",
+    camera_capacities: "",
+    reservation_rolls: "",
+  });
+
+  const [images, setImages] = useState([]);
+  const [documents, setDocuments] = useState([]);
+  const [selectedDates, setSelectedDates] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  /* ============================================================
+     Handlers
+     ============================================================ */
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const handleImages = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    const toastId = toast.loading(`در حال بارگذاری ${files.length} تصویر...`);
+    try {
+      const base64 = await Promise.all(files.map(convertToBase64));
+      setImages(base64);
+      toast.update(toastId, {
+        render: `${files.length} تصویر با موفقیت بارگذاری شد`,
+        type: "success",
+        isLoading: false,
+        autoClose: 5000,
+      });
+    } catch {
+      toast.update(toastId, {
+        render: "خطا در بارگذاری تصاویر",
+        type: "error",
+        isLoading: false,
+        autoClose: 8000,
+      });
+    }
+  };
+
+  const handleDocs = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    const toastId = toast.loading(`در حال بارگذاری ${files.length} مدرک...`);
+    try {
+      const base64 = await Promise.all(files.map(convertToBase64));
+      setDocuments(base64);
+      toast.update(toastId, {
+        render: `${files.length} مدرک با موفقیت بارگذاری شد`,
+        type: "success",
+        isLoading: false,
+        autoClose: 5000,
+      });
+    } catch {
+      toast.update(toastId, {
+        render: "خطا در بارگذاری مدارک",
+        type: "error",
+        isLoading: false,
+        autoClose: 8000,
+      });
+    }
+  };
+
+  const addDate = (dateObject) => {
+    if (!dateObject) return;
+    const gregorianDate = convertToGregorian(dateObject);
+
+    if (selectedDates.includes(gregorianDate)) {
+      notify.warning("این تاریخ قبلاً اضافه شده است");
+      return;
+    }
+    setSelectedDates([...selectedDates, gregorianDate]);
+    notify.success("تاریخ اضافه شد");
+  };
+
+  const removeDate = (date) => {
+    setSelectedDates(selectedDates.filter((d) => d !== date));
+    notify.info("تاریخ حذف شد");
+  };
+
+  /* ============================================================
+     Validate
+     ============================================================ */
+  const validateForm = () => {
+    if (!form.description || form.description.trim().length < 20) {
+      notify.error("توضیحات باید حداقل ۲۰ کاراکتر باشد");
+      return false;
+    }
+    if (images.length === 0) {
+      notify.error("حداقل یک تصویر انتخاب کنید");
+      return false;
+    }
+    const lat = parseFloat(form.lat);
+    if (isNaN(lat) || lat < -90 || lat > 90) {
+      notify.error("Latitude باید بین -90 و 90 باشد");
+      return false;
+    }
+    const lng = parseFloat(form.lng);
+    if (isNaN(lng) || lng < -180 || lng > 180) {
+      notify.error("Longitude باید بین -180 و 180 باشد");
+      return false;
+    }
+    return true;
+  };
+
+  /* ============================================================
+     Submit
+     ============================================================ */
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    setLoading(true);
+    const toastId = toast.loading("در حال ثبت تالار...");
+
+    try {
+      const payload = {
+        ...form,
+        lat: parseFloat(form.lat),
+        lng: parseFloat(form.lng),
+        hall_measure: toNumber(form.hall_measure),
+        capacity: toNumber(form.capacity),
+        duration: toNumber(form.duration),
+        year: toNumber(form.year),
+        parking_count: toNumber(form.parking_count),
+        roof_count: toNumber(form.roof_count),
+        sans_price: toNumber(form.sans_price),
+        sans_discount: toNumber(form.sans_discount),
+        images,
+        hall_document: documents,
+        free_dates: selectedDates,
+        properties: toArray(form.properties),
+        hall_roles: toArray(form.hall_roles),
+        entrance_rolls: toArray(form.entrance_rolls),
+        cancel_rolls: toArray(form.cancel_rolls),
+        camera_capacities: toArray(form.camera_capacities),
+        reservation_rolls: toArray(form.reservation_rolls),
+      };
+
+      const { data } = await axios.post("/api/hall_owner/halls", payload);
+
+      if (data.success) {
+        toast.update(toastId, {
+          render: "تالار با موفقیت ثبت شد!",
+          type: "success",
+          isLoading: false,
+          autoClose: 8000,
         });
-    };
 
-    const toArray = (str) => {
-        if (!str) return [];
-        return str
-            .split(",")
-            .map(s => s.trim())
-            .filter(Boolean);
-    };
+        /* reset */
+        setForm({
+          title: "",
+          province: "",
+          city: "",
+          address: "",
+          lat: "",
+          lng: "",
+          postal_code: "",
+          hall_phone: "",
+          hall_owner_name: "",
+          hall_owner_phone: "",
+          hall_measure: "",
+          description: "",
+          year: "",
+          hall_roles: "",
+          capacity: "",
+          duration: "",
+          entrance_rolls: "",
+          hall_type: "",
+          host_type: "",
+          event_type: "",
+          properties: "",
+          parking_count: "",
+          roof_count: "",
+          has_sans: false,
+          sans_price: "",
+          sans_discount: "",
+          licensee_number: "",
+          cancel_rolls: "",
+          camera_capacities: "",
+          reservation_rolls: "",
+        });
+        setImages([]);
+        setDocuments([]);
+        setSelectedDates([]);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.update(toastId, {
+        render:
+          error.response?.data?.message ||
+          "خطا در ثبت تالار. لطفاً مجدداً تلاش کنید.",
+        type: "error",
+        isLoading: false,
+        autoClose: 10000,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const toNumber = (value) => {
-        if (value === "" || value === null || value === undefined) return undefined;
-        const n = Number(value);
-        return isNaN(n) ? undefined : n;
-    };
+  /* ============================================================
+     Render
+     ============================================================ */
+  return (
+    <div dir="rtl" className="w-full">
+      {/* ==================== Header ==================== */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+        className="mb-6"
+      >
+        <div className="flex items-start gap-3">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center shadow-lg shadow-gold-500/25 flex-shrink-0">
+            <PiBuildings className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
+              ایجاد تالار جدید
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500 mt-1">
+              اطلاعات کامل تالار خود را وارد کنید
+            </p>
+          </div>
+        </div>
+      </motion.div>
 
-    const validateForm = () => {
-        // بررسی توضیحات (حداقل 20 کاراکتر)
-        if (!form.description || form.description.trim().length < 20) {
-            toast.error("توضیحات باید حداقل ۲۰ کاراکتر باشد", {
-                duration: 3000,
-                position: "top-right",
-                icon: "❌",
-                style: {
-                    background: "#FEF2F2",
-                    color: "#991B1B",
-                    borderRadius: "12px",
-                    padding: "12px 20px",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    border: "1px solid #FCA5A5",
-                    boxShadow: "0 4px 15px rgba(0,0,0,0.08)"
+      {/* ==================== Form ==================== */}
+      <form
+        onSubmit={handleSubmit}
+        className="
+          bg-white rounded-2xl
+          ring-1 ring-slate-100
+          shadow-[0_1px_2px_rgba(15,23,42,0.04)]
+          p-5 sm:p-7
+        "
+      >
+        {/* ============ اطلاعات اصلی ============ */}
+        <FormSection
+          index={0}
+          icon={PiBuildings}
+          title="اطلاعات اصلی تالار"
+          description="نام، موقعیت و اطلاعات تماس"
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <InputField
+              label="نام تالار"
+              name="title"
+              icon={PiBuildings}
+              value={form.title}
+              onChange={handleChange}
+              placeholder="مثلاً: تالار گلستان"
+              required
+            />
+            <InputField
+              label="تلفن تالار"
+              name="hall_phone"
+              icon={PiPhone}
+              type="tel"
+              value={form.hall_phone}
+              onChange={handleChange}
+              placeholder="021xxxxxxxx"
+              dir="ltr"
+              required
+            />
+            <InputField
+              label="استان"
+              name="province"
+              icon={PiMapPin}
+              value={form.province}
+              onChange={handleChange}
+              placeholder="تهران"
+              required
+            />
+            <InputField
+              label="شهر"
+              name="city"
+              icon={PiMapPin}
+              value={form.city}
+              onChange={handleChange}
+              placeholder="تهران"
+              required
+            />
+            <div className="sm:col-span-2">
+              <InputField
+                label="آدرس کامل"
+                name="address"
+                icon={PiMapPin}
+                value={form.address}
+                onChange={handleChange}
+                placeholder="خیابان، کوچه، پلاک"
+                required
+              />
+            </div>
+            <InputField
+              label="Latitude (عرض)"
+              name="lat"
+              type="number"
+              step="0.000001"
+              value={form.lat}
+              onChange={handleChange}
+              placeholder="35.6892"
+              dir="ltr"
+              inputMode="decimal"
+              required
+            />
+            <InputField
+              label="Longitude (طول)"
+              name="lng"
+              type="number"
+              step="0.000001"
+              value={form.lng}
+              onChange={handleChange}
+              placeholder="51.3890"
+              dir="ltr"
+              inputMode="decimal"
+              required
+            />
+            <InputField
+              label="کد پستی"
+              name="postal_code"
+              icon={PiEnvelopeSimple}
+              value={form.postal_code}
+              onChange={handleChange}
+              placeholder="۱۰ رقمی"
+              dir="ltr"
+            />
+          </div>
+        </FormSection>
+
+        {/* ============ اطلاعات مالک ============ */}
+        <FormSection
+          index={1}
+          icon={PiUser}
+          title="اطلاعات مالک"
+          description="نام و شماره تماس مدیر تالار"
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <InputField
+              label="نام مالک"
+              name="hall_owner_name"
+              icon={PiUser}
+              value={form.hall_owner_name}
+              onChange={handleChange}
+              placeholder="مثلاً: علی محمدی"
+              required
+            />
+            <InputField
+              label="شماره تماس مالک"
+              name="hall_owner_phone"
+              icon={PiPhone}
+              type="tel"
+              value={form.hall_owner_phone}
+              onChange={handleChange}
+              placeholder="09xxxxxxxxx"
+              dir="ltr"
+              required
+            />
+          </div>
+        </FormSection>
+
+        {/* ============ مشخصات فنی ============ */}
+        <FormSection
+          index={2}
+          icon={PiWrench}
+          title="مشخصات فنی تالار"
+          description="متراژ، ظرفیت و امکانات"
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <InputField
+              label="متراژ تالار (متر مربع)"
+              name="hall_measure"
+              icon={PiRuler}
+              type="number"
+              value={form.hall_measure}
+              onChange={handleChange}
+              placeholder="مثلاً: 800"
+              dir="ltr"
+              required
+            />
+            <InputField
+              label="ظرفیت (نفر)"
+              name="capacity"
+              icon={PiUsersThree}
+              type="number"
+              value={form.capacity}
+              onChange={handleChange}
+              placeholder="مثلاً: 500"
+              dir="ltr"
+              required
+            />
+            <InputField
+              label="مدت سانس (ساعت)"
+              name="duration"
+              type="number"
+              value={form.duration}
+              onChange={handleChange}
+              placeholder="مثلاً: 4"
+              dir="ltr"
+              required
+            />
+            <InputField
+              label="سال ساخت"
+              name="year"
+              type="number"
+              value={form.year}
+              onChange={handleChange}
+              placeholder="مثلاً: 1395"
+              dir="ltr"
+              required
+            />
+            <InputField
+              label="تعداد پارکینگ"
+              name="parking_count"
+              icon={PiCarProfile}
+              type="number"
+              value={form.parking_count}
+              onChange={handleChange}
+              placeholder="مثلاً: 50"
+              dir="ltr"
+              required
+            />
+            <InputField
+              label="تعداد طبقات"
+              name="roof_count"
+              type="number"
+              value={form.roof_count}
+              onChange={handleChange}
+              placeholder="مثلاً: 2"
+              dir="ltr"
+              required
+            />
+            <SelectField
+              label="نوع تالار"
+              name="hall_type"
+              value={form.hall_type}
+              onChange={handleChange}
+              options={HALL_TYPES}
+              placeholder="انتخاب نوع"
+              required
+            />
+            <SelectField
+              label="نوع میزبانی"
+              name="host_type"
+              value={form.host_type}
+              onChange={handleChange}
+              options={HOST_TYPES}
+              placeholder="انتخاب میزبانی"
+              required
+            />
+            <SelectField
+              label="نوع مراسم"
+              name="event_type"
+              value={form.event_type}
+              onChange={handleChange}
+              options={EVENT_TYPES}
+              placeholder="انتخاب مراسم"
+              required
+            />
+          </div>
+
+          <div className="mt-4 space-y-4">
+            <TextareaField
+              label="توضیحات کامل تالار"
+              name="description"
+              value={form.description}
+              onChange={handleChange}
+              placeholder="توضیحات دقیق در مورد تالار، امکانات، سرویس‌ها و..."
+              required
+              rows={5}
+              hint="حداقل ۲۰ کاراکتر"
+              error={
+                form.description && form.description.length < 20
+                  ? "توضیحات باید حداقل ۲۰ کاراکتر باشد"
+                  : undefined
+              }
+            />
+
+            <InputField
+              label="قوانین تالار"
+              name="hall_roles"
+              icon={PiNote}
+              value={form.hall_roles}
+              onChange={handleChange}
+              placeholder="هر قانون را با کاما جدا کنید"
+              hint="مثال: ورود با کفش ممنوع، سیگار ممنوع"
+            />
+
+            <InputField
+              label="قوانین ورود و خروج"
+              name="entrance_rolls"
+              value={form.entrance_rolls}
+              onChange={handleChange}
+              placeholder="قوانین ساعت ورود و خروج (با کاما)"
+            />
+
+            <InputField
+              label="امکانات تالار"
+              name="properties"
+              icon={PiWrench}
+              value={form.properties}
+              onChange={handleChange}
+              placeholder="هر امکان را با کاما جدا کنید"
+              hint="مثال: آسانسور، نمازخانه، سرویس بهداشتی"
+            />
+          </div>
+        </FormSection>
+
+        {/* ============ سانس و قیمت ============ */}
+        <FormSection
+          index={3}
+          icon={PiCurrencyCircleDollar}
+          title="اطلاعات سانس و قیمت"
+          description="قیمت‌گذاری و تخفیف‌ها"
+        >
+          <label className="flex items-center gap-2.5 cursor-pointer py-2 group mb-4">
+            <span
+              className={`
+                relative w-[18px] h-[18px] rounded-md
+                border-2 flex items-center justify-center flex-shrink-0
+                transition-all duration-200
+                ${
+                  form.has_sans
+                    ? "border-gold-500 bg-gradient-to-b from-gold-400 to-gold-600"
+                    : "border-slate-300 bg-white group-hover:border-gold-400"
                 }
-            });
-            return false;
-        }
+              `}
+            >
+              {form.has_sans && (
+                <svg
+                  className="w-3 h-3 text-white"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              )}
+            </span>
+            <input
+              type="checkbox"
+              name="has_sans"
+              checked={form.has_sans}
+              onChange={handleChange}
+              className="sr-only"
+            />
+            <span className="text-[13px] text-slate-700 group-hover:text-slate-900">
+              این تالار دارای سانس است
+            </span>
+          </label>
 
-        // بررسی تصاویر
-        if (images.length === 0) {
-            toast.error("حداقل یک تصویر انتخاب کنید", {
-                duration: 3000,
-                position: "top-right",
-                icon: "❌",
-                style: {
-                    background: "#FEF2F2",
-                    color: "#991B1B",
-                    borderRadius: "12px",
-                    padding: "12px 20px",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    border: "1px solid #FCA5A5",
-                    boxShadow: "0 4px 15px rgba(0,0,0,0.08)"
-                }
-            });
-            return false;
-        }
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <InputField
+              label="قیمت سانس (تومان)"
+              name="sans_price"
+              icon={PiCurrencyCircleDollar}
+              type="number"
+              value={form.sans_price}
+              onChange={handleChange}
+              placeholder="مثلاً: 50000000"
+              dir="ltr"
+            />
+            <InputField
+              label="تخفیف سانس (درصد)"
+              name="sans_discount"
+              icon={PiPercent}
+              type="number"
+              value={form.sans_discount}
+              onChange={handleChange}
+              placeholder="مثلاً: 10"
+              dir="ltr"
+            />
+            <InputField
+              label="شماره مجوز"
+              name="licensee_number"
+              value={form.licensee_number}
+              onChange={handleChange}
+              placeholder="شماره پروانه کسب"
+              dir="ltr"
+            />
+          </div>
+        </FormSection>
 
-        // بررسی Latitude
-        const lat = parseFloat(form.lat);
-        if (isNaN(lat) || lat < -90 || lat > 90) {
-            toast.error("Latitude باید بین -90 و 90 باشد", {
-                duration: 3000,
-                position: "top-right",
-                icon: "❌",
-                style: {
-                    background: "#FEF2F2",
-                    color: "#991B1B",
-                    borderRadius: "12px",
-                    padding: "12px 20px",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    border: "1px solid #FCA5A5",
-                    boxShadow: "0 4px 15px rgba(0,0,0,0.08)"
-                }
-            });
-            return false;
-        }
+        {/* ============ قوانین و مقررات ============ */}
+        <FormSection
+          index={4}
+          icon={PiShieldCheck}
+          title="قوانین و مقررات"
+          description="قوانین لغو، دوربین و رزرو"
+        >
+          <div className="grid grid-cols-1 gap-4">
+            <InputField
+              label="قوانین کنسلی"
+              name="cancel_rolls"
+              value={form.cancel_rolls}
+              onChange={handleChange}
+              placeholder="هر قانون را با کاما جدا کنید"
+            />
+            <InputField
+              label="ظرفیت دوربین‌برداری"
+              name="camera_capacities"
+              value={form.camera_capacities}
+              onChange={handleChange}
+              placeholder="مثال: عکاس، فیلم‌بردار (با کاما)"
+            />
+            <InputField
+              label="قوانین رزرو"
+              name="reservation_rolls"
+              value={form.reservation_rolls}
+              onChange={handleChange}
+              placeholder="هر قانون را با کاما جدا کنید"
+            />
+          </div>
+        </FormSection>
 
-        // بررسی Longitude
-        const lng = parseFloat(form.lng);
-        if (isNaN(lng) || lng < -180 || lng > 180) {
-            toast.error("Longitude باید بین -180 و 180 باشد", {
-                duration: 3000,
-                position: "top-right",
-                icon: "❌",
-                style: {
-                    background: "#FEF2F2",
-                    color: "#991B1B",
-                    borderRadius: "12px",
-                    padding: "12px 20px",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    border: "1px solid #FCA5A5",
-                    boxShadow: "0 4px 15px rgba(0,0,0,0.08)"
-                }
-            });
-            return false;
-        }
+        {/* ============ تاریخ‌های آزاد ============ */}
+        <FormSection
+          index={5}
+          icon={PiCalendarBlank}
+          title="تاریخ‌های آزاد"
+          description="تاریخ‌هایی که تالار در دسترس است"
+        >
+          <div className="space-y-4">
+            <DatePicker
+              calendar={persian}
+              locale={persian_fa}
+              onChange={addDate}
+              format="YYYY/MM/DD"
+              placeholder="انتخاب تاریخ آزاد"
+              inputClass="
+                w-full px-3.5 py-2.5
+                bg-white border border-slate-200 rounded-xl
+                text-[13.5px] text-slate-900
+                hover:border-gold-300
+                focus:outline-none focus:border-gold-500 focus:ring-4 focus:ring-gold-500/10
+                transition-all duration-200
+              "
+              containerClassName="w-full"
+            />
 
-        return true;
-    };
+            {selectedDates.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {selectedDates.map((date) => (
+                  <span
+                    key={date}
+                    className="
+                      inline-flex items-center gap-2
+                      px-3 py-1.5 rounded-lg
+                      bg-gold-50 text-gold-700
+                      ring-1 ring-gold-100
+                      text-[12px] font-medium
+                    "
+                  >
+                    {new Date(date).toLocaleDateString("fa-IR")}
+                    <button
+                      type="button"
+                      onClick={() => removeDate(date)}
+                      aria-label="حذف تاریخ"
+                      className="
+                        w-4 h-4 rounded-full
+                        flex items-center justify-center
+                        text-gold-600 hover:text-white hover:bg-rose-500
+                        transition-all duration-200
+                      "
+                    >
+                      <PiX className="w-3 h-3" strokeWidth={3} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </FormSection>
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+        {/* ============ تصاویر ============ */}
+        <FormSection
+          index={6}
+          icon={PiImage}
+          title="تصاویر تالار"
+          description="حداقل یک تصویر الزامی است"
+        >
+          <UploadBox
+            id="image-upload"
+            accept="image/*"
+            onChange={handleImages}
+            title="انتخاب تصاویر"
+            hint="فرمت JPG، PNG، WEBP"
+            icon={PiImage}
+          />
 
-        // اعتبارسنجی
-        if (!validateForm()) {
-            return;
-        }
+          {images.length > 0 && (
+            <div className="mt-4 p-4 rounded-2xl bg-slate-50 ring-1 ring-slate-100">
+              <div className="flex items-center gap-2 pb-3 mb-3 border-b border-slate-100">
+                <span className="text-[18px] font-bold text-gold-600">
+                  {images.length.toLocaleString("fa-IR")}
+                </span>
+                <span className="text-[12.5px] text-slate-500">
+                  تصویر انتخاب‌شده
+                </span>
+              </div>
+              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                {images.map((img, idx) => (
+                  <div
+                    key={idx}
+                    className="aspect-square rounded-lg overflow-hidden ring-2 ring-slate-200 hover:ring-gold-400 transition-all"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={img}
+                      alt={`تصویر ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </FormSection>
 
-        setLoading(true);
+        {/* ============ مدارک ============ */}
+        <FormSection
+          index={7}
+          icon={PiFilePdf}
+          title="مدارک تالار"
+          description="اسناد و مجوزها (اختیاری)"
+        >
+          <UploadBox
+            id="doc-upload"
+            accept=".pdf,image/*"
+            onChange={handleDocs}
+            title="انتخاب مدارک"
+            hint="فرمت PDF، JPG، PNG"
+            icon={PiFilePdf}
+          />
 
-        try {
-            const payload = {
-                ...form,
-                lat: parseFloat(form.lat),
-                lng: parseFloat(form.lng),
-                hall_measure: toNumber(form.hall_measure),
-                capacity: toNumber(form.capacity),
-                duration: toNumber(form.duration),
-                year: toNumber(form.year),
-                parking_count: toNumber(form.parking_count),
-                roof_count: toNumber(form.roof_count),
-                sans_price: toNumber(form.sans_price),
-                sans_discount: toNumber(form.sans_discount),
-                images,
-                hall_document: documents,
-                free_dates: selectedDates,
-                properties: toArray(form.properties),
-                hall_roles: toArray(form.hall_roles),
-                entrance_rolls: toArray(form.entrance_rolls),
-                cancel_rolls: toArray(form.cancel_rolls),
-                camera_capacities: toArray(form.camera_capacities),
-                reservation_rolls: toArray(form.reservation_rolls)
-            };
+          {documents.length > 0 && (
+            <div className="mt-4 p-4 rounded-2xl bg-slate-50 ring-1 ring-slate-100">
+              <div className="flex items-center gap-2 pb-3 mb-3 border-b border-slate-100">
+                <span className="text-[18px] font-bold text-gold-600">
+                  {documents.length.toLocaleString("fa-IR")}
+                </span>
+                <span className="text-[12.5px] text-slate-500">
+                  مدرک انتخاب‌شده
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {documents.map((_, idx) => (
+                  <div
+                    key={idx}
+                    className="
+                      flex items-center gap-2
+                      px-3 py-2 rounded-lg
+                      bg-white ring-1 ring-slate-100
+                    "
+                  >
+                    <PiFilePdf className="w-4 h-4 text-gold-500 flex-shrink-0" />
+                    <span className="text-[12px] text-slate-700 truncate">
+                      مدرک {idx + 1}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </FormSection>
 
-            const { data } = await axios.post("/api/hall_owner/halls", payload);
-
-            if (data.success) {
-                toast.success(" تالار با موفقیت ثبت شد!", {
-                    duration: 5000,
-                    position: "top-right",
-                    icon: "",
-                    style: {
-                        background: "#fff",
-                        color: "#166534",
-                        borderRadius: "12px",
-                        padding: "16px 24px",
-                        fontSize: "16px",
-                        fontWeight: "700",
-                        border: "2px solid #86EFAC",
-                        boxShadow: "0 4px 20px rgba(0,0,0,0.1)"
-                    }
-                });
-
-                // ریست کردن فرم بعد از ثبت موفق
+        {/* ============ Action Bar ============ */}
+        <div className="pt-6 mt-2 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-end gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              if (
+                confirm(
+                  "آیا مطمئن هستید؟ تمام اطلاعات فرم پاک خواهد شد."
+                )
+              ) {
                 setForm({
-                    title: "",
-                    province: "",
-                    city: "",
-                    address: "",
-                    lat: "",
-                    lng: "",
-                    postal_code: "",
-                    hall_phone: "",
-                    hall_owner_name: "",
-                    hall_owner_phone: "",
-                    hall_measure: "",
-                    description: "",
-                    year: "",
-                    hall_roles: "",
-                    capacity: "",
-                    duration: "",
-                    entrance_rolls: "",
-                    hall_type: "",
-                    host_type: "",
-                    event_type: "",
-                    properties: "",
-                    parking_count: "",
-                    roof_count: "",
-                    has_sans: false,
-                    sans_price: "",
-                    sans_discount: "",
-                    licensee_number: "",
-                    cancel_rolls: "",
-                    camera_capacities: "",
-                    reservation_rolls: ""
+                  title: "",
+                  province: "",
+                  city: "",
+                  address: "",
+                  lat: "",
+                  lng: "",
+                  postal_code: "",
+                  hall_phone: "",
+                  hall_owner_name: "",
+                  hall_owner_phone: "",
+                  hall_measure: "",
+                  description: "",
+                  year: "",
+                  hall_roles: "",
+                  capacity: "",
+                  duration: "",
+                  entrance_rolls: "",
+                  hall_type: "",
+                  host_type: "",
+                  event_type: "",
+                  properties: "",
+                  parking_count: "",
+                  roof_count: "",
+                  has_sans: false,
+                  sans_price: "",
+                  sans_discount: "",
+                  licensee_number: "",
+                  cancel_rolls: "",
+                  camera_capacities: "",
+                  reservation_rolls: "",
                 });
                 setImages([]);
                 setDocuments([]);
                 setSelectedDates([]);
-            }
-        } catch (error) {
-            console.log(error);
-            toast.error("خطا در ثبت تالار. لطفاً مجدداً تلاش کنید.", {
-                duration: 4000,
-                position: "top-right",
-                icon: "❌",
-                style: {
-                    background: "#FEF2F2",
-                    color: "#991B1B",
-                    borderRadius: "12px",
-                    padding: "12px 20px",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    border: "1px solid #FCA5A5",
-                    boxShadow: "0 4px 15px rgba(0,0,0,0.08)"
-                }
-            });
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <div className="createHallPage">
-            <Toaster />
-            <h2>ایجاد تالار جدید</h2>
-
-            <form onSubmit={handleSubmit}>
-                <h3>اطلاعات اصلی تالار</h3>
-
-                <input
-                    name="title"
-                    placeholder="نام تالار"
-                    value={form.title}
-                    onChange={handleChange}
-                    required
-                />
-
-                <input
-                    name="province"
-                    placeholder="استان"
-                    value={form.province}
-                    onChange={handleChange}
-                    required
-                />
-
-                <input
-                    name="city"
-                    placeholder="شهر"
-                    value={form.city}
-                    onChange={handleChange}
-                    required
-                />
-
-                <input
-                    name="address"
-                    placeholder="آدرس کامل"
-                    value={form.address}
-                    onChange={handleChange}
-                    required
-                />
-
-                <div className="row">
-                    <input
-                        type="number"
-                        step="0.000001"
-                        name="lat"
-                        placeholder="Latitude (عرض جغرافیایی)"
-                        value={form.lat}
-                        onChange={handleChange}
-                        required
-                    />
-
-                    <input
-                        type="number"
-                        step="0.000001"
-                        name="lng"
-                        placeholder="Longitude (طول جغرافیایی)"
-                        value={form.lng}
-                        onChange={handleChange}
-                        required
-                    />
-                </div>
-
-                <input
-                    name="postal_code"
-                    placeholder="کدپستی"
-                    value={form.postal_code}
-                    onChange={handleChange}
-                />
-
-                <input
-                    type="tel"
-                    name="hall_phone"
-                    placeholder="تلفن تالار"
-                    value={form.hall_phone}
-                    onChange={handleChange}
-                    required
-                />
-
-                <h3>اطلاعات مالک</h3>
-
-                <input
-                    name="hall_owner_name"
-                    placeholder="نام مالک"
-                    value={form.hall_owner_name}
-                    onChange={handleChange}
-                    required
-                />
-
-                <input
-                    type="tel"
-                    name="hall_owner_phone"
-                    placeholder="شماره تماس مالک"
-                    value={form.hall_owner_phone}
-                    onChange={handleChange}
-                    required
-                />
-
-                <h3>مشخصات فنی تالار</h3>
-
-                <input
-                    type="number"
-                    name="hall_measure"
-                    placeholder="متراژ تالار (متر مربع)"
-                    value={form.hall_measure}
-                    onChange={handleChange}
-                    required
-                />
-
-                <textarea
-                    name="description"
-                    placeholder="توضیحات کامل تالار (حداقل ۲۰ کاراکتر)"
-                    value={form.description}
-                    onChange={handleChange}
-                    required
-                    className={form.description && form.description.length < 20 ? "error" : ""}
-                />
-                {form.description && form.description.length < 20 && (
-                    <span className="hint-error">توضیحات باید حداقل ۲۰ کاراکتر باشد</span>
-                )}
-
-                <input
-                    type="number"
-                    name="year"
-                    placeholder="سال ساخت"
-                    value={form.year}
-                    onChange={handleChange}
-                    required
-                />
-
-                <input
-                    name="hall_roles"
-                    placeholder="قوانین تالار (با کاما جدا کنید)"
-                    value={form.hall_roles}
-                    onChange={handleChange}
-                />
-
-                <div className="row">
-                    <input
-                        type="number"
-                        name="capacity"
-                        placeholder="ظرفیت (نفر)"
-                        value={form.capacity}
-                        onChange={handleChange}
-                        required
-                    />
-
-                    <input
-                        type="number"
-                        name="duration"
-                        placeholder="مدت سانس (ساعت)"
-                        value={form.duration}
-                        onChange={handleChange}
-                        required
-                    />
-                </div>
-
-                <input
-                    name="entrance_rolls"
-                    placeholder="قوانین ورود (با کاما)"
-                    value={form.entrance_rolls}
-                    onChange={handleChange}
-                />
-
-                <div className="row">
-                    <input
-                        name="hall_type"
-                        placeholder="نوع تالار"
-                        value={form.hall_type}
-                        onChange={handleChange}
-                        required
-                    />
-
-                    <input
-                        name="host_type"
-                        placeholder="نوع میزبانی"
-                        value={form.host_type}
-                        onChange={handleChange}
-                        required
-                    />
-                </div>
-
-                <input
-                    name="event_type"
-                    placeholder="نوع مراسم"
-                    value={form.event_type}
-                    onChange={handleChange}
-                    required
-                />
-
-                <input
-                    name="properties"
-                    placeholder="امکانات تالار (با کاما جدا کنید)"
-                    value={form.properties}
-                    onChange={handleChange}
-                />
-
-                <div className="row">
-                    <input
-                        type="number"
-                        name="parking_count"
-                        placeholder="تعداد پارکینگ"
-                        value={form.parking_count}
-                        onChange={handleChange}
-                        required
-                    />
-
-                    <input
-                        type="number"
-                        name="roof_count"
-                        placeholder="تعداد طبقات"
-                        value={form.roof_count}
-                        onChange={handleChange}
-                        required
-                    />
-                </div>
-
-                <h3>اطلاعات سانس و قیمت</h3>
-
-                <label className="checkbox-label">
-                    <input
-                        type="checkbox"
-                        name="has_sans"
-                        checked={form.has_sans}
-                        onChange={handleChange}
-                    />
-                    دارای سانس
-                </label>
-
-                <div className="row">
-                    <input
-                        type="number"
-                        name="sans_price"
-                        placeholder="قیمت سانس (تومان)"
-                        value={form.sans_price}
-                        onChange={handleChange}
-                    />
-
-                    <input
-                        type="number"
-                        name="sans_discount"
-                        placeholder="تخفیف سانس (درصد)"
-                        value={form.sans_discount}
-                        onChange={handleChange}
-                    />
-                </div>
-
-                <input
-                    name="licensee_number"
-                    placeholder="شماره مجوز"
-                    value={form.licensee_number}
-                    onChange={handleChange}
-                />
-
-                <h3>قوانین و مقررات</h3>
-
-                <input
-                    name="cancel_rolls"
-                    placeholder="قوانین کنسلی (با کاما)"
-                    value={form.cancel_rolls}
-                    onChange={handleChange}
-                />
-
-                <input
-                    name="camera_capacities"
-                    placeholder="ظرفیت دوربین (با کاما)"
-                    value={form.camera_capacities}
-                    onChange={handleChange}
-                />
-
-                <input
-                    name="reservation_rolls"
-                    placeholder="قوانین رزرو (با کاما)"
-                    value={form.reservation_rolls}
-                    onChange={handleChange}
-                />
-
-                <h3>تاریخ‌های آزاد</h3>
-
-                <div className="date-section">
-                    <div className="date-input-row">
-                        <DatePicker
-                            calendar={persian}
-                            locale={persian_fa}
-                            onChange={addDate}
-                            format="YYYY/MM/DD"
-                            placeholder="انتخاب تاریخ آزاد"
-                            containerClassName="datepicker-wrapper"
-                            inputClass="datepicker-input"
-                            renderButton={<button className="datepicker-button" type="button">📅</button>}
-                        />
-                    </div>
-
-                    <div className="date-tags">
-                        {selectedDates.map(date => (
-                            <div key={date} className="date-tag">
-                                <span>{date}</span>
-                                <button
-                                    type="button"
-                                    onClick={() => removeDate(date)}
-                                    className="remove-date"
-                                >
-                                    ×
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                <h3>تصاویر تالار</h3>
-
-                <div className="upload-section">
-                    <div className="upload-area">
-                        <input
-                            type="file"
-                            multiple
-                            accept="image/*"
-                            onChange={handleImages}
-                            id="image-upload"
-                            className="upload-input"
-                        />
-                        <label htmlFor="image-upload" className="upload-label">
-                            {/* <div className="upload-icon">🖼️</div> */}
-                            <div className="upload-text">انتخاب تصاویر</div>
-                            <div className="upload-hint">تصاویر با فرمت JPG، PNG، WEBP</div>
-                        </label>
-                    </div>
-                    {images.length > 0 && (
-                        <div className="upload-preview">
-                            <div className="preview-count">
-                                <span className="count-number">{images.length}</span>
-                                <span className="count-text">تصویر انتخاب شده</span>
-                            </div>
-                            <div className="preview-thumbnails">
-                                {images.map((img, index) => (
-                                    <div key={index} className="thumbnail">
-                                        <img src={img} alt={`تصویر ${index + 1}`} />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                <h3>مدارک تالار</h3>
-
-                <div className="upload-section">
-                    <div className="upload-area">
-                        <input
-                            type="file"
-                            multiple
-                            accept=".pdf,image/*"
-                            onChange={handleDocs}
-                            id="doc-upload"
-                            className="upload-input"
-                        />
-                        <label htmlFor="doc-upload" className="upload-label">
-                            {/* <div className="upload-icon">📄</div> */}
-                            <div className="upload-text">انتخاب مدارک</div>
-                            <div className="upload-hint">مدارک با فرمت PDF، JPG، PNG</div>
-                        </label>
-                    </div>
-                    {documents.length > 0 && (
-                        <div className="upload-preview">
-                            <div className="preview-count">
-                                <span className="count-number">{documents.length}</span>
-                                <span className="count-text">مدرک انتخاب شده</span>
-                            </div>
-                            <div className="preview-docs">
-                                {documents.map((doc, index) => (
-                                    <div key={index} className="doc-item">
-                                        <span className="doc-icon">📎</span>
-                                        <span className="doc-name">مدرک {index + 1}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                <button type="submit" className="submit-btn" disabled={loading}>
-                    {loading ? (
-                        <>
-                            <span className="spinner"></span>
-                            در حال ثبت...
-                        </>
-                    ) : (
-                        "ثبت تالار"
-                    )}
-                </button>
-            </form>
-
-            <style jsx>{`
-                .createHallPage {
-                    direction: rtl;
-                    padding: 1rem;
-                    max-width: 100%;
-                }
-
-                h2 {
-                    margin-bottom: 30px;
-                    font-size: 22px;
-                    font-weight: bold;
-                }
-
-                form {
-                    background: white;
-                    border: 1px solid #e5e7eb;
-                    border-radius: 16px;
-                    padding: 35px;
-                    max-width: 900px;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 18px;
-                    width: 100%;
-                }
-
-                h3 {
-                    margin-top: 15px;
-                    font-size: 16px;
-                    font-weight: 600;
-                    color: #374151;
-                }
-
-                input,
-                select,
-                textarea {
-                    width: 100%;
-                    padding: 12px 14px;
-                    border: 1px solid #d1d5db;
-                    background: #fafafa;
-                    border-radius: 10px;
-                    font-size: 14px;
-                    box-sizing: border-box;
-                    transition: all 0.2s ease;
-                }
-
-                input:focus,
-                select:focus,
-                textarea:focus {
-                    outline: none;
-                    border-color: #D4B06A;
-                    box-shadow: 0 0 0 3px rgba(212, 176, 106, 0.15);
-                    background: white;
-                }
-
-                textarea {
-                    min-height: 100px;
-                    resize: vertical;
-                }
-
-                textarea.error {
-                    border-color: #ef4444;
-                }
-
-                textarea.error:focus {
-                    border-color: #ef4444;
-                    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
-                }
-
-                .hint-error {
-                    font-size: 12px;
-                    color: #ef4444;
-                    margin-top: -8px;
-                }
-
-                .row {
-                    display: flex;
-                    gap: 15px;
-                }
-
-                .row input {
-                    flex: 1;
-                }
-
-                .checkbox-label {
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                    font-size: 14px;
-                    color: #374151;
-                    cursor: pointer;
-                }
-
-                .checkbox-label input {
-                    width: 18px;
-                    height: 18px;
-                    cursor: pointer;
-                }
-
-                /* استایل‌های تاریخ */
-                .date-section {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 15px;
-                }
-
-                .date-input-row {
-                    display: flex;
-                    gap: 10px;
-                    align-items: center;
-                }
-
-                .datepicker-wrapper {
-                    flex: 1;
-                    position: relative;
-                }
-
-                .datepicker-input {
-                    width: 100%;
-                    padding: 12px 14px;
-                    padding-left: 50px;
-                    border: 1px solid #d1d5db;
-                    background: #fafafa;
-                    border-radius: 10px;
-                    font-size: 14px;
-                    box-sizing: border-box;
-                    cursor: pointer;
-                    font-family: inherit;
-                    transition: all 0.2s ease;
-                }
-
-                .datepicker-input:hover {
-                    border-color: #D4B06A;
-                    background: #fcf8f0;
-                }
-
-                .datepicker-input:focus {
-                    outline: none;
-                    border-color: #D4B06A;
-                    box-shadow: 0 0 0 3px rgba(212, 176, 106, 0.15);
-                }
-
-                .datepicker-button {
-                    position: absolute;
-                    left: 8px;
-                    top: 50%;
-                    transform: translateY(-50%);
-                    width: 38px;
-                    height: 38px;
-                    border: none;
-                    background: linear-gradient(135deg, #D4B06A 0%, #C39243 50%, #B8860B 100%);
-                    font-size: 18px;
-                    cursor: pointer;
-                    border-radius: 8px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    transition: all 0.3s ease;
-                    padding: 0;
-                    color: white;
-                    box-shadow: 0 2px 10px rgba(212, 176, 106, 0.25);
-                }
-
-                .datepicker-button:hover {
-                    transform: translateY(-50%) scale(1.05);
-                    box-shadow: 0 4px 15px rgba(212, 176, 106, 0.4);
-                }
-
-                .date-tags {
-                    display: flex;
-                    gap: 10px;
-                    flex-wrap: wrap;
-                    margin-top: 5px;
-                }
-
-                .date-tag {
-                    background: #f3f4f6;
-                    padding: 8px 12px;
-                    border-radius: 20px;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    font-size: 13px;
-                    color: #374151;
-                    border: 1px solid #e5e7eb;
-                }
-
-                .remove-date {
-                    background: #ef4444;
-                    color: white;
-                    border: none;
-                    border-radius: 50%;
-                    width: 20px;
-                    height: 20px;
-                    font-size: 12px;
-                    cursor: pointer;
-                    display: inline-flex;
-                    align-items: center;
-                    justify-content: center;
-                    transition: all 0.2s ease;
-                }
-
-                .remove-date:hover {
-                    background: #dc2626;
-                    transform: scale(1.1);
-                }
-
-                /* استایل‌های آپلود */
-                .upload-section {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 15px;
-                }
-
-                .upload-area {
-                    position: relative;
-                    border: 2px dashed #d1d5db;
-                    border-radius: 12px;
-                    background: #fafafa;
-                    transition: all 0.3s ease;
-                    overflow: hidden;
-                }
-
-                .upload-area:hover {
-                    border-color: #D4B06A;
-                    background: #fcf8f0;
-                }
-
-                .upload-input {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    opacity: 0;
-                    cursor: pointer;
-                    z-index: 2;
-                }
-
-                .upload-label {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    padding: 40px 20px;
-                    cursor: pointer;
-                    gap: 8px;
-                }
-
-                .upload-icon {
-                    font-size: 48px;
-                    line-height: 1;
-                }
-
-                .upload-text {
-                    font-size: 16px;
-                    font-weight: 600;
-                    color: #374151;
-                }
-
-                .upload-hint {
-                    font-size: 12px;
-                    color: #9ca3af;
-                }
-
-                .upload-preview {
-                    background: #f9fafb;
-                    border-radius: 10px;
-                    padding: 15px;
-                    border: 1px solid #e5e7eb;
-                }
-
-                .preview-count {
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    margin-bottom: 12px;
-                    padding-bottom: 12px;
-                    border-bottom: 1px solid #e5e7eb;
-                }
-
-                .count-number {
-                    font-size: 20px;
-                    font-weight: bold;
-                    color: #D4B06A;
-                }
-
-                .count-text {
-                    font-size: 14px;
-                    color: #6b7280;
-                }
-
-                .preview-thumbnails {
-                    display: flex;
-                    gap: 10px;
-                    flex-wrap: wrap;
-                }
-
-                .thumbnail {
-                    width: 80px;
-                    height: 80px;
-                    border-radius: 8px;
-                    overflow: hidden;
-                    border: 2px solid #e5e7eb;
-                    transition: all 0.2s ease;
-                }
-
-                .thumbnail:hover {
-                    border-color: #D4B06A;
-                    transform: scale(1.05);
-                }
-
-                .thumbnail img {
-                    width: 100%;
-                    height: 100%;
-                    object-fit: cover;
-                }
-
-                .preview-docs {
-                    display: flex;
-                    gap: 10px;
-                    flex-wrap: wrap;
-                }
-
-                .doc-item {
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    background: white;
-                    padding: 8px 14px;
-                    border-radius: 8px;
-                    border: 1px solid #e5e7eb;
-                }
-
-                .doc-icon {
-                    font-size: 18px;
-                }
-
-                .doc-name {
-                    font-size: 13px;
-                    color: #374151;
-                }
-
-                /* دکمه ثبت */
-                .submit-btn {
-                    margin-top: 20px;
-                    width: 200px;
-                    padding: 14px;
-                    border: none;
-                    border-radius: 10px;
-                    background: linear-gradient(135deg, #D4B06A 0%, #C39243 50%, #B8860B 100%);
-                    color: white;
-                    font-size: 16px;
-                    font-weight: 600;
-                    cursor: pointer;
-                    transition: all 0.3s ease;
-                    box-shadow: 0 4px 15px rgba(212, 176, 106, 0.3);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 10px;
-                }
-
-                .submit-btn:hover:not(:disabled) {
-                    transform: translateY(-2px);
-                    box-shadow: 0 6px 25px rgba(212, 176, 106, 0.4);
-                }
-
-                .submit-btn:active:not(:disabled) {
-                    transform: translateY(0);
-                }
-
-                .submit-btn:disabled {
-                    opacity: 0.7;
-                    cursor: not-allowed;
-                    transform: none;
-                }
-
-                .spinner {
-                    display: inline-block;
-                    width: 20px;
-                    height: 20px;
-                    border: 3px solid rgba(255, 255, 255, 0.3);
-                    border-top-color: white;
-                    border-radius: 50%;
-                    animation: spin 0.8s linear infinite;
-                }
-
-                @keyframes spin {
-                    to { transform: rotate(360deg); }
-                }
-
-                /* ریسپانسیو */
-                @media (max-width: 768px) {
-                    .createHallPage {
-                        padding: 0.75rem;
-                    }
-
-                    form {
-                        padding: 20px;
-                        border-radius: 12px;
-                        gap: 14px;
-                    }
-
-                    h2 {
-                        font-size: 20px;
-                        margin-bottom: 20px;
-                    }
-
-                    h3 {
-                        font-size: 15px;
-                        margin-top: 12px;
-                    }
-
-                    .row {
-                        flex-direction: column;
-                        gap: 14px;
-                    }
-
-                    input,
-                    select,
-                    textarea,
-                    .datepicker-input {
-                        padding: 10px 12px;
-                        font-size: 13px;
-                    }
-
-                    .datepicker-input {
-                        padding-left: 46px;
-                    }
-
-                    .datepicker-button {
-                        width: 34px;
-                        height: 34px;
-                        font-size: 16px;
-                        left: 6px;
-                    }
-
-                    .upload-label {
-                        padding: 30px 15px;
-                    }
-
-                    .upload-icon {
-                        font-size: 36px;
-                    }
-
-                    .upload-text {
-                        font-size: 14px;
-                    }
-
-                    .thumbnail {
-                        width: 60px;
-                        height: 60px;
-                    }
-
-                    .submit-btn {
-                        width: 100%;
-                        padding: 12px;
-                        font-size: 14px;
-                    }
-                }
-
-                @media (max-width: 480px) {
-                    .createHallPage {
-                        padding: 0.5rem;
-                    }
-
-                    form {
-                        padding: 16px;
-                        border-radius: 10px;
-                        gap: 12px;
-                    }
-
-                    h2 {
-                        font-size: 18px;
-                        margin-bottom: 16px;
-                    }
-
-                    h3 {
-                        font-size: 14px;
-                        margin-top: 10px;
-                    }
-
-                    input,
-                    select,
-                    textarea,
-                    .datepicker-input {
-                        padding: 8px 10px;
-                        font-size: 12px;
-                        border-radius: 8px;
-                    }
-
-                    .datepicker-input {
-                        padding-left: 40px;
-                    }
-
-                    .datepicker-button {
-                        width: 30px;
-                        height: 30px;
-                        font-size: 14px;
-                        left: 4px;
-                        border-radius: 6px;
-                    }
-
-                    .upload-label {
-                        padding: 20px 10px;
-                    }
-
-                    .upload-icon {
-                        font-size: 28px;
-                    }
-
-                    .upload-text {
-                        font-size: 12px;
-                    }
-
-                    .upload-hint {
-                        font-size: 10px;
-                    }
-
-                    .thumbnail {
-                        width: 50px;
-                        height: 50px;
-                    }
-
-                    .preview-thumbnails {
-                        gap: 6px;
-                    }
-
-                    .date-tag {
-                        font-size: 11px;
-                        padding: 6px 10px;
-                    }
-
-                    .submit-btn {
-                        padding: 10px;
-                        font-size: 13px;
-                        border-radius: 8px;
-                    }
-                }
-
-                @media (min-width: 769px) and (max-width: 1024px) {
-                    form {
-                        max-width: 750px;
-                        padding: 30px;
-                    }
-                }
-            `}</style>
+                notify.info("فرم پاک شد");
+              }
+            }}
+            disabled={loading}
+            className="
+              w-full sm:w-auto
+              inline-flex items-center justify-center gap-2
+              px-5 py-2.5 rounded-xl
+              text-sm font-medium
+              text-slate-700 bg-white
+              border border-slate-200
+              hover:bg-slate-50 hover:border-slate-300
+              active:scale-95
+              disabled:opacity-50 disabled:cursor-not-allowed
+              transition-all duration-200
+            "
+          >
+            <PiX className="w-4 h-4" />
+            پاک کردن فرم
+          </button>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="
+              w-full sm:w-auto
+              inline-flex items-center justify-center gap-2
+              px-6 py-2.5 rounded-xl
+              text-sm font-bold text-white
+              bg-gradient-to-b from-gold-400 to-gold-600
+              hover:from-gold-500 hover:to-gold-700
+              shadow-md shadow-gold-500/25
+              hover:shadow-lg hover:shadow-gold-500/40
+              hover:-translate-y-0.5
+              active:scale-95
+              focus:outline-none focus:ring-4 focus:ring-gold-500/25
+              disabled:opacity-60 disabled:cursor-not-allowed
+              disabled:hover:translate-y-0
+              transition-all duration-300
+              min-w-[180px]
+            "
+          >
+            {loading ? (
+              <>
+                <PiSpinnerGap className="w-4 h-4 animate-spin" />
+                در حال ثبت...
+              </>
+            ) : (
+              <>
+                <PiFloppyDisk className="w-4 h-4" />
+                ثبت تالار
+              </>
+            )}
+          </button>
         </div>
-    );
+      </form>
+    </div>
+  );
 }

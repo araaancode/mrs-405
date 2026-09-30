@@ -1079,3 +1079,147 @@
     scroll-behavior: auto !important;
   }
 }
+
+
+/* ============================================
+   React Toastify — بازنویسی استایل پیش‌فرض
+   ============================================ */
+
+/* کانتینر اصلی */
+.Toastify__toast-container {
+  font-family: 'IranianSans', system-ui, sans-serif !important;
+  direction: rtl !important;
+  padding: 0 !important;
+  width: 380px !important;
+  max-width: calc(100vw - 32px) !important;
+}
+
+/* خود toast */
+.Toastify__toast {
+  font-family: 'IranianSans', system-ui, sans-serif !important;
+  direction: rtl !important;
+  border-radius: 14px !important;
+  padding: 14px 18px !important;
+  min-height: 56px !important;
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+  box-shadow:
+    0 20px 40px -12px rgba(198, 161, 76, 0.25),
+    0 4px 6px -4px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* متن toast */
+.Toastify__toast-body {
+  font-family: 'IranianSans', system-ui, sans-serif !important;
+  direction: rtl !important;
+  font-size: 13.5px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  align-items: center !important;
+}
+
+/* نوع‌های مختلف */
+.Toastify__toast--success {
+  background: #ECFDF5 !important;
+  color: #065F46 !important;
+  border: 1px solid #A7F3D0 !important;
+}
+
+.Toastify__toast--error {
+  background: #FEF2F2 !important;
+  color: #991B1B !important;
+  border: 1px solid #FCA5A5 !important;
+}
+
+.Toastify__toast--info {
+  background: #EFF6FF !important;
+  color: #1E40AF !important;
+  border: 1px solid #BFDBFE !important;
+}
+
+.Toastify__toast--warning {
+  background: #FFFBEB !important;
+  color: #92400E !important;
+  border: 1px solid #FDE68A !important;
+}
+
+.Toastify__toast--loading {
+  background: #FFFFFF !important;
+  color: #1E293B !important;
+  border: 1px solid rgba(198, 161, 76, 0.2) !important;
+}
+
+/* آیکون */
+.Toastify__toast-icon {
+  margin-left: 10px !important;
+  margin-right: 0 !important;
+  width: 20px !important;
+  flex-shrink: 0 !important;
+}
+
+/* نوار پیشرفت */
+.Toastify__progress-bar {
+  background: linear-gradient(to left, #C6A14C, #A8853A) !important;
+  height: 3px !important;
+  border-radius: 0 0 14px 14px !important;
+}
+
+.Toastify__progress-bar--success {
+  background: linear-gradient(to left, #10B981, #059669) !important;
+}
+
+.Toastify__progress-bar--error {
+  background: linear-gradient(to left, #EF4444, #DC2626) !important;
+}
+
+.Toastify__progress-bar--info {
+  background: linear-gradient(to left, #3B82F6, #2563EB) !important;
+}
+
+.Toastify__progress-bar--warning {
+  background: linear-gradient(to left, #F59E0B, #D97706) !important;
+}
+
+/* دکمه بستن */
+.Toastify__close-button {
+  color: currentColor !important;
+  opacity: 0.5 !important;
+  transition: opacity 0.2s ease !important;
+  align-self: center !important;
+}
+
+.Toastify__close-button:hover {
+  opacity: 1 !important;
+}
+
+/* انیمیشن ورود */
+@keyframes toast-slide-down {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ریسپانسیو */
+@media (max-width: 480px) {
+  .Toastify__toast-container {
+    width: calc(100vw - 24px) !important;
+    left: 12px !important;
+    right: 12px !important;
+    top: 12px !important;
+  }
+
+  .Toastify__toast {
+    padding: 12px 14px !important;
+    font-size: 13px !important;
+    border-radius: 12px !important;
+  }
+
+  .Toastify__toast-body {
+    font-size: 13px !important;
+  }
+}

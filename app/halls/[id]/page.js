@@ -578,7 +578,7 @@ export default function HallDetailsPage({ params }) {
       setGuests("");
       setNote("");
 
-      setTimeout(() => router.push("/profile"), 2000);
+      setTimeout(() => router.push("/user/profile"), 2000);
     } catch (err) {
       console.error("Reservation error:", err);
       toast.error(err.response?.data?.message || "خطا در ثبت رزرو");

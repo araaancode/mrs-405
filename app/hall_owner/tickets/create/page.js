@@ -1,831 +1,527 @@
+// app/hall_owner/tickets/create/page.jsx
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { PulseLoader } from "react-spinners";
-import toast, { Toaster } from "react-hot-toast";
+import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "react-toastify";
+import {
+  PiTicket,
+  PiChatCircleDots,
+  PiPencilSimpleLine,
+  PiPaperPlaneTilt,
+  PiSpinnerGap,
+  PiArrowLeft,
+  PiCheckCircle,
+  PiWarningCircle,
+  PiInfo,
+  PiLightbulb,
+  PiCheck,
+} from "react-icons/pi";
+import { notify } from "@/lib/toast";
 
+/* ============================================================
+   Priority Config
+   ============================================================ */
+const PRIORITIES = [
+  {
+    value: "low",
+    label: "کم",
+    icon: PiCheckCircle,
+    activeBg: "bg-emerald-50",
+    activeBorder: "border-emerald-400",
+    activeText: "text-emerald-700",
+    hoverBorder: "hover:border-emerald-200",
+    desc: "برای سوالات و پیشنهادات",
+  },
+  {
+    value: "medium",
+    label: "متوسط",
+    icon: PiWarningCircle,
+    activeBg: "bg-amber-50",
+    activeBorder: "border-amber-400",
+    activeText: "text-amber-700",
+    hoverBorder: "hover:border-amber-200",
+    desc: "برای مشکلات معمولی",
+  },
+  {
+    value: "high",
+    label: "زیاد",
+    icon: PiWarningCircle,
+    activeBg: "bg-rose-50",
+    activeBorder: "border-rose-400",
+    activeText: "text-rose-700",
+    hoverBorder: "hover:border-rose-200",
+    desc: "بررسی سریع‌تر",
+  },
+];
+
+/* ============================================================
+   Page
+   ============================================================ */
 export default function HallOwnerCreateTicketPage() {
-    const router = useRouter();
+  const router = useRouter();
 
-    const [form, setForm] = useState({
-        subject: "",
-        description: "",
-        priority: "medium"
-    });
+  const [form, setForm] = useState({
+    subject: "",
+    description: "",
+    priority: "medium",
+  });
 
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
-    const handleChange = (e) => {
-        setForm({
-            ...form,
-            [e.target.name]: e.target.value
-        });
-        setError("");
-    };
+  /* ============================================================
+     تغییرات
+     ============================================================ */
+  const handleChange = useCallback((e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: "" }));
+  }, []);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError("");
+  /* ============================================================
+     Validation
+     ============================================================ */
+  const validate = () => {
+    const e = {};
 
-        if (!form.subject || !form.description) {
-            const msg = "لطفاً موضوع و توضیحات تیکت را وارد کنید";
-            setError(msg);
-            toast.error(msg, {
-                duration: 3000,
-                position: "top-right",
-                icon: "❌",
-                style: {
-                    background: "#fff",
-                    color: "#991B1B",
-                    borderRadius: "12px",
-                    padding: "12px 20px",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    border: "1px solid #FCA5A5",
-                    boxShadow: "0 4px 15px rgba(0,0,0,0.08)"
+    if (!form.subject.trim()) {
+      e.subject = "موضوع تیکت الزامی است";
+    } else if (form.subject.trim().length < 5) {
+      e.subject = "موضوع باید حداقل ۵ کاراکتر باشد";
+    } else if (form.subject.length > 100) {
+      e.subject = "موضوع نمی‌تواند بیشتر از ۱۰۰ کاراکتر باشد";
+    }
+
+    if (!form.description.trim()) {
+      e.description = "توضیحات تیکت الزامی است";
+    } else if (form.description.trim().length < 10) {
+      e.description = "توضیحات باید حداقل ۱۰ کاراکتر باشد";
+    } else if (form.description.length > 2000) {
+      e.description = "توضیحات نمی‌تواند بیشتر از ۲۰۰۰ کاراکتر باشد";
+    }
+
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  /* ============================================================
+     Submit
+     ============================================================ */
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!validate()) {
+      notify.error("لطفاً خطاهای فرم را برطرف کنید");
+      return;
+    }
+
+    setLoading(true);
+    const toastId = toast.loading("در حال ثبت تیکت...");
+
+    try {
+      await axios.post("/api/hall_owner/tickets", {
+        subject: form.subject.trim(),
+        description: form.description.trim(),
+        priority: form.priority,
+      });
+
+      toast.update(toastId, {
+        render: "تیکت با موفقیت ثبت شد",
+        type: "success",
+        isLoading: false,
+        autoClose: 5000,
+      });
+
+      setTimeout(() => router.push("/hall_owner/tickets"), 1200);
+    } catch (err) {
+      toast.update(toastId, {
+        render: err.response?.data?.message || "خطا در ثبت تیکت",
+        type: "error",
+        isLoading: false,
+        autoClose: 10000,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* ============================================================
+     Render
+     ============================================================ */
+  return (
+    <div dir="rtl" className="w-full">
+      {/* ==================== Header ==================== */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+        className="mb-6"
+      >
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center shadow-lg shadow-gold-500/25 flex-shrink-0">
+              <PiTicket className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
+                ایجاد تیکت جدید
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                تیکت خود را ثبت کنید، کارشناسان ما در اسرع وقت پاسخگو خواهند
+                بود
+              </p>
+            </div>
+          </div>
+
+          <Link
+            href="/hall_owner/tickets"
+            className="
+              hidden sm:inline-flex items-center gap-2
+              px-4 py-2.5 rounded-xl
+              text-[12.5px] font-medium
+              text-slate-700 bg-white
+              border border-slate-200
+              hover:bg-slate-50 hover:border-slate-300
+              active:scale-95
+              transition-all duration-200
+              flex-shrink-0
+            "
+          >
+            <PiArrowLeft className="w-4 h-4" />
+            بازگشت به لیست
+          </Link>
+        </div>
+      </motion.div>
+
+      {/* ==================== Form Card ==================== */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, delay: 0.05 }}
+        className="
+          max-w-3xl
+          bg-white rounded-2xl
+          ring-1 ring-slate-100
+          shadow-[0_1px_2px_rgba(15,23,42,0.04)]
+          p-5 sm:p-7
+        "
+      >
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* ============ موضوع ============ */}
+          <div>
+            <label
+              htmlFor="subject"
+              className="block text-[13px] font-medium text-slate-700 mb-1.5"
+            >
+              موضوع تیکت <span className="text-rose-500">*</span>
+            </label>
+
+            <div className="relative group">
+              <PiChatCircleDots
+                className="
+                  absolute right-3.5 top-1/2 -translate-y-1/2
+                  w-4 h-4 pointer-events-none
+                  text-slate-400
+                  group-focus-within:text-gold-500
+                  transition-colors duration-200
+                "
+              />
+              <input
+                id="subject"
+                type="text"
+                name="subject"
+                value={form.subject}
+                onChange={handleChange}
+                placeholder="مثلاً: مشکل در ثبت تالار"
+                maxLength={100}
+                aria-invalid={!!errors.subject}
+                aria-describedby={
+                  errors.subject ? "subject-error" : undefined
                 }
-            });
-            return;
-        }
-
-        if (form.subject.length < 5) {
-            const msg = "موضوع تیکت باید حداقل ۵ کاراکتر باشد";
-            setError(msg);
-            toast.error(msg, {
-                duration: 3000,
-                position: "top-right",
-                icon: "❌",
-                style: {
-                    background: "#fff",
-                    color: "#991B1B",
-                    borderRadius: "12px",
-                    padding: "12px 20px",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    border: "1px solid #FCA5A5",
-                    boxShadow: "0 4px 15px rgba(0,0,0,0.08)"
-                }
-            });
-            return;
-        }
-
-        if (form.description.length < 10) {
-            const msg = "توضیحات تیکت باید حداقل ۱۰ کاراکتر باشد";
-            setError(msg);
-            toast.error(msg, {
-                duration: 3000,
-                position: "top-right",
-                icon: "❌",
-                style: {
-                    background: "#fff",
-                    color: "#991B1B",
-                    borderRadius: "12px",
-                    padding: "12px 20px",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    border: "1px solid #FCA5A5",
-                    boxShadow: "0 4px 15px rgba(0,0,0,0.08)"
-                }
-            });
-            return;
-        }
-
-        try {
-            setLoading(true);
-
-            await axios.post("/api/hall_owner/tickets", {
-                subject: form.subject,
-                description: form.description,
-                priority: form.priority
-            });
-
-            toast.success(" تیکت با موفقیت ثبت شد!", {
-                duration: 4000,
-                position: "top-right",
-                icon: "",
-                style: {
-                    background: "#fff",
-                    color: "#166534",
-                    borderRadius: "12px",
-                    padding: "16px 24px",
-                    fontSize: "16px",
-                    fontWeight: "700",
-                    border: "2px solid #86EFAC",
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.1)"
-                }
-            });
-
-            setTimeout(() => {
-                router.push("/hall_owner/tickets");
-            }, 1500);
-
-        } catch (err) {
-            const msg = err.response?.data?.message || "خطا در ایجاد تیکت";
-            setError(msg);
-            toast.error(msg, {
-                duration: 3000,
-                position: "top-right",
-                icon: "❌",
-                style: {
-                    background: "#fff",
-                    color: "#991B1B",
-                    borderRadius: "12px",
-                    padding: "12px 20px",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    border: "1px solid #FCA5A5",
-                    boxShadow: "0 4px 15px rgba(0,0,0,0.08)"
-                }
-            });
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <div className="create-ticket-page">
-            <Toaster />
-
-            {/* هدر صفحه */}
-            <div className="header">
-                <div className="header-content">
-                    <div className="header-icon">
-                        <svg className="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-                        </svg>
-                    </div>
-                    <div>
-                        <h2>ایجاد تیکت جدید</h2>
-                        <p>تیکت پشتیبانی خود را ثبت کنید، کارشناسان ما در اسرع وقت پاسخگو خواهند بود</p>
-                    </div>
-                </div>
-                <div className="header-line" />
+                className={`
+                  w-full pr-11 pl-3.5 py-2.5
+                  bg-white border rounded-xl
+                  text-sm text-slate-900
+                  placeholder:text-slate-400
+                  focus:outline-none focus:ring-4
+                  transition-all duration-200
+                  ${
+                    errors.subject
+                      ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500/10"
+                      : "border-slate-200 hover:border-gold-300 focus:border-gold-500 focus:ring-gold-500/10"
+                  }
+                `}
+              />
             </div>
 
-            {/* فرم ایجاد تیکت */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="form-container"
-            >
-                <form onSubmit={handleSubmit} className="form">
+            <div className="flex items-center justify-between gap-2 mt-1.5">
+              {errors.subject ? (
+                <p
+                  id="subject-error"
+                  className="text-[11px] text-rose-600 flex items-center gap-1"
+                >
+                  <PiWarningCircle className="w-3.5 h-3.5" />
+                  {errors.subject}
+                </p>
+              ) : (
+                <p className="text-[11px] text-slate-400">
+                  حداقل ۵ و حداکثر ۱۰۰ کاراکتر
+                </p>
+              )}
+              <span
+                className={`
+                  text-[10.5px] font-mono
+                  ${
+                    form.subject.length > 90
+                      ? "text-rose-500"
+                      : "text-slate-400"
+                  }
+                `}
+              >
+                {form.subject.length}/100
+              </span>
+            </div>
+          </div>
 
-                    {/* موضوع تیکت */}
-                    <div className="form-group">
-                        <label className="form-label">
-                            موضوع تیکت
-                            <span className="required">*</span>
-                        </label>
-                        <div className="input-wrapper">
-                            <div className="input-icon">
-                                <svg className="icon-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                                </svg>
-                            </div>
-                            <input
-                                type="text"
-                                name="subject"
-                                value={form.subject}
-                                onChange={handleChange}
-                                placeholder="مثلاً: مشکل در ثبت تالار"
-                                className="form-input"
-                                required
-                                minLength={5}
-                                maxLength={100}
-                            />
-                        </div>
-                        <div className="input-hint">
-                            <span>حداقل ۵ و حداکثر ۱۰۰ کاراکتر</span>
-                            <span>{form.subject.length}/100</span>
-                        </div>
-                    </div>
+          {/* ============ اولویت ============ */}
+          <div>
+            <label className="block text-[13px] font-medium text-slate-700 mb-1.5">
+              سطح اولویت
+            </label>
 
-                    {/* اولویت */}
-                    <div className="form-group">
-                        <label className="form-label">سطح اولویت</label>
-                        <div className="priority-grid">
-                            <button
-                                type="button"
-                                onClick={() => setForm({ ...form, priority: "low" })}
-                                className={`priority-btn ${form.priority === "low" ? "priority-low-active" : "priority-low"}`}
-                            >
-                                <span>✓</span>
-                                <span>کم</span>
-                            </button>
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              {PRIORITIES.map((p) => {
+                const Icon = p.icon;
+                const isActive = form.priority === p.value;
 
-                            <button
-                                type="button"
-                                onClick={() => setForm({ ...form, priority: "medium" })}
-                                className={`priority-btn ${form.priority === "medium" ? "priority-medium-active" : "priority-medium"}`}
-                            >
-                                <span>!!</span>
-                                <span>متوسط</span>
-                            </button>
+                return (
+                  <button
+                    key={p.value}
+                    type="button"
+                    onClick={() =>
+                      setForm((prev) => ({ ...prev, priority: p.value }))
+                    }
+                    aria-pressed={isActive}
+                    className={`
+                      relative flex flex-col items-center justify-center gap-1.5
+                      px-3 py-3 sm:py-4 rounded-xl
+                      border-2 transition-all duration-200
+                      active:scale-95
+                      ${
+                        isActive
+                          ? `${p.activeBg} ${p.activeBorder} ${p.activeText} shadow-sm`
+                          : `bg-white border-slate-200 text-slate-600 ${p.hoverBorder} hover:bg-slate-50`
+                      }
+                    `}
+                  >
+                    <Icon
+                      className={`w-4 h-4 ${
+                        isActive ? "" : "text-slate-400"
+                      }`}
+                    />
+                    <span className="text-[12px] font-bold">{p.label}</span>
 
-                            <button
-                                type="button"
-                                onClick={() => setForm({ ...form, priority: "high" })}
-                                className={`priority-btn ${form.priority === "high" ? "priority-high-active" : "priority-high"}`}
-                            >
-                                <span>⚠️</span>
-                                <span>زیاد</span>
-                            </button>
-                        </div>
-                        <p className="priority-hint">
-                            {form.priority === "high" && "⚠️ تیکت‌های با اولویت بالا سریع‌تر بررسی می‌شوند"}
-                            {form.priority === "medium" && "ℹ️ اولویت متوسط برای مشکلات معمولی"}
-                            {form.priority === "low" && "✓ اولویت کم برای سوالات و پیشنهادات"}
-                        </p>
-                    </div>
-
-                    {/* توضیحات */}
-                    <div className="form-group">
-                        <label className="form-label">
-                            توضیحات کامل
-                            <span className="required">*</span>
-                        </label>
-                        <div className="textarea-wrapper">
-                            <div className="textarea-icon">
-                                <svg className="icon-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                            </div>
-                            <textarea
-                                name="description"
-                                value={form.description}
-                                onChange={handleChange}
-                                className="form-textarea"
-                                placeholder="مشکل خود را کامل توضیح دهید..."
-                                rows="6"
-                                required
-                                minLength={10}
-                            />
-                        </div>
-                        <div className="input-hint">
-                            <span>حداقل ۱۰ کاراکتر</span>
-                            <span>{form.description.length} کاراکتر</span>
-                        </div>
-                    </div>
-
-                    {/* نمایش خطا */}
-                    {error && (
-                        <motion.div
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="error-box"
-                        >
-                            <span className="error-icon">⚠️</span>
-                            <p className="error-text">{error}</p>
-                        </motion.div>
+                    {isActive && (
+                      <motion.span
+                        layoutId="priorityIndicator"
+                        className="
+                          absolute -top-1 -right-1
+                          w-5 h-5 rounded-full
+                          bg-white shadow-md ring-1 ring-current
+                          flex items-center justify-center
+                        "
+                      >
+                        <PiCheck className="w-3 h-3" strokeWidth={3} />
+                      </motion.span>
                     )}
+                  </button>
+                );
+              })}
+            </div>
 
-                    {/* دکمه‌های اقدام */}
-                    <div className="form-actions">
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="btn-submit"
-                        >
-                            {loading ? (
-                                <>
-                                    <PulseLoader color="#ffffff" size={8} margin={4} />
-                                    <span>در حال ارسال...</span>
-                                </>
-                            ) : (
-                                <>
-                                    <svg className="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                                    </svg>
-                                    ثبت تیکت
-                                </>
-                            )}
-                        </button>
+            <p className="text-[11px] text-slate-400 mt-2 flex items-center gap-1">
+              <PiInfo className="w-3.5 h-3.5" />
+              {PRIORITIES.find((p) => p.value === form.priority)?.desc}
+            </p>
+          </div>
 
-                        <button
-                            type="button"
-                            onClick={() => router.back()}
-                            className="btn-cancel"
-                        >
-                            <svg className="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                            </svg>
-                            بازگشت
-                        </button>
-                    </div>
+          {/* ============ توضیحات ============ */}
+          <div>
+            <label
+              htmlFor="description"
+              className="block text-[13px] font-medium text-slate-700 mb-1.5"
+            >
+              توضیحات کامل <span className="text-rose-500">*</span>
+            </label>
 
-                    {/* راهنمای تکمیل تیکت */}
-                    <div className="help-box">
-                        <div className="help-content">
-                            <div className="help-icon-box">
-                                <span className="help-icon-text">✓</span>
-                            </div>
-                            <div className="help-text">
-                                <h4 className="help-title">نکات مهم در ثبت تیکت</h4>
-                                <ul className="help-list">
-                                    <li>• موضوع تیکت را دقیق و مختصر انتخاب کنید</li>
-                                    <li>• توضیحات کامل و واضح بنویسید</li>
-                                    <li>• در صورت نیاز، تصاویر یا مستندات ضمیمه کنید</li>
-                                    <li>• پاسخ تیکت در بخش "همه تیکت‌ها" قابل مشاهده است</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-
-                </form>
-            </motion.div>
-
-            <style jsx>{`
-                .create-ticket-page {
-                    direction: rtl;
-                    padding: 1rem;
-                    max-width: 100%;
+            <div className="relative group">
+              <PiPencilSimpleLine
+                className="
+                  absolute right-3.5 top-3
+                  w-4 h-4 pointer-events-none
+                  text-slate-400
+                  group-focus-within:text-gold-500
+                  transition-colors duration-200
+                "
+              />
+              <textarea
+                id="description"
+                name="description"
+                value={form.description}
+                onChange={handleChange}
+                placeholder="مشکل یا سوال خود را کامل و واضح توضیح دهید..."
+                rows={6}
+                maxLength={2000}
+                aria-invalid={!!errors.description}
+                aria-describedby={
+                  errors.description ? "description-error" : undefined
                 }
-
-                /* هدر */
-                .header {
-                    margin-bottom: 2rem;
-                }
-
-                .header-content {
-                    display: flex;
-                    align-items: center;
-                    gap: 0.75rem;
-                    margin-bottom: 0.5rem;
-                }
-
-                .header-icon {
-                    padding: 0.5rem;
-                    background: linear-gradient(135deg, rgba(212, 176, 106, 0.1), rgba(184, 146, 46, 0.1));
-                    border-radius: 0.75rem;
-                    flex-shrink: 0;
-                }
-
-                .icon {
-                    width: 2rem;
-                    height: 2rem;
-                    color: #D4B06A;
-                }
-
-                .header-content h2 {
-                    font-size: 1.5rem;
-                    font-weight: 900;
-                    color: #2C2418;
-                }
-
-                .header-content p {
-                    color: #6b7280;
-                    font-size: 0.875rem;
-                    margin-top: 0.25rem;
-                }
-
-                .header-line {
-                    width: 5rem;
-                    height: 0.25rem;
-                    background: linear-gradient(90deg, #D4B06A, #B8922E);
-                    border-radius: 9999px;
-                    margin-top: 0.5rem;
-                }
-
-                /* فرم */
-                .form-container {
-                    max-width: 48rem;
-                }
-
-                .form {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 1.5rem;
-                }
-
-                .form-group {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 0.5rem;
-                }
-
-                .form-label {
-                    font-size: 0.875rem;
-                    font-weight: 700;
-                    color: #2C2418;
-                }
-
-                .required {
-                    color: #ef4444;
-                    margin-right: 0.25rem;
-                }
-
-                .input-wrapper {
-                    position: relative;
-                }
-
-                .input-icon {
-                    position: absolute;
-                    top: 50%;
-                    right: 0.75rem;
-                    transform: translateY(-50%);
-                    pointer-events: none;
-                }
-
-                .icon-svg {
-                    width: 1.25rem;
-                    height: 1.25rem;
-                    color: #9ca3af;
-                    transition: color 0.3s;
-                }
-
-                .input-wrapper:focus-within .icon-svg {
-                    color: #D4B06A;
-                }
-
-                .form-input {
-                    width: 100%;
-                    padding: 0.75rem 2.5rem 0.75rem 1rem;
-                    background: #f9fafb;
-                    border: 2px solid #e5e7eb;
-                    border-radius: 0.75rem;
-                    font-size: 0.875rem;
-                    color: #2C2418;
-                    transition: all 0.3s;
-                    outline: none;
-                    font-family: inherit;
-                }
-
-                .form-input:focus {
-                    border-color: #D4B06A;
-                    box-shadow: 0 0 0 3px rgba(212, 176, 106, 0.15);
-                    background: white;
-                }
-
-                .form-input::placeholder {
-                    color: #9ca3af;
-                }
-
-                .input-hint {
-                    display: flex;
-                    justify-content: space-between;
-                    font-size: 0.75rem;
-                    color: #9ca3af;
-                    margin-top: 0.25rem;
-                }
-
-                /* اولویت */
-                .priority-grid {
-                    display: grid;
-                    grid-template-columns: repeat(3, 1fr);
-                    gap: 0.75rem;
-                }
-
-                .priority-btn {
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 0.5rem;
-                    padding: 0.75rem 1rem;
-                    border-radius: 0.75rem;
-                    font-weight: 500;
-                    font-size: 0.875rem;
-                    transition: all 0.3s;
-                    border: 2px solid #e5e7eb;
-                    background: #f9fafb;
-                    color: #6b7280;
-                    cursor: pointer;
-                }
-
-                .priority-btn:hover {
-                    border-color: #d1d5db;
-                }
-
-                .priority-low {
-                    border-color: #e5e7eb;
-                    background: #f9fafb;
-                    color: #6b7280;
-                }
-
-                .priority-low-active {
-                    border-color: #22c55e;
-                    background: #f0fdf4;
-                    color: #16a34a;
-                }
-
-                .priority-medium {
-                    border-color: #e5e7eb;
-                    background: #f9fafb;
-                    color: #6b7280;
-                }
-
-                .priority-medium-active {
-                    border-color: #eab308;
-                    background: #fefce8;
-                    color: #ca8a04;
-                }
-
-                .priority-high {
-                    border-color: #e5e7eb;
-                    background: #f9fafb;
-                    color: #6b7280;
-                }
-
-                .priority-high-active {
-                    border-color: #ef4444;
-                    background: #fef2f2;
-                    color: #dc2626;
-                }
-
-                .priority-hint {
-                    font-size: 0.75rem;
-                    color: #9ca3af;
-                    margin-top: 0.5rem;
-                }
-
-                /* Textarea */
-                .textarea-wrapper {
-                    position: relative;
-                }
-
-                .textarea-icon {
-                    position: absolute;
-                    top: 0.75rem;
-                    right: 0.75rem;
-                    pointer-events: none;
-                }
-
-                .textarea-wrapper:focus-within .icon-svg {
-                    color: #D4B06A;
-                }
-
-                .form-textarea {
-                    width: 100%;
-                    padding: 0.75rem 2.5rem 0.75rem 1rem;
-                    background: #f9fafb;
-                    border: 2px solid #e5e7eb;
-                    border-radius: 0.75rem;
-                    font-size: 0.875rem;
-                    color: #2C2418;
-                    transition: all 0.3s;
-                    outline: none;
-                    resize: vertical;
-                    min-height: 150px;
-                    font-family: inherit;
-                }
-
-                .form-textarea:focus {
-                    border-color: #D4B06A;
-                    box-shadow: 0 0 0 3px rgba(212, 176, 106, 0.15);
-                    background: white;
-                }
-
-                .form-textarea::placeholder {
-                    color: #9ca3af;
-                }
-
-                /* خطا */
-                .error-box {
-                    display: flex;
-                    align-items: center;
-                    gap: 0.5rem;
-                    padding: 0.75rem;
-                    background: #fef2f2;
-                    border: 1px solid #fca5a5;
-                    border-radius: 0.75rem;
-                }
-
-                .error-icon {
-                    color: #ef4444;
-                    font-size: 1.25rem;
-                }
-
-                .error-text {
-                    color: #dc2626;
-                    font-size: 0.875rem;
-                    font-weight: 500;
-                }
-
-                /* دکمه‌ها */
-                .form-actions {
-                    display: flex;
-                    align-items: center;
-                    gap: 1rem;
-                    padding-top: 1rem;
-                }
-
-                .btn-submit {
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 0.5rem;
-                    padding: 0.875rem 2rem;
-                    background: linear-gradient(135deg, #D4B06A, #B8922E);
-                    color: white;
-                    border: none;
-                    border-radius: 0.75rem;
-                    font-weight: 700;
-                    font-size: 1rem;
-                    box-shadow: 0 4px 15px rgba(212, 176, 106, 0.3);
-                    transition: all 0.3s;
-                    cursor: pointer;
-                    min-width: 150px;
-                }
-
-                .btn-submit:hover:not(:disabled) {
-                    transform: translateY(-2px);
-                    box-shadow: 0 6px 25px rgba(212, 176, 106, 0.4);
-                }
-
-                .btn-submit:disabled {
-                    opacity: 0.7;
-                    cursor: not-allowed;
-                    transform: none;
-                }
-
-                .btn-icon {
-                    width: 1.25rem;
-                    height: 1.25rem;
-                }
-
-                .btn-cancel {
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 0.5rem;
-                    padding: 0.875rem 1.5rem;
-                    border: 2px solid #e5e7eb;
-                    border-radius: 0.75rem;
-                    font-weight: 500;
-                    font-size: 0.875rem;
-                    color: #6b7280;
-                    background: transparent;
-                    transition: all 0.3s;
-                    cursor: pointer;
-                }
-
-                .btn-cancel:hover {
-                    border-color: #d1d5db;
-                    background: #f9fafb;
-                }
-
-                /* راهنما */
-                .help-box {
-                    margin-top: 2rem;
-                    padding: 1rem;
-                    background: linear-gradient(135deg, #eff6ff, #eef2ff);
-                    border-radius: 0.75rem;
-                    border: 1px solid #bfdbfe;
-                }
-
-                .help-content {
-                    display: flex;
-                    align-items: flex-start;
-                    gap: 0.75rem;
-                }
-
-                .help-icon-box {
-                    width: 2rem;
-                    height: 2rem;
-                    background: #bfdbfe;
-                    border-radius: 0.5rem;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    flex-shrink: 0;
-                }
-
-                .help-icon-text {
-                    color: #2563eb;
-                    font-size: 1.25rem;
-                    font-weight: 700;
-                }
-
-                .help-text {
-                    flex: 1;
-                }
-
-                .help-title {
-                    font-weight: 700;
-                    color: #1e40af;
-                    font-size: 0.875rem;
-                    margin-bottom: 0.25rem;
-                }
-
-                .help-list {
-                    list-style: none;
-                    padding: 0;
-                    margin: 0;
-                    font-size: 0.75rem;
-                    color: #1e40af;
-                    space-y: 0.25rem;
-                }
-
-                .help-list li {
-                    padding: 0.125rem 0;
-                }
-
-                /* ریسپانسیو */
-                @media (max-width: 768px) {
-                    .create-ticket-page {
-                        padding: 0.75rem;
-                    }
-
-                    .header-content h2 {
-                        font-size: 1.25rem;
-                    }
-
-                    .priority-grid {
-                        grid-template-columns: 1fr 1fr 1fr;
-                        gap: 0.5rem;
-                    }
-
-                    .priority-btn {
-                        padding: 0.5rem 0.75rem;
-                        font-size: 0.75rem;
-                    }
-
-                    .form-actions {
-                        flex-direction: column;
-                    }
-
-                    .btn-submit,
-                    .btn-cancel {
-                        width: 100%;
-                    }
-
-                    .btn-submit {
-                        min-width: unset;
-                    }
-
-                    .help-content {
-                        flex-direction: column;
-                        align-items: center;
-                        text-align: center;
-                    }
-
-                    .help-list {
-                        text-align: right;
-                    }
-                }
-
-                @media (max-width: 480px) {
-                    .create-ticket-page {
-                        padding: 0.5rem;
-                    }
-
-                    .header-content {
-                        flex-direction: column;
-                        align-items: flex-start;
-                    }
-
-                    .header-content h2 {
-                        font-size: 1.125rem;
-                    }
-
-                    .header-content p {
-                        font-size: 0.75rem;
-                    }
-
-                    .priority-grid {
-                        grid-template-columns: 1fr;
-                        gap: 0.5rem;
-                    }
-
-                    .priority-btn {
-                        padding: 0.625rem;
-                    }
-
-                    .form-input,
-                    .form-textarea {
-                        font-size: 0.8rem;
-                        padding: 0.625rem 2rem 0.625rem 0.75rem;
-                    }
-
-                    .btn-submit,
-                    .btn-cancel {
-                        padding: 0.75rem;
-                        font-size: 0.875rem;
-                    }
-
-                    .help-box {
-                        padding: 0.75rem;
-                    }
-
-                    .help-title {
-                        font-size: 0.8rem;
-                    }
-
-                    .help-list li {
-                        font-size: 0.7rem;
-                    }
-                }
-
-                @media (min-width: 769px) and (max-width: 1024px) {
-                    .form-container {
-                        max-width: 40rem;
-                    }
-                }
-            `}</style>
+                className={`
+                  w-full pr-11 pl-3.5 py-3
+                  bg-white border rounded-xl
+                  text-sm text-slate-900
+                  placeholder:text-slate-400
+                  resize-none
+                  focus:outline-none focus:ring-4
+                  transition-all duration-200
+                  ${
+                    errors.description
+                      ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500/10"
+                      : "border-slate-200 hover:border-gold-300 focus:border-gold-500 focus:ring-gold-500/10"
+                  }
+                `}
+              />
+            </div>
+
+            <div className="flex items-center justify-between gap-2 mt-1.5">
+              {errors.description ? (
+                <p
+                  id="description-error"
+                  className="text-[11px] text-rose-600 flex items-center gap-1"
+                >
+                  <PiWarningCircle className="w-3.5 h-3.5" />
+                  {errors.description}
+                </p>
+              ) : (
+                <p className="text-[11px] text-slate-400">
+                  هرچه دقیق‌تر بنویسید، پاسخ سریع‌تر خواهد بود
+                </p>
+              )}
+              <span
+                className={`
+                  text-[10.5px] font-mono
+                  ${
+                    form.description.length > 1800
+                      ? "text-rose-500"
+                      : "text-slate-400"
+                  }
+                `}
+              >
+                {form.description.length}/2000
+              </span>
+            </div>
+          </div>
+
+          {/* ============ Action Bar ============ */}
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-3 pt-5 border-t border-slate-100">
+            <Link
+              href="/hall_owner/tickets"
+              className="
+                inline-flex items-center justify-center gap-2
+                px-5 py-2.5 rounded-xl
+                text-[13px] font-medium
+                text-slate-700 bg-white
+                border border-slate-200
+                hover:bg-gold-50 hover:border-gold-300 hover:text-gold-700
+                active:scale-95
+                transition-all duration-200
+              "
+            >
+              <PiArrowLeft className="w-4 h-4" />
+              بازگشت
+            </Link>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="
+                flex-1 sm:flex-none sm:min-w-[180px]
+                inline-flex items-center justify-center gap-2
+                px-6 py-3 rounded-xl
+                text-sm font-bold text-white
+                bg-gradient-to-b from-gold-400 to-gold-600
+                hover:from-gold-500 hover:to-gold-700
+                shadow-md shadow-gold-500/25
+                hover:shadow-lg hover:shadow-gold-500/40
+                hover:-translate-y-0.5
+                focus:outline-none focus:ring-4 focus:ring-gold-500/25
+                disabled:opacity-60 disabled:cursor-not-allowed
+                disabled:hover:translate-y-0 disabled:hover:shadow-md
+                active:scale-95
+                transition-all duration-200
+              "
+            >
+              {loading ? (
+                <>
+                  <PiSpinnerGap className="w-4 h-4 animate-spin" />
+                  در حال ارسال...
+                </>
+              ) : (
+                <>
+                  <PiPaperPlaneTilt className="w-4 h-4" />
+                  ثبت تیکت
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </motion.div>
+
+      {/* ==================== Help Box ==================== */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, delay: 0.15 }}
+        className="
+          mt-6 max-w-3xl
+          p-5 rounded-2xl
+          bg-gradient-to-br from-gold-50/60 via-white to-white
+          border border-gold-100
+        "
+      >
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 rounded-xl bg-gold-100 flex items-center justify-center flex-shrink-0">
+            <PiLightbulb className="w-4 h-4 text-gold-600" />
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <h4 className="text-[13px] font-bold text-slate-800 mb-2">
+              نکات مهم در ثبت تیکت
+            </h4>
+
+            <ul className="space-y-1.5 text-[12px] text-slate-600">
+              {[
+                "موضوع تیکت را دقیق و مختصر انتخاب کنید",
+                "مراحل بروز مشکل را گام‌به‌گام توضیح دهید",
+                "پیام‌های قبلی تیکت را در بخش «همه تیکت‌ها» پیگیری کنید",
+                "برای مشکلات فوری، اولویت «زیاد» را انتخاب کنید",
+              ].map((tip, i) => (
+                <li key={i} className="flex items-start gap-2">
+                  <PiCheckCircle
+                    className="w-3.5 h-3.5 text-gold-500 mt-0.5 flex-shrink-0"
+                    strokeWidth={3}
+                  />
+                  {tip}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
-    );
+      </motion.div>
+    </div>
+  );
 }
