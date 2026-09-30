@@ -1,263 +1,838 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { PulseLoader } from "react-spinners";
-import toast, { Toaster } from "react-hot-toast";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-    PiEnvelopeFill,
-    PiLockKeyFill,
-    PiArrowLeft,
-    PiArrowRight,
-    PiEye,
-    PiEyeSlash,
-    PiDeviceMobileFill,
-    PiUserFill
+  PiEnvelopeFill,
+  PiLockKeyFill,
+  PiArrowLeft,
+  PiArrowRight,
+  PiEye,
+  PiEyeSlash,
+  PiDeviceMobileFill,
+  PiUserFill,
+  PiCheckCircleFill,
+  PiWarningCircleFill,
+  PiArrowCounterClockwiseFill,
+  PiKeyFill,
+  PiSpinnerGap,
+  PiShieldCheckFill,
 } from "react-icons/pi";
-import { GiLaurelCrown } from 'react-icons/gi';
 
+/* ============================================================
+   Login Tabs
+   ============================================================ */
+const LOGIN_TYPES = [
+  { id: "password", label: "ایمیل / نام کاربری", shortLabel: "ایمیل" },
+  { id: "phone-password", label: "همراه و رمز", shortLabel: "همراه" },
+  { id: "phone-otp", label: "همراه و کد تایید", shortLabel: "کد تایید" },
+];
+
+/* ============================================================
+   InputField
+   ============================================================ */
+function InputField({
+  label,
+  icon: Icon,
+  type = "text",
+  value,
+  onChange,
+  placeholder,
+  dir = "rtl",
+  required,
+  autoComplete,
+  inputMode,
+  isPassword,
+  showPassword,
+  onTogglePassword,
+  extra,
+}) {
+  return (
+    <div>
+      <label className="block text-[13px] font-medium text-slate-700 mb-1.5">
+        {label}
+        {required && <span className="text-rose-500 mr-1">*</span>}
+      </label>
+
+      <div className="relative group">
+        {Icon && (
+          <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none z-10">
+            <Icon className="w-4 h-4 text-gold-500 group-focus-within:text-gold-600 transition-colors duration-200" />
+          </div>
+        )}
+
+        <input
+          type={isPassword ? (showPassword ? "text" : "password") : type}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          required={required}
+          dir={dir}
+          autoComplete={autoComplete}
+          inputMode={inputMode}
+          className={`
+            w-full
+            ${Icon ? "pr-10" : "pr-3.5"} ${isPassword ? "pl-10" : "pl-3.5"}
+            py-2.5
+            bg-white border border-slate-200 rounded-xl
+            text-[13.5px] text-slate-900
+            placeholder:text-slate-400
+            hover:border-gold-300
+            focus:outline-none focus:border-gold-500 focus:ring-4 focus:ring-gold-500/10
+            transition-all duration-200
+            ${dir === "ltr" ? "text-left" : "text-right"}
+          `}
+        />
+
+        {isPassword && (
+          <button
+            type="button"
+            onClick={onTogglePassword}
+            aria-label={showPassword ? "پنهان کردن رمز" : "نمایش رمز"}
+            className="
+              absolute left-3 top-1/2 -translate-y-1/2
+              w-7 h-7 rounded-lg
+              flex items-center justify-center
+              text-slate-400 hover:text-gold-500 hover:bg-gold-50
+              active:scale-90
+              transition-all duration-200
+            "
+          >
+            {showPassword ? (
+              <PiEyeSlash className="w-4 h-4" />
+            ) : (
+              <PiEye className="w-4 h-4" />
+            )}
+          </button>
+        )}
+      </div>
+
+      {extra && (
+        <p className="text-[11px] text-slate-400 mt-1.5">{extra}</p>
+      )}
+    </div>
+  );
+}
+
+/* ============================================================
+   Alert
+   ============================================================ */
+function Alert({ type = "error", children }) {
+  if (!children) return null;
+
+  const styles = {
+    error: {
+      bg: "bg-rose-50",
+      border: "border-rose-200",
+      text: "text-rose-700",
+      icon: PiWarningCircleFill,
+    },
+    success: {
+      bg: "bg-emerald-50",
+      border: "border-emerald-200",
+      text: "text-emerald-700",
+      icon: PiCheckCircleFill,
+    },
+  };
+
+  const style = styles[type];
+  const Icon = style.icon;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`
+        flex items-center gap-2
+        p-3 rounded-xl border
+        ${style.bg} ${style.border} ${style.text}
+      `}
+    >
+      <Icon className="w-4 h-4 flex-shrink-0" />
+      <p className="text-[12.5px] font-medium">{children}</p>
+    </motion.div>
+  );
+}
+
+/* ============================================================
+   SubmitButton — طلایی روشن
+   ============================================================ */
+function SubmitButton({ loading, loadingText, text, icon: Icon }) {
+  return (
+    <button
+      type="submit"
+      disabled={loading}
+      className="
+        group relative w-full
+        inline-flex items-center justify-center gap-2
+        px-6 py-3 rounded-xl
+        text-sm font-bold text-white
+        bg-gradient-to-b from-gold-400 to-gold-600
+        hover:from-gold-500 hover:to-gold-700
+        shadow-md shadow-gold-500/25
+        hover:shadow-lg hover:shadow-gold-500/40
+        hover:-translate-y-0.5
+        active:scale-95
+        focus:outline-none focus:ring-4 focus:ring-gold-500/25
+        disabled:opacity-60 disabled:cursor-not-allowed
+        disabled:hover:translate-y-0 disabled:hover:shadow-md
+        transition-all duration-300
+      "
+    >
+      {loading ? (
+        <>
+          <PiSpinnerGap className="w-4 h-4 animate-spin" />
+          {loadingText}
+        </>
+      ) : (
+        <>
+          {Icon && <Icon className="w-4 h-4" />}
+          {text}
+          <PiArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-300" />
+        </>
+      )}
+    </button>
+  );
+}
+
+/* ============================================================
+   FooterLinks — بدون ثبت‌نام (مخصوص ادمین)
+   ============================================================ */
+function FooterLinks() {
+  return (
+    <div className="mt-6 pt-5 border-t border-slate-100">
+      <p className="text-center">
+        <Link
+          href="/"
+          className="
+            inline-flex items-center gap-1
+            text-[11.5px] text-slate-400 hover:text-gold-600
+            transition-colors duration-200
+          "
+        >
+          <PiArrowLeft className="w-3.5 h-3.5" />
+          بازگشت به صفحه اصلی
+        </Link>
+      </p>
+    </div>
+  );
+}
+
+/* ============================================================
+   Page
+   ============================================================ */
 export default function AdminLoginPage() {
-    const router = useRouter();
-    const [identifier, setIdentifier] = useState("");
-    const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
 
-    const handleLogin = async (e) => {
-        e.preventDefault();
-        setError("");
-        setLoading(true);
+  /* -------- State -------- */
+  const [loginType, setLoginType] = useState("password");
+  const [otpStep, setOtpStep] = useState("form");
 
-        try {
-            const res = await signIn("credentials", {
-                redirect: false,
-                identifier,
-                password,
-            });
+  const [identifier, setIdentifier] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [otpCode, setOtpCode] = useState("");
 
-            if (res?.error) {
-                setError(res.error);
-                toast.error(res.error, {
-                    duration: 3000,
-                    position: "top-right",
-                    icon: "❌",
-                    style: {
-                        background: "#FEF2F2",
-                        color: "#991B1B",
-                        borderRadius: "12px",
-                        padding: "12px 20px",
-                        fontSize: "14px",
-                        fontWeight: "600",
-                        border: "1px solid #FCA5A5",
-                        boxShadow: "0 4px 15px rgba(0,0,0,0.08)"
-                    }
-                });
-                setLoading(false);
-                return;
-            }
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
+  const [tempPhoneForOtp, setTempPhoneForOtp] = useState("");
 
-            toast.success(" به پنل مدیریت خوش آمدید!", {
-                duration: 3000,
-                position: "top-right",
-                icon: "",
-                style: {
-                    background: "#F0FDF4",
-                    color: "#166534",
-                    borderRadius: "12px",
-                    padding: "16px 24px",
-                    fontSize: "16px",
-                    fontWeight: "700",
-                    border: "2px solid #86EFAC",
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.1)"
-                }
-            });
+  /* -------- Resend Timer -------- */
+  useEffect(() => {
+    if (resendTimer > 0) {
+      const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendTimer]);
 
-            setTimeout(() => {
-                router.push("/admin/profile");
-            }, 1500);
+  /* -------- Handlers -------- */
+  const handleTypeChange = useCallback((type) => {
+    setLoginType(type);
+    setError("");
+    setSuccess("");
+    setOtpStep("form");
+  }, []);
 
-        } catch (err) {
-            const msg = "خطا در ارتباط با سرور";
-            setError(msg);
-            toast.error(msg, {
-                duration: 3000,
-                position: "top-right",
-                icon: "❌",
-                style: {
-                    background: "#FEF2F2",
-                    color: "#991B1B",
-                    borderRadius: "12px",
-                    padding: "12px 20px",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    border: "1px solid #FCA5A5",
-                    boxShadow: "0 4px 15px rgba(0,0,0,0.08)"
-                }
-            });
-            setLoading(false);
+  const handleBackToForm = useCallback(() => {
+    setOtpStep("form");
+    setPhone("");
+    setOtpCode("");
+    setError("");
+    setSuccess("");
+  }, []);
+
+  const inputIcon = useMemo(() => {
+    if (identifier.includes("@")) return PiEnvelopeFill;
+    if (/^09\d{9}$/.test(identifier)) return PiDeviceMobileFill;
+    return PiUserFill;
+  }, [identifier]);
+
+  /* --- ایمیل/نام کاربری + رمز --- */
+  const handlePasswordLogin = useCallback(
+    async (e) => {
+      e.preventDefault();
+      setError("");
+      setLoading(true);
+
+      const res = await signIn("credentials", {
+        redirect: false,
+        identifier,
+        password,
+        role: "admin",
+      });
+
+      if (res?.error) {
+        setError(res.error);
+        setLoading(false);
+        return;
+      }
+
+      router.push("/admin/profile");
+    },
+    [identifier, password, router]
+  );
+
+  /* --- همراه + رمز --- */
+  const handlePhonePasswordLogin = useCallback(
+    async (e) => {
+      e.preventDefault();
+      setError("");
+      setLoading(true);
+
+      const res = await signIn("phone-password", {
+        redirect: false,
+        phone,
+        password,
+        role: "admin",
+      });
+
+      if (res?.error) {
+        setError(res.error);
+        setLoading(false);
+        return;
+      }
+
+      router.push("/admin/profile");
+    },
+    [phone, password, router]
+  );
+
+  /* --- درخواست OTP --- */
+  const handleRequestOtp = useCallback(
+    async (e) => {
+      e.preventDefault();
+      setError("");
+      setSuccess("");
+
+      if (!phone || !/^09\d{9}$/.test(phone)) {
+        setError("شماره همراه معتبر وارد کنید (۰۹xxxxxxxxx)");
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+        const res = await signIn("phone-otp", {
+          redirect: false,
+          phone,
+          step: "request",
+          role: "admin",
+        });
+
+        if (res?.error) {
+          setError(res.error);
+          setLoading(false);
+          return;
         }
-    };
 
-    // تشخیص نوع ورودی برای نمایش آیکون مناسب
-    const getInputIcon = () => {
-        if (identifier.includes("@")) {
-            return <PiEnvelopeFill className="w-5 h-5 text-[#D4B06A] group-focus-within:text-[#B8922E] transition-colors duration-300" />;
-        } else if (/^09[0-9]{9}$/.test(identifier)) {
-            return <PiDeviceMobileFill className="w-5 h-5 text-[#D4B06A] group-focus-within:text-[#B8922E] transition-colors duration-300" />;
-        }
-        return <PiUserFill className="w-5 h-5 text-[#D4B06A] group-focus-within:text-[#B8922E] transition-colors duration-300" />;
-    };
+        setTempPhoneForOtp(phone);
+        setSuccess("کد تایید با موفقیت ارسال شد");
+        setOtpStep("verify");
+        setResendTimer(60);
+      } catch {
+        setError("خطا در ارسال کد تایید");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [phone]
+  );
 
-    return (
-        <div className="min-h-screen flex flex-col justify-center py-8 sm:py-12 md:py-20 px-4 sm:px-6 lg:px-8 ">
-            <Toaster />
-            <div className="max-w-md mx-auto w-full">
+  /* --- تایید OTP --- */
+  const handleVerifyOtp = useCallback(
+    async (e) => {
+      e.preventDefault();
+      setError("");
 
-                {/* Decorative crown divider - کاملاً رسپانسیو */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6 }}
-                    className="text-center mb-6 sm:mb-8"
-                >
-                    <div className="flex items-center justify-center gap-3 sm:gap-4 mb-3 mt-10 sm:mb-4">
-                        <div className="w-8 sm:w-12 md:w-16 h-px bg-gradient-to-r from-transparent via-[#D4B06A] to-transparent" />
-                        <div className="relative">
-                            <div className="absolute inset-0 bg-[#D4B06A]/20 rounded-full blur-xl" />
-                            <GiLaurelCrown className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 text-[#D4B06A] relative drop-shadow-md" />
-                        </div>
-                        <div className="w-8 sm:w-12 md:w-16 h-px bg-gradient-to-r from-transparent via-[#D4B06A] to-transparent" />
-                    </div>
+      if (!otpCode || otpCode.length < 4) {
+        setError("کد تایید معتبر وارد کنید");
+        return;
+      }
 
-                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-[#2C2418] tracking-tight">
-                        ورود <span className="text-[#D4B06A]">مدیر سایت</span>
-                    </h2>
-                    <div className="w-16 sm:w-20 h-1 bg-gradient-to-r from-[#D4B06A] to-[#B8922E] rounded-full mx-auto mt-2 sm:mt-3 mb-2 sm:mb-3" />
-                    <p className="text-sm sm:text-base text-gray-500 mt-1 sm:mt-2">
-                        به پنل مدیریت خوش آمدید
-                    </p>
-                </motion.div>
+      setLoading(true);
 
-                {/* Login Card - کاملاً رسپانسیو */}
-                <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.1 }}
-                    className="bg-white rounded-2xl sm:rounded-3xl border border-gray-100 shadow-lg sm:shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden"
-                >
-                    <form onSubmit={handleLogin} className="p-4 sm:p-6 md:p-8">
-                        {/* Identifier Field (Email/Phone/Username) */}
-                        <div className="mb-4 sm:mb-6">
-                            <label className="block text-[#2C2418] text-xs sm:text-sm font-bold mb-1.5 sm:mb-2">
-                                ایمیل / شماره موبایل / نام مدیر سایت
-                            </label>
-                            <div className="relative group">
-                                <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:pr-3 pointer-events-none">
-                                    {getInputIcon()}
-                                </div>
-                                <input
-                                    type="text"
-                                    placeholder="example@gmail.com / 09123456789 / admin_name"
-                                    value={identifier}
-                                    onChange={(e) => setIdentifier(e.target.value)}
-                                    required
-                                    dir="ltr"
-                                    className="w-full pr-8 sm:pr-10 px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border-2 border-gray-200 rounded-xl 
-                                         text-[#2C2418] placeholder-gray-400 text-xs sm:text-sm
-                                         focus:outline-none focus:border-[#D4B06A] focus:ring-2 focus:ring-[#D4B06A]/20
-                                         transition-all duration-300"
-                                />
-                            </div>
-                        </div>
+      const res = await signIn("phone-otp", {
+        redirect: false,
+        phone: tempPhoneForOtp,
+        otpCode,
+        step: "verify",
+        role: "admin",
+      });
 
-                        {/* Password Field */}
-                        <div className="mb-4 sm:mb-6">
-                            <label className="block text-[#2C2418] text-xs sm:text-sm font-bold mb-1.5 sm:mb-2">
-                                رمز عبور
-                            </label>
-                            <div className="relative group">
-                                <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:pr-3 pointer-events-none">
-                                    <PiLockKeyFill className="w-4 h-4 sm:w-5 sm:h-5 text-[#D4B06A] group-focus-within:text-[#B8922E] transition-colors duration-300" />
-                                </div>
-                                <input
-                                    type={showPassword ? "text" : "password"}
-                                    placeholder="••••••••"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    required
-                                    className="w-full pr-8 sm:pr-10 pl-8 sm:pl-12 px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border-2 border-gray-200 rounded-xl 
-                                         text-[#2C2418] placeholder-gray-400 text-xs sm:text-sm
-                                         focus:outline-none focus:border-[#D4B06A] focus:ring-2 focus:ring-[#D4B06A]/20
-                                         transition-all duration-300"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute inset-y-0 left-0 flex items-center pl-2 sm:pl-3 text-gray-400 hover:text-[#D4B06A] transition-colors duration-300 focus:outline-none"
-                                >
-                                    {showPassword ? (
-                                        <PiEyeSlash className="w-4 h-4 sm:w-5 sm:h-5" />
-                                    ) : (
-                                        <PiEye className="w-4 h-4 sm:w-5 sm:h-5" />
-                                    )}
-                                </button>
-                            </div>
-                        </div>
+      if (res?.error) {
+        setError(res.error);
+        setLoading(false);
+        return;
+      }
 
-                        {/* Error Message */}
-                        {error && (
-                            <motion.div
-                                initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                transition={{ duration: 0.3 }}
-                                className="mb-3 sm:mb-5 p-2.5 sm:p-3 bg-red-50 border border-red-200 rounded-lg sm:rounded-xl"
-                            >
-                                <p className="text-red-600 text-xs sm:text-sm text-center font-medium">
-                                    {error}
-                                </p>
-                            </motion.div>
-                        )}
+      router.push("/admin/profile");
+    },
+    [otpCode, tempPhoneForOtp, router]
+  );
 
-                        {/* Submit Button */}
-                        <motion.button
-                            type="submit"
-                            disabled={loading}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            className="group relative w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#D4B06A] to-[#B8922E] text-white px-4 sm:px-6 py-3 sm:py-3.5 rounded-xl font-bold text-sm sm:text-base shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
-                        >
-                            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-                            {loading ? (
-                                <>
-                                    <PulseLoader color="#ffffff" size={8} margin={4} />
-                                    <span>در حال ورود...</span>
-                                </>
-                            ) : (
-                                <>
-                                    ورود به پنل مدیریت
-                                    <PiArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" />
-                                </>
-                            )}
-                        </motion.button>
+  /* --- ارسال مجدد --- */
+  const handleResendOtp = useCallback(async () => {
+    if (resendTimer > 0) return;
 
-                        {/* لینک بازگشت به صفحه اصلی */}
-                        <div className="mt-5 sm:mt-6 pt-4 sm:pt-5 text-center border-t border-gray-100">
-                            <Link
-                                href="/"
-                                className="inline-flex items-center gap-1 text-gray-400 hover:text-[#D4B06A] transition-colors text-xs sm:text-sm"
-                            >
-                                <PiArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
-                                بازگشت به صفحه اصلی
-                            </Link>
-                        </div>
-                    </form>
-                </motion.div>
+    setError("");
+    setSuccess("");
+    setLoading(true);
 
+    try {
+      const res = await signIn("phone-otp", {
+        redirect: false,
+        phone: tempPhoneForOtp,
+        step: "request",
+        role: "admin",
+      });
+
+      if (res?.error) {
+        setError(res.error);
+        setLoading(false);
+        return;
+      }
+
+      setSuccess("کد تایید مجدداً ارسال شد");
+      setResendTimer(60);
+    } catch {
+      setError("خطا در ارسال مجدد کد");
+    } finally {
+      setLoading(false);
+    }
+  }, [resendTimer, tempPhoneForOtp]);
+
+  /* ============================================================
+     Render
+     ============================================================ */
+  return (
+    <div className="min-h-screen flex flex-col justify-center py-10 sm:py-14 px-4 sm:px-6 lg:px-8 relative">
+      {/* الگوی تزئینی پس‌زمینه */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-50"
+        style={{
+          backgroundImage: `
+            radial-gradient(circle at 20% 30%, rgba(198,161,76,0.06) 0%, transparent 45%),
+            radial-gradient(circle at 80% 70%, rgba(198,161,76,0.05) 0%, transparent 45%)
+          `,
+        }}
+      />
+
+      <div className="relative max-w-md mx-auto w-full">
+        {/* ==================== Header ==================== */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-6"
+        >
+          {/* جعبه آیکون طلایی با نشان ADMIN */}
+          <div className="flex justify-center mb-5">
+            <div className="relative">
+              <div
+                className="
+                  relative w-16 h-16 rounded-2xl
+                  bg-gradient-to-br from-gold-400 to-gold-600
+                  flex items-center justify-center
+                  shadow-lg shadow-gold-500/30
+                  ring-4 ring-gold-100/50
+                "
+              >
+                <div className="absolute inset-0 rounded-2xl bg-gold-500/20 blur-xl" />
+                <PiShieldCheckFill className="relative w-7 h-7 text-white" />
+              </div>
+
+              {/* نشان ADMIN */}
+              <span
+                className="
+                  absolute -top-1.5 -left-1.5
+                  px-2 py-0.5 rounded-full
+                  bg-gradient-to-l from-slate-700 to-slate-900
+                  text-white text-[9px] font-black
+                  shadow-md shadow-slate-900/40
+                  ring-2 ring-white
+                "
+              >
+                ADMIN
+              </span>
             </div>
-        </div>
-    );
+          </div>
+
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+            ورود{" "}
+            <span className="bg-gradient-to-l from-gold-500 to-gold-700 bg-clip-text text-transparent">
+              مدیر سایت
+            </span>
+          </h2>
+
+          <div className="w-16 h-1 bg-gradient-to-r from-gold-400 to-gold-600 rounded-full mx-auto mt-3 mb-3" />
+
+          <p className="text-[13px] text-slate-500">
+            {loginType === "password" && "به پنل مدیریت خوش آمدید"}
+            {loginType === "phone-password" &&
+              "ورود با شماره همراه و رمز عبور"}
+            {loginType === "phone-otp" &&
+              "ورود با شماره همراه و کد تایید"}
+          </p>
+        </motion.div>
+
+        {/* ==================== Tabs ==================== */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="
+            p-1.5
+            bg-white/80 backdrop-blur-sm
+            rounded-2xl
+            ring-1 ring-slate-100
+            shadow-[0_4px_20px_rgba(15,23,42,0.06)]
+            mb-4
+          "
+        >
+          <div className="grid grid-cols-3 gap-1">
+            {LOGIN_TYPES.map((type) => {
+              const isActive = loginType === type.id;
+              return (
+                <button
+                  key={type.id}
+                  type="button"
+                  onClick={() => handleTypeChange(type.id)}
+                  aria-pressed={isActive}
+                  className={`
+                    relative
+                    py-2.5 px-2 rounded-xl
+                    text-[12px] font-medium
+                    transition-all duration-300
+                    ${
+                      isActive
+                        ? "bg-gradient-to-b from-gold-400 to-gold-600 text-white shadow-md shadow-gold-500/25"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                    }
+                  `}
+                >
+                  <span className="hidden sm:inline">{type.label}</span>
+                  <span className="sm:hidden">{type.shortLabel}</span>
+                </button>
+              );
+            })}
+          </div>
+        </motion.div>
+
+        {/* ==================== Form Card ==================== */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.15 }}
+          className="
+            bg-white
+            rounded-2xl
+            ring-1 ring-slate-100
+            shadow-[0_8px_32px_rgba(15,23,42,0.08)]
+            overflow-hidden
+          "
+        >
+          <AnimatePresence mode="wait">
+            {/* ========== فرم ایمیل/نام کاربری ========== */}
+            {loginType === "password" && (
+              <motion.form
+                key="password"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.25 }}
+                onSubmit={handlePasswordLogin}
+                className="p-5 sm:p-7 space-y-4"
+              >
+                <InputField
+                  label="ایمیل / نام کاربری"
+                  icon={inputIcon}
+                  value={identifier}
+                  onChange={(e) => {
+                    setIdentifier(e.target.value);
+                    if (error) setError("");
+                  }}
+                  placeholder="admin@example.com"
+                  dir="ltr"
+                  required
+                  autoComplete="username"
+                />
+
+                <InputField
+                  label="رمز عبور"
+                  icon={PiLockKeyFill}
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (error) setError("");
+                  }}
+                  placeholder="••••••••"
+                  required
+                  isPassword
+                  showPassword={showPassword}
+                  onTogglePassword={() => setShowPassword((v) => !v)}
+                  autoComplete="current-password"
+                />
+
+                {error && <Alert type="error">{error}</Alert>}
+
+                <SubmitButton
+                  loading={loading}
+                  loadingText="در حال ورود..."
+                  text="ورود به پنل مدیریت"
+                  icon={PiShieldCheckFill}
+                />
+
+                <FooterLinks />
+              </motion.form>
+            )}
+
+            {/* ========== فرم همراه + رمز ========== */}
+            {loginType === "phone-password" && (
+              <motion.form
+                key="phone-password"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.25 }}
+                onSubmit={handlePhonePasswordLogin}
+                className="p-5 sm:p-7 space-y-4"
+              >
+                <InputField
+                  label="شماره همراه"
+                  icon={PiDeviceMobileFill}
+                  value={phone}
+                  onChange={(e) => {
+                    setPhone(e.target.value);
+                    if (error) setError("");
+                  }}
+                  placeholder="09123456789"
+                  dir="ltr"
+                  inputMode="tel"
+                  required
+                  autoComplete="tel"
+                />
+
+                <InputField
+                  label="رمز عبور"
+                  icon={PiLockKeyFill}
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (error) setError("");
+                  }}
+                  placeholder="••••••••"
+                  required
+                  isPassword
+                  showPassword={showPassword}
+                  onTogglePassword={() => setShowPassword((v) => !v)}
+                  autoComplete="current-password"
+                />
+
+                {error && <Alert type="error">{error}</Alert>}
+
+                <SubmitButton
+                  loading={loading}
+                  loadingText="در حال ورود..."
+                  text="ورود به پنل مدیریت"
+                  icon={PiShieldCheckFill}
+                />
+
+                <FooterLinks />
+              </motion.form>
+            )}
+
+            {/* ========== فرم همراه + OTP ========== */}
+            {loginType === "phone-otp" && (
+              <motion.div
+                key="phone-otp"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.25 }}
+                className="p-5 sm:p-7 space-y-4"
+              >
+                <AnimatePresence mode="wait">
+                  {otpStep === "form" && (
+                    <motion.form
+                      key="otp-form"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 20 }}
+                      transition={{ duration: 0.25 }}
+                      onSubmit={handleRequestOtp}
+                      className="space-y-4"
+                    >
+                      <InputField
+                        label="شماره همراه"
+                        icon={PiDeviceMobileFill}
+                        value={phone}
+                        onChange={(e) => {
+                          setPhone(e.target.value);
+                          if (error) setError("");
+                        }}
+                        placeholder="09123456789"
+                        dir="ltr"
+                        inputMode="tel"
+                        required
+                        autoComplete="tel"
+                        extra="کد تایید به این شماره ارسال خواهد شد"
+                      />
+
+                      {error && <Alert type="error">{error}</Alert>}
+
+                      <SubmitButton
+                        loading={loading}
+                        loadingText="در حال ارسال کد..."
+                        text="ارسال کد تایید"
+                        icon={PiKeyFill}
+                      />
+
+                      <FooterLinks />
+                    </motion.form>
+                  )}
+
+                  {otpStep === "verify" && (
+                    <motion.form
+                      key="otp-verify"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.25 }}
+                      onSubmit={handleVerifyOtp}
+                      className="space-y-4"
+                    >
+                      <div className="flex items-center justify-between">
+                        <label className="block text-[13px] font-medium text-slate-700">
+                          کد تایید
+                        </label>
+                        <button
+                          type="button"
+                          onClick={handleBackToForm}
+                          className="
+                            inline-flex items-center gap-1
+                            text-[11px] text-slate-400 hover:text-gold-600
+                            transition-colors
+                          "
+                        >
+                          <PiArrowCounterClockwiseFill className="w-3.5 h-3.5" />
+                          تغییر شماره
+                        </button>
+                      </div>
+
+                      <InputField
+                        label=""
+                        icon={PiKeyFill}
+                        value={otpCode}
+                        onChange={(e) =>
+                          setOtpCode(
+                            e.target.value.replace(/\D/g, "").slice(0, 6)
+                          )
+                        }
+                        placeholder="کد ۴ تا ۶ رقمی"
+                        dir="ltr"
+                        inputMode="numeric"
+                        required
+                        autoComplete="one-time-code"
+                      />
+
+                      <p className="text-[11.5px] text-slate-400 text-center -mt-2">
+                        کد برای شماره{" "}
+                        <span className="font-medium text-slate-600">
+                          {tempPhoneForOtp}
+                        </span>{" "}
+                        ارسال شد
+                      </p>
+
+                      {success && <Alert type="success">{success}</Alert>}
+                      {error && <Alert type="error">{error}</Alert>}
+
+                      <SubmitButton
+                        loading={loading}
+                        loadingText="در حال تایید..."
+                        text="تایید و ورود"
+                        icon={PiCheckCircleFill}
+                      />
+
+                      <div className="text-center">
+                        <button
+                          type="button"
+                          onClick={handleResendOtp}
+                          disabled={resendTimer > 0 || loading}
+                          className="
+                            text-[11.5px] text-slate-500
+                            hover:text-gold-600
+                            disabled:opacity-50 disabled:cursor-not-allowed
+                            transition-colors
+                          "
+                        >
+                          {resendTimer > 0
+                            ? `ارسال مجدد کد پس از ${resendTimer.toLocaleString("fa-IR")} ثانیه`
+                            : "ارسال مجدد کد تایید"}
+                        </button>
+                      </div>
+
+                      <FooterLinks />
+                    </motion.form>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+
+        {/* ==================== پیام امنیتی ادمین ==================== */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.25 }}
+          className="
+            mt-5
+            p-3.5 rounded-2xl
+            bg-gradient-to-br from-gold-50/60 via-white to-white
+            border border-gold-100
+            flex items-start gap-2.5
+          "
+        >
+          <div className="w-8 h-8 rounded-lg bg-gold-100 flex items-center justify-center flex-shrink-0">
+            <PiShieldCheckFill className="w-4 h-4 text-gold-600" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[11.5px] font-bold text-slate-700 mb-0.5">
+              دسترسی امن ادمین
+            </p>
+            <p className="text-[10.5px] text-slate-500 leading-relaxed">
+              این صفحه مخصوص مدیران سیستم است. تمام فعالیت‌ها ثبت و نظارت
+              می‌شوند.
+            </p>
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  );
 }
