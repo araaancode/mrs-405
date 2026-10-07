@@ -1,0 +1,19 @@
+{
+  "name": "سیستم رزرو تالار",
+  "short_name": "رزرو تالار",
+  "description": "سیستم جامع رزرو آنلاین تالارها",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FDFCF9",
+  "theme_color": "#C6A14C",
+  "orientation": "portrait",
+  "lang": "fa",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ]
+}

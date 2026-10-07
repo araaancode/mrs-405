@@ -2,7 +2,6 @@
 const mongoose = require("mongoose");
 
 const notificationSchema = new mongoose.Schema({
-    // کاربر دریافت‌کننده
     user_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
@@ -10,10 +9,10 @@ const notificationSchema = new mongoose.Schema({
         index: true
     },
 
-    // نوع نوتیفیکیشن
     type: {
         type: String,
         enum: [
+            // کاربر (user)
             'reservation_created',
             'reservation_accepted',
             'reservation_rejected',
@@ -21,6 +20,23 @@ const notificationSchema = new mongoose.Schema({
             'reservation_paid',
             'payment_success',
             'payment_failed',
+            'ticket_created',
+            'ticket_reply',
+            'ticket_closed',
+
+            // تالاردار (hall_owner)
+            'new_reservation',
+            'reservation_canceled_by_user',
+            'payment_received',
+            'new_ticket_from_user',
+
+            // ادمین (admin)
+            'new_hall_request',
+            'new_owner_registration',
+            'new_ticket',
+            'user_report',
+
+            // عمومی
             'reminder',
             'system',
             'promotion'
@@ -28,7 +44,6 @@ const notificationSchema = new mongoose.Schema({
         required: true
     },
 
-    // عنوان نوتیفیکیشن
     title: {
         type: String,
         required: true,
@@ -36,7 +51,6 @@ const notificationSchema = new mongoose.Schema({
         maxlength: 200
     },
 
-    // متن نوتیفیکیشن
     message: {
         type: String,
         required: true,
@@ -44,39 +58,33 @@ const notificationSchema = new mongoose.Schema({
         maxlength: 1000
     },
 
-    // داده‌های اضافی (مثلاً لینک‌ها، آی‌دی‌ها)
     data: {
         type: Object,
         default: {}
     },
 
-    // آیا خوانده شده؟
     is_read: {
         type: Boolean,
         default: false
     },
 
-    // زمان خوانده شدن
     read_at: {
         type: Date,
         default: null
     },
 
-    // اولویت
     priority: {
         type: String,
         enum: ['low', 'medium', 'high', 'critical'],
         default: 'medium'
     },
 
-    // روش‌های ارسال
     channels: {
         email: { type: Boolean, default: false },
         sms: { type: Boolean, default: false },
         inApp: { type: Boolean, default: true }
     },
 
-    // وضعیت ارسال
     sent_status: {
         email: {
             type: String,
@@ -90,19 +98,16 @@ const notificationSchema = new mongoose.Schema({
         }
     },
 
-    // تاریخ ارسال
     sent_at: {
         type: Date,
         default: null
     },
 
-    // انقضای نوتیفیکیشن
     expires_at: {
         type: Date,
         default: null
     },
 
-    // منبع ایجاد (کدام بخش سیستم)
     source: {
         type: String,
         enum: ['system', 'admin', 'user', 'automated'],
@@ -114,13 +119,11 @@ const notificationSchema = new mongoose.Schema({
     toObject: { virtuals: true }
 });
 
-// ایندکس‌ها
 notificationSchema.index({ user_id: 1, is_read: 1 });
 notificationSchema.index({ user_id: 1, createdAt: -1 });
 notificationSchema.index({ type: 1 });
 notificationSchema.index({ expires_at: 1 }, { expireAfterSeconds: 0 });
 
-// متد مجازی: زمان گذشته
 notificationSchema.virtual('time_ago').get(function () {
     const diff = Date.now() - this.createdAt.getTime();
     const minutes = Math.floor(diff / 60000);
@@ -133,14 +136,12 @@ notificationSchema.virtual('time_ago').get(function () {
     return 'لحظاتی پیش';
 });
 
-// متد: علامت‌گذاری به عنوان خوانده شده
 notificationSchema.methods.markAsRead = async function () {
     this.is_read = true;
     this.read_at = new Date();
     return await this.save();
 };
 
-// متد استاتیک: دریافت نوتیفیکیشن‌های خوانده نشده
 notificationSchema.statics.getUnreadCount = async function (userId) {
     return await this.countDocuments({ user_id: userId, is_read: false });
 };

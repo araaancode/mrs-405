@@ -1,20 +1,24 @@
+// app/api/hall_owner/halls/route.js
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import connectDB from "@/lib/db";
 import Hall from "@/models/Hall";
+import User from "@/models/User";
+import { notifyNewHallRequest } from "@/lib/notificationHelpers";
 
 import fs from "fs";
 import path from "path";
 
 export async function POST(req) {
-
     try {
-
         const session = await getServerSession(authOptions);
 
         if (!session || session.user.role !== "hall_owner") {
-            return NextResponse.json({ success: false, message: "دسترسی غیرمجاز" }, { status: 403 });
+            return NextResponse.json(
+                { success: false, message: "دسترسی غیرمجاز" },
+                { status: 403 }
+            );
         }
 
         await connectDB();
@@ -54,7 +58,7 @@ export async function POST(req) {
             cancel_rolls,
             camera_capacities,
             reservation_rolls,
-            images
+            images,
         } = body;
 
         const uploadDir = path.join(process.cwd(), "public/uploads/halls");
@@ -64,20 +68,14 @@ export async function POST(req) {
         }
 
         const saveFiles = (files, folder) => {
-
             const paths = [];
-
             for (const file of files || []) {
-
                 const base64 = file.split(";base64,").pop();
                 const fileName = `${Date.now()}-${Math.random()}.${folder}`;
                 const filePath = path.join(uploadDir, fileName);
-
                 fs.writeFileSync(filePath, base64, { encoding: "base64" });
-
                 paths.push(`/uploads/halls/${fileName}`);
             }
-
             return paths;
         };
 
@@ -85,9 +83,7 @@ export async function POST(req) {
         const docPaths = saveFiles(hall_document, "pdf");
 
         const hall = await Hall.create({
-
             hall_owner_id: session.user.id,
-
             title,
             province,
             city,
@@ -121,33 +117,31 @@ export async function POST(req) {
             camera_capacities,
             reservation_rolls,
             images: imagePaths,
-            is_active: true
-
+            is_active: true,
         });
+
+        // 🔔 نوتیفیکیشن به ادمین‌ها (ثبت تالار جدید)
+        const owner = await User.findById(session.user.id);
+        await notifyNewHallRequest({ hall, owner });
 
         return NextResponse.json({
             success: true,
-            data: hall
+            data: hall,
         });
-
     } catch (error) {
-        console.log(error)
-        return NextResponse.json({
-            success: false,
-            message: error.message
-        }, { status: 500 });
-
+        console.log(error);
+        return NextResponse.json(
+            {
+                success: false,
+                message: error.message,
+            },
+            { status: 500 }
+        );
     }
-
 }
 
-
-// ===========================
-// GET HALLS FOR LOGGED-IN OWNER
-// ===========================
 export async function GET() {
     try {
-
         const session = await getServerSession(authOptions);
 
         if (!session || session.user.role !== "hall_owner") {
@@ -159,14 +153,14 @@ export async function GET() {
 
         await connectDB();
 
-        const halls = await Hall.find({ hall_owner_id: session.user.id })
-            .sort({ createdAt: -1 });
+        const halls = await Hall.find({ hall_owner_id: session.user.id }).sort({
+            createdAt: -1,
+        });
 
         return NextResponse.json({
             success: true,
-            halls
+            halls,
         });
-
     } catch (error) {
         console.log(error);
         return NextResponse.json(

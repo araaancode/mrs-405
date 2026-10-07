@@ -1,58 +1,46 @@
+// app/api/hall_owner/halls/[id]/route.js
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import connectDB from "@/lib/db";
 import Hall from "@/models/Hall";
 
 export async function GET(req, { params }) {
-
     try {
-
         await connectDB();
 
-        const { id } = params;
+        const { id } = await params;
 
-        // بررسی معتبر بودن ObjectId
         if (!mongoose.Types.ObjectId.isValid(id)) {
-            return NextResponse.json({
-                success: false,
-                message: "شناسه تالار نامعتبر است"
-            }, { status: 400 });
+            return NextResponse.json(
+                { success: false, message: "شناسه تالار نامعتبر است" },
+                { status: 400 }
+            );
         }
 
         const hall = await Hall.findById(id);
 
         if (!hall) {
-            return NextResponse.json({
-                success: false,
-                message: "تالار پیدا نشد"
-            }, { status: 404 });
+            return NextResponse.json(
+                { success: false, message: "تالار پیدا نشد" },
+                { status: 404 }
+            );
         }
 
-        return NextResponse.json({
-            success: true,
-            hall
-        });
-
+        return NextResponse.json({ success: true, hall });
     } catch (error) {
-
         console.log(error);
-
-        return NextResponse.json({
-            success: false,
-            message: "خطا در دریافت تالار"
-        }, { status: 500 });
-
+        return NextResponse.json(
+            { success: false, message: "خطا در دریافت تالار" },
+            { status: 500 }
+        );
     }
-
 }
 
 export async function PUT(req, { params }) {
-
     try {
-
         await connectDB();
 
-        const { id } = params;
+        const { id } = await params;
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return NextResponse.json(
@@ -64,7 +52,6 @@ export async function PUT(req, { params }) {
         const body = await req.json();
 
         const hall = await Hall.findById(id);
-
         if (!hall) {
             return NextResponse.json(
                 { success: false, message: "تالار پیدا نشد" },
@@ -107,38 +94,27 @@ export async function PUT(req, { params }) {
                 licensee_number: body.licensee_number,
                 cancel_rolls: body.cancel_rolls,
                 camera_capacities: body.camera_capacities,
-                reservation_rolls: body.reservation_rolls
+                reservation_rolls: body.reservation_rolls,
             },
             { new: true, runValidators: true }
         );
 
-        return NextResponse.json({
-            success: true,
-            hall: updatedHall
-        });
-
+        return NextResponse.json({ success: true, hall: updatedHall });
     } catch (error) {
-
         console.log(error);
-
         return NextResponse.json(
             { success: false, message: "خطا در ویرایش تالار" },
             { status: 500 }
         );
-
     }
-
 }
 
-
-// روت حذف تالار
 export async function DELETE(req, { params }) {
     try {
         await connectDB();
-        const { id } = params;
+        const { id } = await params;
 
         const hall = await Hall.findOne({ _id: id });
-
         if (!hall) {
             return NextResponse.json(
                 { message: "تالار یافت نشد یا شما اجازه حذف آن را ندارید" },
@@ -146,14 +122,12 @@ export async function DELETE(req, { params }) {
             );
         }
 
-        // 3. عملیات حذف
         await Hall.findByIdAndDelete(id);
 
         return NextResponse.json(
             { message: "تالار با موفقیت حذف شد" },
             { status: 200 }
         );
-
     } catch (error) {
         console.error("Error deleting hall:", error);
         return NextResponse.json(
@@ -162,7 +136,3 @@ export async function DELETE(req, { params }) {
         );
     }
 }
-
-
-
-

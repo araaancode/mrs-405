@@ -3,16 +3,20 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import connectDB from "@/lib/db";
-import HallReservation from "@/models/HallReservation";   // ← اصلاح شد
+import HallReservation from "@/models/HallReservation";
+import { notifyReservationAccepted } from "@/lib/notificationHelpers";
 
 export async function PATCH(req, { params }) {
     try {
         const session = await getServerSession(authOptions);
         if (!session?.user?.id) {
-            return NextResponse.json({ error: "احراز هویت نشده" }, { status: 401 });
+            return NextResponse.json(
+                { error: "احراز هویت نشده" },
+                { status: 401 }
+            );
         }
 
-        const { id } = params;
+        const { id } = await params;
         const body = await req.json().catch(() => ({}));
         const ownerNote = body?.owner_note || "";
 
@@ -23,16 +27,27 @@ export async function PATCH(req, { params }) {
             "hall_owner_id title"
         );
         if (!reservation) {
-            return NextResponse.json({ error: "رزرو یافت نشد" }, { status: 404 });
+            return NextResponse.json(
+                { error: "رزرو یافت نشد" },
+                { status: 404 }
+            );
         }
 
-        if (String(reservation.hall_id?.hall_owner_id) !== String(session.user.id)) {
-            return NextResponse.json({ error: "دسترسی غیرمجاز" }, { status: 403 });
+        if (
+            String(reservation.hall_id?.hall_owner_id) !==
+            String(session.user.id)
+        ) {
+            return NextResponse.json(
+                { error: "دسترسی غیرمجاز" },
+                { status: 403 }
+            );
         }
 
         if (reservation.status !== "pending") {
             return NextResponse.json(
-                { error: `این رزرو در وضعیت "${reservation.status}" است و قابل تایید نیست` },
+                {
+                    error: `این رزرو در وضعیت "${reservation.status}" است و قابل تایید نیست`,
+                },
                 { status: 400 }
             );
         }
@@ -42,6 +57,12 @@ export async function PATCH(req, { params }) {
         reservation.reviewed_at = new Date();
         if (ownerNote) reservation.owner_note = ownerNote;
         await reservation.save();
+
+        // 🔔 نوتیفیکیشن به کاربر
+        await notifyReservationAccepted({
+            reservation,
+            hall: reservation.hall_id,
+        });
 
         return NextResponse.json(
             { message: "رزرو با موفقیت تایید شد", reservation },

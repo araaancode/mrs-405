@@ -3,16 +3,20 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import connectDB from "@/lib/db";
-import HallReservation from "@/models/HallReservation";   // ← اصلاح شد
+import HallReservation from "@/models/HallReservation";
+import { notifyReservationRejected } from "@/lib/notificationHelpers";
 
 export async function PATCH(req, { params }) {
     try {
         const session = await getServerSession(authOptions);
         if (!session?.user?.id) {
-            return NextResponse.json({ error: "احراز هویت نشده" }, { status: 401 });
+            return NextResponse.json(
+                { error: "احراز هویت نشده" },
+                { status: 401 }
+            );
         }
 
-        const { id } = params;
+        const { id } = await params;
         const body = await req.json().catch(() => ({}));
         const { cancel_reason, owner_note } = body;
 
@@ -27,19 +31,30 @@ export async function PATCH(req, { params }) {
 
         const reservation = await HallReservation.findById(id).populate(
             "hall_id",
-            "hall_owner_id"
+            "hall_owner_id title"
         );
         if (!reservation) {
-            return NextResponse.json({ error: "رزرو یافت نشد" }, { status: 404 });
+            return NextResponse.json(
+                { error: "رزرو یافت نشد" },
+                { status: 404 }
+            );
         }
 
-        if (String(reservation.hall_id?.hall_owner_id) !== String(session.user.id)) {
-            return NextResponse.json({ error: "دسترسی غیرمجاز" }, { status: 403 });
+        if (
+            String(reservation.hall_id?.hall_owner_id) !==
+            String(session.user.id)
+        ) {
+            return NextResponse.json(
+                { error: "دسترسی غیرمجاز" },
+                { status: 403 }
+            );
         }
 
         if (reservation.status !== "pending") {
             return NextResponse.json(
-                { error: `این رزرو در وضعیت "${reservation.status}" است و قابل رد نیست` },
+                {
+                    error: `این رزرو در وضعیت "${reservation.status}" است و قابل رد نیست`,
+                },
                 { status: 400 }
             );
         }
@@ -50,6 +65,13 @@ export async function PATCH(req, { params }) {
         reservation.cancel_reason = cancel_reason.trim();
         if (owner_note) reservation.owner_note = owner_note;
         await reservation.save();
+
+        // 🔔 نوتیفیکیشن به کاربر
+        await notifyReservationRejected({
+            reservation,
+            hall: reservation.hall_id,
+            reason: cancel_reason.trim(),
+        });
 
         return NextResponse.json(
             { message: "رزرو رد شد", reservation },
