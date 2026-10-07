@@ -48,7 +48,7 @@ export async function PUT(req) {
 
         const data = await req.json();
 
-        /* ✅ پاکسازی مقادیر خالی و فیلدهای غیرمجاز */
+        /*  پاکسازی مقادیر خالی و فیلدهای غیرمجاز */
         const cleanData = {};
         const forbiddenFields = [
             "_id",
@@ -65,12 +65,12 @@ export async function PUT(req) {
             cleanData[key] = value;
         }
 
-        /* ✅ استفاده از returnDocument به‌جای new */
+        /*  استفاده از returnDocument به‌جای new */
         const user = await User.findByIdAndUpdate(
             session.user.id,
             cleanData,
             {
-                returnDocument: "after", // ✅ جایگزین new: true
+                returnDocument: "after", //  جایگزین new: true
                 runValidators: true,
             }
         );
@@ -89,7 +89,7 @@ export async function PUT(req) {
     } catch (error) {
         console.error("PUT /api/hall_owner/profile error:", error);
 
-        /* ✅ مدیریت خطاهای Validation */
+        /*  مدیریت خطاهای Validation */
         if (error.name === "ValidationError") {
             const messages = Object.values(error.errors).map((e) => e.message);
             return Response.json(

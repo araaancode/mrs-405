@@ -48,12 +48,12 @@ export async function POST(req) {
             reporterId: user._id,
         });
 
-        console.log("✅ [tickets] Ticket created:", ticket._id);
+        console.log(" [tickets] Ticket created:", ticket._id);
 
         // 🔔 نوتیفیکیشن به ادمین‌ها
         try {
             await notifyNewTicket({ ticket });
-            console.log("✅ [tickets] Notification sent to admins");
+            console.log(" [tickets] Notification sent to admins");
         } catch (notifErr) {
             console.error("❌ [tickets] Notification failed:", notifErr);
         }

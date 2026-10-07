@@ -114,7 +114,7 @@ export default function UserCreateTicketPage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // ✅ FIX: به‌جای toast های پراکنده، اعتبارسنجی متمرکز
+        //  FIX: به‌جای toast های پراکنده، اعتبارسنجی متمرکز
         if (!validate()) {
             toast.error("لطفاً خطاهای فرم را برطرف کنید");
             return;

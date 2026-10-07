@@ -59,7 +59,7 @@ export async function GET(req) {
             );
         }
 
-        console.log("✅ Reservation found:", {
+        console.log(" Reservation found:", {
             reservationId: reservation._id,
             userId: reservation.user_id._id,
             amount: reservation.pre_payment,
@@ -99,7 +99,7 @@ export async function GET(req) {
             // ۵.۱. پرداخت موفق
             // ------------------------------------
 
-            console.log("✅ Payment verified successfully");
+            console.log(" Payment verified successfully");
 
             // به‌روزرسانی اطلاعات رزرو
             reservation.payment_info.ref_id = verifyResult.refId.toString();
@@ -115,7 +115,7 @@ export async function GET(req) {
             reservation.status = "paid";
             await reservation.save();
 
-            console.log("✅ Reservation updated to 'paid'");
+            console.log(" Reservation updated to 'paid'");
 
             // ------------------------------------
             // ۵.۲. ارسال نوتیفیکیشن پرداخت موفق

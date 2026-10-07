@@ -12,7 +12,7 @@ const notificationSchema = new mongoose.Schema({
     type: {
         type: String,
         enum: [
-            // کاربر (user)
+            // ==================== کاربر (user) ====================
             'reservation_created',
             'reservation_accepted',
             'reservation_rejected',
@@ -24,19 +24,26 @@ const notificationSchema = new mongoose.Schema({
             'ticket_reply',
             'ticket_closed',
 
-            // تالاردار (hall_owner)
+            // ==================== تالاردار (hall_owner) ====================
             'new_reservation',
             'reservation_canceled_by_user',
             'payment_received',
             'new_ticket_from_user',
 
-            // ادمین (admin)
+            // ==================== ادمین (admin) ====================
+            'new_reservation_for_admin',
             'new_hall_request',
             'new_owner_registration',
             'new_ticket',
             'user_report',
 
-            // عمومی
+            // ==================== تأیید/رد ====================
+            'hall_approved',           // ← جدید
+            'hall_rejected',           // ← جدید
+            'account_approved',        // ← جدید
+            'account_deactivated',     // ← جدید
+
+            // ==================== عمومی ====================
             'reminder',
             'system',
             'promotion'

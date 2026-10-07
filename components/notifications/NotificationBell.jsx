@@ -3,6 +3,7 @@
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     PiBell,
@@ -36,6 +37,7 @@ function getIcon(type) {
         reservation_canceled: PiCalendarX,
         payment_success: PiCreditCard,
         payment_failed: PiXCircle,
+        ticket_created: PiTicket,
         ticket_reply: PiChatCircleDots,
         ticket_closed: PiCheckCircle,
 
@@ -94,6 +96,9 @@ function getColor(priority, isRead) {
     return map[priority] || map.medium;
 }
 
+/* ============================================================
+   زمان نسبی
+   ============================================================ */
 function timeAgo(date) {
     const diff = Date.now() - new Date(date).getTime();
     const m = Math.floor(diff / 60000);
@@ -106,9 +111,21 @@ function timeAgo(date) {
 }
 
 /* ============================================================
+   لینک صفحه اعلان‌ها بر اساس نقش
+   ============================================================ */
+function getNotificationsHref(role) {
+    if (role === "admin") return "/admin/notifications";
+    if (role === "hall_owner") return "/hall_owner/notifications";
+    return "/user/notifications";
+}
+
+/* ============================================================
    Bell
    ============================================================ */
 export default function NotificationBell() {
+    const { data: session } = useSession();
+    const role = session?.user?.role;
+
     const {
         notifications,
         unreadCount,
@@ -122,29 +139,45 @@ export default function NotificationBell() {
 
     const wrapperRef = useRef(null);
 
+    /* بستن Dropdown با کلیک بیرون */
     useEffect(() => {
         if (!open) return;
         const onClick = (e) => {
             if (wrapperRef.current && !wrapperRef.current.contains(e.target))
                 setOpen(false);
         };
-        const onKey = (e) => e.key === "Escape" && setOpen(false);
         document.addEventListener("mousedown", onClick);
-        document.addEventListener("keydown", onKey);
-        return () => {
-            document.removeEventListener("mousedown", onClick);
-            document.removeEventListener("keydown", onKey);
-        };
+        return () => document.removeEventListener("mousedown", onClick);
     }, [open, setOpen]);
+
+    /* بستن Dropdown با Escape */
+    useEffect(() => {
+        if (!open) return;
+        const onKey = (e) => e.key === "Escape" && setOpen(false);
+        document.addEventListener("keydown", onKey);
+        return () => document.removeEventListener("keydown", onKey);
+    }, [open, setOpen]);
+
+    const notifHref = getNotificationsHref(role);
 
     return (
         <div ref={wrapperRef} className="relative">
-            {/* دکمه زنگ */}
+            {/* ==================== دکمه زنگ ==================== */}
             <button
                 type="button"
                 aria-label="اعلان‌ها"
                 onClick={() => setOpen((p) => !p)}
-                className="relative w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center rounded-2xl bg-white/80 backdrop-blur border border-slate-200/80 hover:border-gold-300 hover:bg-gold-50/60 text-slate-600 hover:text-gold-700 transition-all active:scale-95"
+                className="
+                    relative w-10 h-10 sm:w-11 sm:h-11
+                    flex items-center justify-center
+                    rounded-2xl
+                    bg-white/80 backdrop-blur
+                    border border-slate-200/80
+                    hover:border-gold-300 hover:bg-gold-50/60
+                    text-slate-600 hover:text-gold-700
+                    transition-all duration-200
+                    active:scale-95
+                "
             >
                 {unreadCount > 0 ? (
                     <PiBellRinging className="w-5 h-5" />
@@ -152,13 +185,23 @@ export default function NotificationBell() {
                     <PiBell className="w-5 h-5" />
                 )}
 
+                {/* Badge تعداد خوانده‌نشده */}
                 <AnimatePresence>
                     {unreadCount > 0 && (
                         <motion.span
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
                             exit={{ scale: 0 }}
-                            className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-gradient-to-br from-rose-500 to-rose-600 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white shadow-md shadow-rose-500/30"
+                            className="
+                                absolute -top-1 -right-1
+                                min-w-[18px] h-[18px] px-1
+                                rounded-full
+                                bg-gradient-to-br from-rose-500 to-rose-600
+                                text-white text-[10px] font-bold
+                                flex items-center justify-center
+                                ring-2 ring-white
+                                shadow-md shadow-rose-500/30
+                            "
                         >
                             {unreadCount > 99
                                 ? "99+"
@@ -168,18 +211,28 @@ export default function NotificationBell() {
                 </AnimatePresence>
             </button>
 
-            {/* Dropdown */}
+            {/* ==================== Dropdown ==================== */}
             <AnimatePresence>
                 {open && (
                     <motion.div
                         initial={{ opacity: 0, y: -8, scale: 0.97 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -8, scale: 0.97 }}
-                        transition={{ duration: 0.18 }}
-                        className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-[340px] sm:w-[380px] max-w-[calc(100vw-1.5rem)] bg-white/95 backdrop-blur-xl rounded-2xl border border-slate-200/80 shadow-[0_20px_50px_-12px_rgba(15,23,42,0.15)] overflow-hidden z-50"
+                        transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
+                        className="
+                            absolute left-0 sm:left-auto sm:right-0
+                            mt-2 w-[340px] sm:w-[380px]
+                            max-w-[calc(100vw-1.5rem)]
+                            bg-white/95 backdrop-blur-xl
+                            rounded-2xl
+                            border border-slate-200/80
+                            shadow-[0_20px_50px_-12px_rgba(15,23,42,0.15)]
+                            overflow-hidden
+                            z-50
+                        "
                         dir="rtl"
                     >
-                        {/* هدر */}
+                        {/* ---------- هدر ---------- */}
                         <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-slate-100 bg-gradient-to-l from-gold-50/40 to-white">
                             <div className="flex items-center gap-2">
                                 <span className="text-sm font-bold text-slate-800">
@@ -191,11 +244,19 @@ export default function NotificationBell() {
                                     </span>
                                 )}
                             </div>
+
                             {unreadCount > 0 && (
                                 <button
                                     type="button"
                                     onClick={markAllAsRead}
-                                    className="inline-flex items-center gap-1 text-[11px] font-bold text-gold-700 hover:text-gold-800 px-2 py-1 rounded-lg hover:bg-gold-50 transition-colors"
+                                    className="
+                                        inline-flex items-center gap-1
+                                        text-[11px] font-bold
+                                        text-gold-700 hover:text-gold-800
+                                        px-2 py-1 rounded-lg
+                                        hover:bg-gold-50
+                                        transition-colors
+                                    "
                                 >
                                     <PiCheckCircle className="w-3.5 h-3.5" />
                                     خواندن همه
@@ -203,7 +264,7 @@ export default function NotificationBell() {
                             )}
                         </div>
 
-                        {/* لیست */}
+                        {/* ---------- لیست ---------- */}
                         <div className="max-h-[420px] overflow-y-auto">
                             {loading && notifications.length === 0 ? (
                                 <div className="py-12 flex flex-col items-center gap-2 text-slate-400">
@@ -218,6 +279,9 @@ export default function NotificationBell() {
                                     <p className="text-sm font-medium text-slate-600">
                                         اعلان جدیدی ندارید
                                     </p>
+                                    <p className="text-[11px] text-slate-400 mt-1">
+                                        اعلان‌های شما اینجا نمایش داده می‌شوند
+                                    </p>
                                 </div>
                             ) : (
                                 <ul className="divide-y divide-slate-100/80">
@@ -227,20 +291,36 @@ export default function NotificationBell() {
                                         return (
                                             <li key={n._id}>
                                                 <div
-                                                    className={`group relative flex gap-3 px-4 py-3 transition-colors ${
-                                                        !n.is_read
-                                                            ? "bg-gold-50/30 hover:bg-gold-50/60"
-                                                            : "hover:bg-slate-50/60"
-                                                    }`}
+                                                    className={`
+                                                        group relative
+                                                        flex gap-3
+                                                        px-4 py-3
+                                                        transition-colors
+                                                        ${
+                                                            !n.is_read
+                                                                ? "bg-gold-50/30 hover:bg-gold-50/60"
+                                                                : "hover:bg-slate-50/60"
+                                                        }
+                                                    `}
                                                 >
+                                                    {/* نقطه خوانده‌نشده */}
                                                     {!n.is_read && (
                                                         <span className="absolute right-2 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-gold-500" />
                                                     )}
+
+                                                    {/* آیکون */}
                                                     <div
-                                                        className={`w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center ring-1 ${c.bg} ${c.text} ${c.ring}`}
+                                                        className={`
+                                                            w-9 h-9 rounded-xl flex-shrink-0
+                                                            flex items-center justify-center
+                                                            ring-1
+                                                            ${c.bg} ${c.text} ${c.ring}
+                                                        `}
                                                     >
                                                         <Icon className="w-4 h-4" />
                                                     </div>
+
+                                                    {/* محتوا */}
                                                     <button
                                                         type="button"
                                                         onClick={() =>
@@ -249,11 +329,14 @@ export default function NotificationBell() {
                                                         className="flex-1 text-right min-w-0"
                                                     >
                                                         <p
-                                                            className={`text-[12.5px] leading-snug ${
-                                                                !n.is_read
-                                                                    ? "font-bold text-slate-800"
-                                                                    : "font-medium text-slate-600"
-                                                            }`}
+                                                            className={`
+                                                                text-[12.5px] leading-snug
+                                                                ${
+                                                                    !n.is_read
+                                                                        ? "font-bold text-slate-800"
+                                                                        : "font-medium text-slate-600"
+                                                                }
+                                                            `}
                                                         >
                                                             {n.title}
                                                         </p>
@@ -264,13 +347,23 @@ export default function NotificationBell() {
                                                             {timeAgo(n.createdAt)}
                                                         </p>
                                                     </button>
+
+                                                    {/* دکمه حذف */}
                                                     <button
                                                         type="button"
                                                         onClick={() =>
                                                             deleteNotification(n._id)
                                                         }
                                                         aria-label="حذف"
-                                                        className="self-start w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 opacity-0 group-hover:opacity-100 transition-all"
+                                                        className="
+                                                            self-start
+                                                            w-7 h-7 rounded-lg
+                                                            flex items-center justify-center
+                                                            text-slate-300
+                                                            hover:text-rose-500 hover:bg-rose-50
+                                                            opacity-0 group-hover:opacity-100
+                                                            transition-all
+                                                        "
                                                     >
                                                         <PiTrash className="w-3.5 h-3.5" />
                                                     </button>
@@ -282,13 +375,18 @@ export default function NotificationBell() {
                             )}
                         </div>
 
-                        {/* فوتر */}
+                        {/* ---------- فوتر ---------- */}
                         {notifications.length > 0 && (
                             <div className="px-4 py-2.5 border-t border-slate-100 bg-slate-50/60">
                                 <Link
-                                    href="/user/notifications"
+                                    href={notifHref}
                                     onClick={() => setOpen(false)}
-                                    className="block text-center text-[11.5px] font-bold text-gold-700 hover:text-gold-800 transition-colors"
+                                    className="
+                                        block text-center
+                                        text-[11.5px] font-bold
+                                        text-gold-700 hover:text-gold-800
+                                        transition-colors
+                                    "
                                 >
                                     مشاهده همه اعلان‌ها
                                 </Link>
