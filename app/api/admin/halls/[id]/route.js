@@ -106,7 +106,7 @@ export async function PATCH(req, { params }) {
                     type: "hall_approved",
                     data: { hall_title: hall.title },
                 });
-                console.log("✅ [admin hall approve] Notification sent");
+                console.log(" [admin hall approve] Notification sent");
             } catch (err) {
                 console.error(
                     "❌ [admin hall approve] Notification failed:",
@@ -139,7 +139,7 @@ export async function PATCH(req, { params }) {
                 type: "hall_rejected",
                 data: { hall_title: hall.title, reason: reason.trim() },
             });
-            console.log("✅ [admin hall reject] Notification sent");
+            console.log(" [admin hall reject] Notification sent");
         } catch (err) {
             console.error(
                 "❌ [admin hall reject] Notification failed:",

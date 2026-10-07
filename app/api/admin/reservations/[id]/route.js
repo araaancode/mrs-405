@@ -114,7 +114,7 @@ export async function PATCH(req, { params }) {
                     reason: cancel_reason.trim(),
                 },
             });
-            console.log("✅ [admin cancel reservation] Sent to user");
+            console.log(" [admin cancel reservation] Sent to user");
 
             // به تالاردار
             if (hall?.hall_owner_id) {
@@ -126,7 +126,7 @@ export async function PATCH(req, { params }) {
                         reason: cancel_reason.trim(),
                     },
                 });
-                console.log("✅ [admin cancel reservation] Sent to owner");
+                console.log(" [admin cancel reservation] Sent to owner");
             }
         } catch (err) {
             console.error(

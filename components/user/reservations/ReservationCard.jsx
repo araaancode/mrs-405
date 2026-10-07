@@ -17,7 +17,10 @@ import {
     PiArrowLeft,
     PiNote,
     PiCurrencyCircleDollar,
+    PiReceipt,
 } from "react-icons/pi";
+
+import PaymentButton from "./PaymentButton";
 
 const faNum = (n) => Number(n || 0).toLocaleString("fa-IR");
 
@@ -76,6 +79,14 @@ function StatusBadge({ status }) {
             ring: "ring-emerald-200",
             dot: "bg-emerald-500",
         },
+        accepted: {
+            label: "تأیید شده",
+            icon: PiCheckCircle,
+            bg: "bg-emerald-50",
+            text: "text-emerald-700",
+            ring: "ring-emerald-200",
+            dot: "bg-emerald-500",
+        },
         confirmed: {
             label: "تأیید شده",
             icon: PiCheckCircle,
@@ -84,8 +95,32 @@ function StatusBadge({ status }) {
             ring: "ring-emerald-200",
             dot: "bg-emerald-500",
         },
+        paid: {
+            label: "پرداخت شده",
+            icon: PiCheckCircle,
+            bg: "bg-blue-50",
+            text: "text-blue-700",
+            ring: "ring-blue-200",
+            dot: "bg-blue-500",
+        },
         cancelled: {
             label: "لغو شده",
+            icon: PiXCircle,
+            bg: "bg-rose-50",
+            text: "text-rose-700",
+            ring: "ring-rose-200",
+            dot: "bg-rose-500",
+        },
+        canceled_by_user: {
+            label: "لغو توسط شما",
+            icon: PiXCircle,
+            bg: "bg-rose-50",
+            text: "text-rose-700",
+            ring: "ring-rose-200",
+            dot: "bg-rose-500",
+        },
+        canceled_by_admin: {
+            label: "لغو توسط مدیر",
             icon: PiXCircle,
             bg: "bg-rose-50",
             text: "text-rose-700",
@@ -133,7 +168,7 @@ function StatusBadge({ status }) {
 /* ============================================================
    ReservationCard
    ============================================================ */
-export default function ReservationCard({ reservation, index = 0 }) {
+export default function ReservationCard({ reservation, index = 0, onUpdate }) {
     const hall = reservation.hall_id || {};
     const title = hall.title || reservation.hall_title || "تالار";
     const city = hall.city || reservation.hall_city || "—";
@@ -149,23 +184,32 @@ export default function ReservationCard({ reservation, index = 0 }) {
 
     /* قیمت */
     const price = Number(
-        reservation.total_price || reservation.price || hall.sans_price || 0
+        reservation.total_price ||
+            reservation.final_price ||
+            reservation.price ||
+            hall.sans_price ||
+            0
     );
+
+    /* پیش‌پرداخت */
+    const prePayment = Number(reservation.pre_payment || 0);
+    const isPaid = !!reservation.payment_info?.ref_id;
 
     /* تاریخ‌ها */
     const startDate = formatDate(reservation.start_date);
     const endDate = formatDate(reservation.end_date);
     const createdDate = formatDate(reservation.createdAt);
 
-    /* شماره رزرو (کوتاه) */
-    const reservationNumber =
-        reservation._id?.slice(-8).toUpperCase() || "—";
+    /* شماره رزرو */
+    const reservationNumber = reservation._id?.slice(-8).toUpperCase() || "—";
 
-    /* وضعیت */
-    const isActiveStatus =
-        reservation.status === "pending" ||
-        reservation.status === "approved" ||
-        reservation.status === "confirmed";
+    /* وضعیت فعال */
+    const isActiveStatus = ["pending", "accepted", "approved", "confirmed", "paid"].includes(
+        reservation.status
+    );
+
+    /* قابلیت پرداخت */
+    const canPay = reservation.status === "accepted" && !isPaid;
 
     return (
         <motion.article
@@ -203,10 +247,8 @@ export default function ReservationCard({ reservation, index = 0 }) {
           "
                 />
 
-                {/* گرادیانت */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent md:hidden" />
 
-                {/* وضعیت روی تصویر موبایل */}
                 <div className="absolute top-3 right-3 md:hidden">
                     <StatusBadge status={reservation.status} />
                 </div>
@@ -214,7 +256,7 @@ export default function ReservationCard({ reservation, index = 0 }) {
 
             {/* ==================== اطلاعات ==================== */}
             <div className="flex-1 p-4 sm:p-5 min-w-0 flex flex-col">
-                {/* ردیف بالا: عنوان + وضعیت */}
+                {/* ردیف بالا */}
                 <div className="flex items-start justify-between gap-3 mb-2">
                     <div className="min-w-0 flex-1">
                         <Link href={hallUrl}>
@@ -231,7 +273,6 @@ export default function ReservationCard({ reservation, index = 0 }) {
                         </div>
                     </div>
 
-                    {/* وضعیت دسکتاپ */}
                     <div className="hidden md:block flex-shrink-0">
                         <StatusBadge status={reservation.status} />
                     </div>
@@ -239,7 +280,6 @@ export default function ReservationCard({ reservation, index = 0 }) {
 
                 {/* اطلاعات رزرو */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 my-3">
-                    {/* تاریخ شروع */}
                     <div className="bg-slate-50 rounded-lg px-3 py-2">
                         <div className="flex items-center gap-1 text-[10px] text-slate-500 mb-0.5">
                             <PiCalendarBlank className="w-3 h-3" />
@@ -250,7 +290,6 @@ export default function ReservationCard({ reservation, index = 0 }) {
                         </p>
                     </div>
 
-                    {/* تاریخ پایان */}
                     <div className="bg-slate-50 rounded-lg px-3 py-2">
                         <div className="flex items-center gap-1 text-[10px] text-slate-500 mb-0.5">
                             <PiCalendarBlank className="w-3 h-3" />
@@ -261,7 +300,6 @@ export default function ReservationCard({ reservation, index = 0 }) {
                         </p>
                     </div>
 
-                    {/* تعداد مهمان */}
                     {reservation.guests_count && (
                         <div className="bg-slate-50 rounded-lg px-3 py-2">
                             <div className="flex items-center gap-1 text-[10px] text-slate-500 mb-0.5">
@@ -274,7 +312,6 @@ export default function ReservationCard({ reservation, index = 0 }) {
                         </div>
                     )}
 
-                    {/* قیمت */}
                     {price > 0 && (
                         <div className="bg-gold-50 rounded-lg px-3 py-2 ring-1 ring-gold-100">
                             <div className="flex items-center gap-1 text-[10px] text-gold-700 mb-0.5">
@@ -291,6 +328,21 @@ export default function ReservationCard({ reservation, index = 0 }) {
                     )}
                 </div>
 
+                {/* ==================== پیش‌پرداخت ==================== */}
+                {prePayment > 0 && (
+                    <div className="mb-3 p-2.5 bg-emerald-50/60 rounded-lg flex items-center justify-between gap-2 ring-1 ring-emerald-100">
+                        <div className="flex items-center gap-2">
+                            <PiReceipt className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                            <span className="text-[11.5px] font-medium text-emerald-800">
+                                پیش‌پرداخت لازم:
+                            </span>
+                        </div>
+                        <span className="text-[12.5px] font-bold text-emerald-700">
+                            {faNum(prePayment)} تومان
+                        </span>
+                    </div>
+                )}
+
                 {/* یادداشت */}
                 {reservation.user_note && (
                     <div className="mb-3 p-2.5 bg-slate-50 rounded-lg flex items-start gap-2">
@@ -301,7 +353,7 @@ export default function ReservationCard({ reservation, index = 0 }) {
                     </div>
                 )}
 
-                {/* ردیف پایین: شماره رزرو + اکشن‌ها */}
+                {/* ردیف پایین */}
                 <div className="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between gap-3 flex-wrap">
                     <div className="text-[10.5px] text-slate-400">
                         <span>شماره رزرو: </span>
@@ -312,7 +364,13 @@ export default function ReservationCard({ reservation, index = 0 }) {
                         <span>ثبت: {createdDate}</span>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                        {/* ==================== دکمه پرداخت ==================== */}
+                        <PaymentButton
+                            reservation={reservation}
+                            onSuccess={onUpdate}
+                        />
+
                         {hall.hall_phone && isActiveStatus && (
                             <a
                                 href={`tel:${hall.hall_phone}`}

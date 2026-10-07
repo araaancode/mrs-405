@@ -111,7 +111,7 @@ export async function PATCH(req, { params }) {
                     type: "account_approved",
                     data: {},
                 });
-                console.log("✅ [admin user approve] Notification sent");
+                console.log(" [admin user approve] Notification sent");
             } catch (err) {
                 console.error(
                     "❌ [admin user approve] Notification failed:",
@@ -137,7 +137,7 @@ export async function PATCH(req, { params }) {
                 type: "account_deactivated",
                 data: { reason: reason?.trim() || "" },
             });
-            console.log("✅ [admin user deactivate] Notification sent");
+            console.log(" [admin user deactivate] Notification sent");
         } catch (err) {
             console.error(
                 "❌ [admin user deactivate] Notification failed:",
