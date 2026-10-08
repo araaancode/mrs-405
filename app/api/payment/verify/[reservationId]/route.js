@@ -116,14 +116,14 @@ export async function GET(req, { params }) {
                 refId: verifyResult.refId,
             });
         } catch (notifErr) {
-            console.error("❌ [payment verify] Notif failed:", notifErr);
+            console.error(" [payment verify] Notif failed:", notifErr);
         }
 
         return NextResponse.redirect(
             `${baseUrl}/payment/success?ref=${verifyResult.refId}&reservation=${reservationId}`
         );
     } catch (error) {
-        console.error("❌ [payment verify] Error:", error);
+        console.error(" [payment verify] Error:", error);
         return NextResponse.redirect(
             `${baseUrl}/payment/failed?reason=server_error`
         );

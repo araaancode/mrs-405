@@ -78,7 +78,7 @@ export async function PATCH(req, { params }) {
             { status: 200 }
         );
     } catch (err) {
-        console.error("❌ Reject error:", err);
+        console.error(" Reject error:", err);
         return NextResponse.json(
             { error: "خطا در رد رزرو", details: err.message },
             { status: 500 }

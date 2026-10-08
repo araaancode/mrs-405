@@ -45,7 +45,7 @@ export async function GET(req, { params }) {
 
         return NextResponse.json(reservation);
     } catch (error) {
-        console.error("❌ [admin reservation GET] Error:", error);
+        console.error(" [admin reservation GET] Error:", error);
         return NextResponse.json(
             { message: error.message || "خطای سرور" },
             { status: 500 }
@@ -130,7 +130,7 @@ export async function PATCH(req, { params }) {
             }
         } catch (err) {
             console.error(
-                "❌ [admin cancel reservation] Notification failed:",
+                " [admin cancel reservation] Notification failed:",
                 err
             );
         }
@@ -141,7 +141,7 @@ export async function PATCH(req, { params }) {
             reservation,
         });
     } catch (error) {
-        console.error("❌ [admin reservation PATCH] Error:", error);
+        console.error(" [admin reservation PATCH] Error:", error);
         return NextResponse.json(
             { message: error.message || "خطای سرور" },
             { status: 500 }

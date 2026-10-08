@@ -88,7 +88,7 @@ export async function POST(req, { params }) {
                 }
             }
         } catch (notifErr) {
-            console.error("❌ [owner ticket reply] Notification failed:", notifErr);
+            console.error(" [owner ticket reply] Notification failed:", notifErr);
         }
 
         return Response.json({
@@ -96,7 +96,7 @@ export async function POST(req, { params }) {
             ticket,
         });
     } catch (error) {
-        console.error("❌ [owner ticket POST] Error:", error);
+        console.error(" [owner ticket POST] Error:", error);
         return Response.json(
             { message: error.message || "خطای سرور" },
             { status: 500 }
@@ -129,7 +129,7 @@ export async function GET(req, { params }) {
 
         return Response.json(ticket);
     } catch (error) {
-        console.error("❌ [owner ticket GET] Error:", error);
+        console.error(" [owner ticket GET] Error:", error);
         return Response.json(
             { message: error.message || "خطای سرور" },
             { status: 500 }

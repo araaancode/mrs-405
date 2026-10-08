@@ -44,7 +44,7 @@ export async function GET(req, { params }) {
 
         return NextResponse.json(ticket);
     } catch (error) {
-        console.error("❌ [admin ticket GET] Error:", error);
+        console.error(" [admin ticket GET] Error:", error);
         return NextResponse.json(
             { message: error.message || "خطای سرور" },
             { status: 500 }
@@ -143,7 +143,7 @@ export async function POST(req, { params }) {
             }
         } catch (notifErr) {
             console.error(
-                "❌ [admin ticket reply] Notification failed:",
+                " [admin ticket reply] Notification failed:",
                 notifErr
             );
         }
@@ -154,7 +154,7 @@ export async function POST(req, { params }) {
             ticket,
         });
     } catch (error) {
-        console.error("❌ [admin ticket POST] Error:", error);
+        console.error(" [admin ticket POST] Error:", error);
         return NextResponse.json(
             { message: error.message || "خطای سرور" },
             { status: 500 }
@@ -223,7 +223,7 @@ export async function PATCH(req, { params }) {
                     data: { subject: ticket.subject },
                 });
             } catch (notifErr) {
-                console.error("❌ [admin ticket PATCH] Notif failed:", notifErr);
+                console.error(" [admin ticket PATCH] Notif failed:", notifErr);
             }
         }
 
@@ -233,7 +233,7 @@ export async function PATCH(req, { params }) {
             ticket,
         });
     } catch (error) {
-        console.error("❌ [admin ticket PATCH] Error:", error);
+        console.error(" [admin ticket PATCH] Error:", error);
         return NextResponse.json(
             { message: error.message || "خطای سرور" },
             { status: 500 }

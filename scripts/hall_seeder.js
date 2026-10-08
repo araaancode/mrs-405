@@ -228,7 +228,7 @@ async function seed() {
         process.exit(0);
 
     } catch (error) {
-        console.error("❌ Error in seeder:", error);
+        console.error(" Error in seeder:", error);
         if (error.writeErrors) {
             console.error("Write errors:", error.writeErrors.map(e => ({
                 index: e.index,

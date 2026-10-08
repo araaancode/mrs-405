@@ -65,12 +65,12 @@ export async function POST(req) {
                 });
             }
         } catch (notifErr) {
-            console.error("❌ [owner tickets] Notification failed:", notifErr);
+            console.error(" [owner tickets] Notification failed:", notifErr);
         }
 
         return Response.json(ticket, { status: 201 });
     } catch (error) {
-        console.error("❌ [owner tickets POST] Error:", error);
+        console.error(" [owner tickets POST] Error:", error);
         return Response.json(
             { message: error.message || "خطای سرور" },
             { status: 500 }
@@ -107,7 +107,7 @@ export async function GET() {
 
         return Response.json(tickets);
     } catch (error) {
-        console.error("❌ [owner tickets GET] Error:", error);
+        console.error(" [owner tickets GET] Error:", error);
         return Response.json(
             { message: error.message || "خطای سرور" },
             { status: 500 }

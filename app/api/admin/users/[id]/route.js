@@ -41,7 +41,7 @@ export async function GET(req, { params }) {
 
         return NextResponse.json(user);
     } catch (error) {
-        console.error("❌ [admin user GET] Error:", error);
+        console.error(" [admin user GET] Error:", error);
         return NextResponse.json(
             { message: error.message || "خطای سرور" },
             { status: 500 }
@@ -114,7 +114,7 @@ export async function PATCH(req, { params }) {
                 console.log(" [admin user approve] Notification sent");
             } catch (err) {
                 console.error(
-                    "❌ [admin user approve] Notification failed:",
+                    " [admin user approve] Notification failed:",
                     err
                 );
             }
@@ -140,7 +140,7 @@ export async function PATCH(req, { params }) {
             console.log(" [admin user deactivate] Notification sent");
         } catch (err) {
             console.error(
-                "❌ [admin user deactivate] Notification failed:",
+                " [admin user deactivate] Notification failed:",
                 err
             );
         }
@@ -151,7 +151,7 @@ export async function PATCH(req, { params }) {
             user,
         });
     } catch (error) {
-        console.error("❌ [admin user PATCH] Error:", error);
+        console.error(" [admin user PATCH] Error:", error);
         return NextResponse.json(
             { message: error.message || "خطای سرور" },
             { status: 500 }
@@ -204,7 +204,7 @@ export async function DELETE(req, { params }) {
             message: "کاربر حذف شد",
         });
     } catch (error) {
-        console.error("❌ [admin user DELETE] Error:", error);
+        console.error(" [admin user DELETE] Error:", error);
         return NextResponse.json(
             { message: error.message || "خطای سرور" },
             { status: 500 }

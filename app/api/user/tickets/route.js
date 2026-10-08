@@ -16,21 +16,21 @@ export async function POST(req) {
         const session = await getServerSession(authOptions);
 
         if (!session || !session.user?.id) {
-            console.log("❌ [tickets] No session");
+            console.log(" [tickets] No session");
             return Response.json({ message: "Unauthorized" }, { status: 401 });
         }
 
         const user = await User.findById(session.user.id);
 
         if (!user) {
-            console.log("❌ [tickets] User not found");
+            console.log(" [tickets] User not found");
             return Response.json({ message: "User not found" }, { status: 404 });
         }
 
         console.log("🔍 [tickets] User role:", user.role);
 
         if (user.role !== "user") {
-            console.log("❌ [tickets] Forbidden - role is not user");
+            console.log(" [tickets] Forbidden - role is not user");
             return Response.json({ message: "Forbidden" }, { status: 403 });
         }
 
@@ -55,12 +55,12 @@ export async function POST(req) {
             await notifyNewTicket({ ticket });
             console.log(" [tickets] Notification sent to admins");
         } catch (notifErr) {
-            console.error("❌ [tickets] Notification failed:", notifErr);
+            console.error(" [tickets] Notification failed:", notifErr);
         }
 
         return Response.json(ticket, { status: 201 });
     } catch (error) {
-        console.error("❌ [tickets POST] Error:", error);
+        console.error(" [tickets POST] Error:", error);
         return Response.json(
             { message: error.message || "خطای سرور" },
             { status: 500 }
@@ -97,7 +97,7 @@ export async function GET() {
 
         return Response.json(tickets);
     } catch (error) {
-        console.error("❌ [tickets GET] Error:", error);
+        console.error(" [tickets GET] Error:", error);
         return Response.json(
             { message: error.message || "خطای سرور" },
             { status: 500 }

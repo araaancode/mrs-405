@@ -109,7 +109,7 @@ export async function PATCH(req, { params }) {
             }
         } catch (notifErr) {
             console.error(
-                "❌ [cancel reservation] Notification failed:",
+                " [cancel reservation] Notification failed:",
                 notifErr
             );
         }
@@ -123,7 +123,7 @@ export async function PATCH(req, { params }) {
             { status: 200 }
         );
     } catch (error) {
-        console.error("❌ [cancel reservation] Error:", error);
+        console.error(" [cancel reservation] Error:", error);
         return NextResponse.json(
             { message: error.message || "خطا در لغو رزرو" },
             { status: 500 }

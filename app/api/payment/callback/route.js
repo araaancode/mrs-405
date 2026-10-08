@@ -28,7 +28,7 @@ export async function GET(req) {
 
         // اگر کاربر پرداخت را لغو کرد
         if (status !== "OK") {
-            console.log("❌ Payment canceled by user");
+            console.log(" Payment canceled by user");
             return NextResponse.redirect(
                 `${process.env.NEXT_PUBLIC_BASE_URL}/reservations?payment=canceled`
             );
@@ -36,7 +36,7 @@ export async function GET(req) {
 
         // اگر Authority وجود ندارد
         if (!authority) {
-            console.log("❌ Missing authority");
+            console.log(" Missing authority");
             return NextResponse.redirect(
                 `${process.env.NEXT_PUBLIC_BASE_URL}/reservations?payment=error`
             );
@@ -53,7 +53,7 @@ export async function GET(req) {
             .populate('hall_id', 'title address city');
 
         if (!reservation) {
-            console.error("❌ Reservation not found for authority:", authority);
+            console.error(" Reservation not found for authority:", authority);
             return NextResponse.redirect(
                 `${process.env.NEXT_PUBLIC_BASE_URL}/reservations?payment=error`
             );
@@ -159,7 +159,7 @@ export async function GET(req) {
             // ۵.۴. پرداخت ناموفق
             // ------------------------------------
 
-            console.log("❌ Payment verification failed:", verifyResult.message);
+            console.log(" Payment verification failed:", verifyResult.message);
 
             // بررسی تکراری بودن (کد ۱۰۱)
             if (verifyResult.code === 101) {
@@ -217,7 +217,7 @@ export async function GET(req) {
         // ۶. مدیریت خطاهای غیرمنتظره
         // ==========================================
 
-        console.error('❌ Payment callback error:', {
+        console.error(' Payment callback error:', {
             message: error.message,
             stack: error.stack,
             timestamp: new Date().toISOString()

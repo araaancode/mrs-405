@@ -33,7 +33,7 @@ export async function GET(req) {
 
         return NextResponse.json({ reservations }, { status: 200 });
     } catch (err) {
-        console.error("❌ GET reservations error:", err);
+        console.error(" GET reservations error:", err);
         return NextResponse.json(
             { error: "خطا در دریافت رزروها", details: err.message },
             { status: 500 }

@@ -101,7 +101,7 @@ export async function POST(req) {
             amount,
         });
     } catch (error) {
-        console.error("❌ [payment request] Error:", error);
+        console.error(" [payment request] Error:", error);
         return NextResponse.json(
             { message: error.message || "خطای سرور" },
             { status: 500 }

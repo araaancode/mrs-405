@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import connectDB from "@/lib/db";
 import HallReservation from "@/models/HallReservation";
+import Hall from "@/models/Hall";
 import { notifyReservationAccepted } from "@/lib/notificationHelpers";
 
 export async function PATCH(req, { params }) {
@@ -26,6 +27,7 @@ export async function PATCH(req, { params }) {
             "hall_id",
             "hall_owner_id title"
         );
+
         if (!reservation) {
             return NextResponse.json(
                 { error: "رزرو یافت نشد" },
@@ -58,18 +60,27 @@ export async function PATCH(req, { params }) {
         if (ownerNote) reservation.owner_note = ownerNote;
         await reservation.save();
 
-        // 🔔 نوتیفیکیشن به کاربر
-        await notifyReservationAccepted({
-            reservation,
-            hall: reservation.hall_id,
-        });
+        // ==================== 🔔 نوتیفیکیشن ====================
+        try {
+            // گرفتن hall کامل (نه فقط populate شده)
+            const hall = await Hall.findById(reservation.hall_id._id);
+
+            await notifyReservationAccepted({
+                reservation,
+                hall,
+            });
+
+            console.log(" [confirm] Notification sent");
+        } catch (notifErr) {
+            console.error(" [confirm] Notification failed:", notifErr);
+        }
 
         return NextResponse.json(
             { message: "رزرو با موفقیت تایید شد", reservation },
             { status: 200 }
         );
     } catch (err) {
-        console.error("❌ Confirm error:", err);
+        console.error(" Confirm error:", err);
         return NextResponse.json(
             { error: "خطا در تایید رزرو", details: err.message },
             { status: 500 }

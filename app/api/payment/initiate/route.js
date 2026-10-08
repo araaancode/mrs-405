@@ -107,7 +107,7 @@ export async function POST(req) {
         });
 
     } catch (error) {
-        console.error('❌ Payment initiation error:', error);
+        console.error(' Payment initiation error:', error);
         return NextResponse.json(
             { success: false, error: "خطا در شروع پرداخت" },
             { status: 500 }

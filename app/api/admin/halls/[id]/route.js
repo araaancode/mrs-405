@@ -45,7 +45,7 @@ export async function GET(req, { params }) {
 
         return NextResponse.json(hall);
     } catch (error) {
-        console.error("❌ [admin hall GET] Error:", error);
+        console.error(" [admin hall GET] Error:", error);
         return NextResponse.json(
             { message: error.message || "خطای سرور" },
             { status: 500 }
@@ -109,7 +109,7 @@ export async function PATCH(req, { params }) {
                 console.log(" [admin hall approve] Notification sent");
             } catch (err) {
                 console.error(
-                    "❌ [admin hall approve] Notification failed:",
+                    " [admin hall approve] Notification failed:",
                     err
                 );
             }
@@ -142,7 +142,7 @@ export async function PATCH(req, { params }) {
             console.log(" [admin hall reject] Notification sent");
         } catch (err) {
             console.error(
-                "❌ [admin hall reject] Notification failed:",
+                " [admin hall reject] Notification failed:",
                 err
             );
         }
@@ -153,7 +153,7 @@ export async function PATCH(req, { params }) {
             hall,
         });
     } catch (error) {
-        console.error("❌ [admin hall PATCH] Error:", error);
+        console.error(" [admin hall PATCH] Error:", error);
         return NextResponse.json(
             { message: error.message || "خطای سرور" },
             { status: 500 }
@@ -199,7 +199,7 @@ export async function DELETE(req, { params }) {
             message: "تالار حذف شد",
         });
     } catch (error) {
-        console.error("❌ [admin hall DELETE] Error:", error);
+        console.error(" [admin hall DELETE] Error:", error);
         return NextResponse.json(
             { message: error.message || "خطای سرور" },
             { status: 500 }
