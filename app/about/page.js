@@ -1,8 +1,7 @@
 // app/(public)/about/page.js
 import Link from "next/link";
+import Image from "next/image";
 import {
-    PiHeart,
-    PiStar,
     PiUsersThree,
     PiBuildings,
     PiMapPin,
@@ -16,14 +15,9 @@ import {
     PiCalendarBlank,
     PiWallet,
     PiCreditCard,
-    PiChartLineUp,
     PiSparkle,
     PiArrowLeft,
-    PiQuotes,
-    PiEnvelopeSimple,
-    PiPhone,
     PiCrownSimpleFill,
-    PiCaretRight,
 } from "react-icons/pi";
 
 /* ============================================================
@@ -34,6 +28,21 @@ export const metadata = {
     description:
         "بزرگترین سامانه جستجو و رزرو آنلاین تالارها، املاک، اتوبوس‌ها و غذای خانگی در ایران",
 };
+
+/* ============================================================
+   کلاس‌های مشترک — جلوگیری از تکرار در HTML و کاهش حجم خروجی
+   ============================================================ */
+const CARD_BASE =
+    "group bg-white rounded-2xl ring-1 ring-slate-100 shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:shadow-[0_12px_32px_-12px_rgba(198,161,76,0.18)] hover:ring-gold-200/70 hover:-translate-y-1 transition-all duration-300 [will-change:transform]";
+
+const ICON_BOX =
+    "flex items-center justify-center bg-gradient-to-br from-gold-50 to-gold-100/60 ring-1 ring-gold-100 group-hover:from-gold-400 group-hover:to-gold-600 group-hover:ring-gold-400 transition-all duration-300";
+
+const ICON_COLOR =
+    "text-gold-600 group-hover:text-white transition-colors duration-300";
+
+const GRADIENT_TEXT =
+    "bg-gradient-to-l from-gold-500 to-gold-700 bg-clip-text text-transparent";
 
 /* ============================================================
    Static Data
@@ -48,42 +57,12 @@ const STATS = [
 ];
 
 const FEATURES = [
-    {
-        id: 1,
-        title: "تنوع بی‌نظیر",
-        description: "بیش از ۷٬۰۰۰ خدمات‌دهنده در سراسر ایران",
-        icon: PiSparkle,
-    },
-    {
-        id: 2,
-        title: "قیمت منصفانه",
-        description: "بهترین قیمت‌ها بدون واسطه",
-        icon: PiWallet,
-    },
-    {
-        id: 3,
-        title: "پرداخت امن",
-        description: "درگاه پرداخت مستقیم و امن",
-        icon: PiCreditCard,
-    },
-    {
-        id: 4,
-        title: "پشتیبانی ۲۴/۷",
-        description: "پاسخگویی سریع در تمام ساعات",
-        icon: PiHeadphones,
-    },
-    {
-        id: 5,
-        title: "تایید هویت",
-        description: "همه خدمات‌دهندگان تایید هویت شده",
-        icon: PiShieldCheck,
-    },
-    {
-        id: 6,
-        title: "رزرو آسان",
-        description: "رزرو آنلاین در کمتر از ۲ دقیقه",
-        icon: PiCalendarBlank,
-    },
+    { id: 1, title: "تنوع بی‌نظیر", description: "بیش از ۷٬۰۰۰ خدمات‌دهنده در سراسر ایران", icon: PiSparkle },
+    { id: 2, title: "قیمت منصفانه", description: "بهترین قیمت‌ها بدون واسطه", icon: PiWallet },
+    { id: 3, title: "پرداخت امن", description: "درگاه پرداخت مستقیم و امن", icon: PiCreditCard },
+    { id: 4, title: "پشتیبانی ۲۴/۷", description: "پاسخگویی سریع در تمام ساعات", icon: PiHeadphones },
+    { id: 5, title: "تایید هویت", description: "همه خدمات‌دهندگان تایید هویت شده", icon: PiShieldCheck },
+    { id: 6, title: "رزرو آسان", description: "رزرو آنلاین در کمتر از ۲ دقیقه", icon: PiCalendarBlank },
 ];
 
 const MISSION_ITEMS = [
@@ -101,27 +80,20 @@ function SectionTitle({ title, highlight, description, align = "center" }) {
         align === "center"
             ? "text-center mx-auto"
             : align === "right"
-                ? "text-right"
-                : "text-left";
+              ? "text-right"
+              : "text-left";
 
     return (
         <div className={`max-w-2xl mb-10 sm:mb-12 ${alignment}`}>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-3 tracking-tight">
                 {title}{" "}
-                {highlight && (
-                    <span className="bg-gradient-to-l from-gold-500 to-gold-700 bg-clip-text text-transparent">
-                        {highlight}
-                    </span>
-                )}
+                {highlight && <span className={GRADIENT_TEXT}>{highlight}</span>}
             </h2>
 
             <div
-                className={`
-          w-16 sm:w-20 h-1
-          bg-gradient-to-r from-gold-400 to-gold-600
-          rounded-full mb-4
-          ${align === "center" ? "mx-auto" : ""}
-        `}
+                className={`w-16 sm:w-20 h-1 bg-gradient-to-r from-gold-400 to-gold-600 rounded-full mb-4 ${
+                    align === "center" ? "mx-auto" : ""
+                }`}
             />
 
             {description && (
@@ -140,28 +112,23 @@ export default function AboutPage() {
     return (
         <div dir="rtl" className="min-h-screen bg-[#FDFCF9]">
             {/* ==================== Hero Section ==================== */}
-            <div className="relative overflow-hidden">
-                {/* الگوی تزئینی پس‌زمینه */}
-                <div className="absolute inset-0 pointer-events-none opacity-60">
-                    <div className="absolute top-10 left-10 w-48 sm:w-64 h-48 sm:h-64 bg-gold-400/10 rounded-full blur-3xl" />
-                    <div className="absolute bottom-10 right-10 w-64 sm:w-96 h-64 sm:h-96 bg-gold-500/10 rounded-full blur-3xl" />
-                </div>
+            <section className="relative overflow-hidden">
+                {/* پس‌زمینه تزئینی — با radial-gradient سبک‌تر از blur-3xl */}
+                <div
+                    aria-hidden="true"
+                    className="absolute inset-0 pointer-events-none opacity-70"
+                    style={{
+                        backgroundImage:
+                            "radial-gradient(circle at 15% 20%, rgba(198,161,76,0.14) 0%, transparent 40%), radial-gradient(circle at 85% 80%, rgba(198,161,76,0.12) 0%, transparent 45%)",
+                    }}
+                />
 
                 <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 md:py-24 lg:py-28">
                     <div className="text-center max-w-3xl mx-auto">
                         {/* آیکون تاج */}
                         <div className="flex justify-center mb-6">
-                            <div
-                                className="
-                  relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl
-                  bg-gradient-to-br from-gold-400 to-gold-600
-                  flex items-center justify-center
-                  shadow-lg shadow-gold-500/30
-                  ring-4 ring-gold-100/50
-                "
-                            >
-                                <div className="absolute inset-0 rounded-2xl bg-gold-500/20 blur-xl" />
-                                <PiCrownSimpleFill className="relative w-7 h-7 sm:w-8 sm:h-8 text-white" />
+                            <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center shadow-lg shadow-gold-500/30 ring-4 ring-gold-100/50">
+                                <PiCrownSimpleFill className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
                             </div>
                         </div>
 
@@ -174,10 +141,7 @@ export default function AboutPage() {
                         </div>
 
                         <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 mb-4 tracking-tight leading-tight">
-                            داستان{" "}
-                            <span className="bg-gradient-to-l from-gold-500 to-gold-700 bg-clip-text text-transparent">
-                                رزرو تالار
-                            </span>
+                            داستان <span className={GRADIENT_TEXT}>رزرو تالار</span>
                         </h1>
 
                         <div className="w-20 h-1 bg-gradient-to-r from-gold-400 to-gold-600 rounded-full mx-auto mb-5" />
@@ -189,43 +153,24 @@ export default function AboutPage() {
                         </p>
                     </div>
                 </div>
-            </div>
+            </section>
 
             {/* ==================== Stats Section ==================== */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16 md:pb-20">
+            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16 md:pb-20">
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
                     {STATS.map((stat) => {
                         const Icon = stat.icon;
                         return (
                             <div
                                 key={stat.id}
-                                className="
-                  group
-                  bg-white rounded-2xl
-                  ring-1 ring-slate-100
-                  shadow-[0_1px_2px_rgba(15,23,42,0.04)]
-                  hover:shadow-[0_12px_32px_-12px_rgba(198,161,76,0.18)]
-                  hover:ring-gold-200/70
-                  hover:-translate-y-1
-                  p-4 sm:p-5
-                  text-center
-                  transition-all duration-300
-                "
+                                className={`${CARD_BASE} p-4 sm:p-5 text-center`}
                             >
                                 <div
-                                    className="
-                    w-11 h-11 sm:w-12 sm:h-12
-                    bg-gradient-to-br from-gold-50 to-gold-100/60
-                    rounded-xl
-                    flex items-center justify-center
-                    mx-auto mb-3
-                    ring-1 ring-gold-100
-                    group-hover:from-gold-400 group-hover:to-gold-600
-                    group-hover:ring-gold-400
-                    transition-all duration-300
-                  "
+                                    className={`${ICON_BOX} w-11 h-11 sm:w-12 sm:h-12 rounded-xl mx-auto mb-3`}
                                 >
-                                    <Icon className="w-5 h-5 text-gold-600 group-hover:text-white transition-colors duration-300" />
+                                    <Icon
+                                        className={`w-5 h-5 ${ICON_COLOR}`}
+                                    />
                                 </div>
                                 <div className="text-lg sm:text-2xl font-black text-slate-900">
                                     {stat.value}
@@ -237,19 +182,19 @@ export default function AboutPage() {
                         );
                     })}
                 </div>
-            </div>
+            </section>
 
             {/* ==================== Mission Section ==================== */}
-            <div className="bg-white border-t border-slate-100">
+            <section
+                className="bg-white border-t border-slate-100"
+                style={{ contentVisibility: "auto", containIntrinsicSize: "800px" }}
+            >
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-16 md:py-20">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 items-center">
                         {/* متن */}
                         <div className="order-2 lg:order-1">
                             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-4 tracking-tight">
-                                ماموریت{" "}
-                                <span className="bg-gradient-to-l from-gold-500 to-gold-700 bg-clip-text text-transparent">
-                                    ما
-                                </span>
+                                ماموریت <span className={GRADIENT_TEXT}>ما</span>
                             </h2>
                             <div className="w-16 sm:w-20 h-1 bg-gradient-to-r from-gold-400 to-gold-600 rounded-full mb-5" />
 
@@ -260,18 +205,10 @@ export default function AboutPage() {
                                 برنامه‌ریزی کنید.
                             </p>
 
-                            {/* لیست موارد */}
                             <ul className="space-y-3">
                                 {MISSION_ITEMS.map((item, i) => (
                                     <li key={i} className="flex items-start gap-3">
-                                        <span
-                                            className="
-                        w-6 h-6 rounded-lg
-                        bg-emerald-50 ring-1 ring-emerald-100
-                        flex items-center justify-center flex-shrink-0
-                        mt-0.5
-                      "
-                                        >
+                                        <span className="w-6 h-6 rounded-lg bg-emerald-50 ring-1 ring-emerald-100 flex items-center justify-center flex-shrink-0 mt-0.5">
                                             <PiCheckCircle
                                                 className="w-3.5 h-3.5 text-emerald-600"
                                                 strokeWidth={3}
@@ -285,46 +222,25 @@ export default function AboutPage() {
                             </ul>
                         </div>
 
-                        {/* تصویر */}
+                        {/* تصویر — با next/image و priority برای LCP */}
                         <div className="relative order-1 lg:order-2">
-                            <div
-                                className="
-                  aspect-square
-                  rounded-3xl overflow-hidden
-                  ring-1 ring-slate-100
-                  shadow-[0_20px_50px_-15px_rgba(15,23,42,0.15)]
-                "
-                            >
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
+                            <div className="aspect-square rounded-3xl overflow-hidden ring-1 ring-slate-100 shadow-[0_20px_50px_-15px_rgba(15,23,42,0.15)]">
+                                <Image
                                     src="/images/about/1.jpg"
                                     alt="مراسم"
+                                    width={800}
+                                    height={800}
+                                    sizes="(max-width: 1024px) 100vw, 50vw"
+                                    quality={85}
+                                    priority
                                     className="w-full h-full object-cover"
                                 />
                             </div>
 
                             {/* کارت شناور */}
-                            <div
-                                className="
-                  absolute -bottom-4 -left-4 sm:-bottom-6 sm:-left-6
-                  bg-white rounded-2xl
-                  ring-1 ring-slate-100
-                  shadow-xl shadow-slate-900/10
-                  p-4 sm:p-5
-                  min-w-[180px]
-                "
-                            >
+                            <div className="absolute -bottom-4 -left-4 sm:-bottom-6 sm:-left-6 bg-white rounded-2xl ring-1 ring-slate-100 shadow-xl shadow-slate-900/10 p-4 sm:p-5 min-w-[180px]">
                                 <div className="flex items-center gap-3 sm:gap-4">
-                                    <div
-                                        className="
-                      w-12 h-12 sm:w-14 sm:h-14
-                      bg-gradient-to-br from-gold-400 to-gold-600
-                      rounded-xl
-                      flex items-center justify-center
-                      shadow-md shadow-gold-500/25
-                      flex-shrink-0
-                    "
-                                    >
+                                    <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-gold-400 to-gold-600 rounded-xl flex items-center justify-center shadow-md shadow-gold-500/25 flex-shrink-0">
                                         <PiMedal className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                                     </div>
                                     <div>
@@ -340,10 +256,13 @@ export default function AboutPage() {
                         </div>
                     </div>
                 </div>
-            </div>
+            </section>
 
             {/* ==================== Features Section ==================== */}
-            <div className="bg-[#F5F2ED]">
+            <section
+                className="bg-[#F5F2ED]"
+                style={{ contentVisibility: "auto", containIntrinsicSize: "900px" }}
+            >
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-16 md:py-20">
                     <SectionTitle
                         title="چرا"
@@ -357,32 +276,14 @@ export default function AboutPage() {
                             return (
                                 <div
                                     key={feature.id}
-                                    className="
-                    group
-                    bg-white rounded-2xl
-                    ring-1 ring-slate-100
-                    shadow-[0_1px_2px_rgba(15,23,42,0.04)]
-                    hover:shadow-[0_12px_32px_-12px_rgba(198,161,76,0.18)]
-                    hover:ring-gold-200/70
-                    hover:-translate-y-1
-                    p-5 sm:p-6
-                    transition-all duration-300
-                  "
+                                    className={`${CARD_BASE} p-5 sm:p-6`}
                                 >
                                     <div
-                                        className="
-                      w-12 h-12 sm:w-14 sm:h-14
-                      rounded-xl
-                      flex items-center justify-center
-                      mb-5
-                      bg-gradient-to-br from-gold-50 to-gold-100/60
-                      ring-1 ring-gold-100
-                      group-hover:from-gold-400 group-hover:to-gold-600
-                      group-hover:ring-gold-400
-                      transition-all duration-300
-                    "
+                                        className={`${ICON_BOX} w-12 h-12 sm:w-14 sm:h-14 rounded-xl mb-5`}
                                     >
-                                        <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-gold-600 group-hover:text-white transition-colors duration-300" />
+                                        <Icon
+                                            className={`w-6 h-6 sm:w-7 sm:h-7 ${ICON_COLOR}`}
+                                        />
                                     </div>
 
                                     <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-2">
@@ -396,38 +297,28 @@ export default function AboutPage() {
                         })}
                     </div>
                 </div>
-            </div>
+            </section>
 
             {/* ==================== CTA Section ==================== */}
-            <div className="bg-white border-t border-slate-100">
+            <section
+                className="bg-white border-t border-slate-100"
+                style={{ contentVisibility: "auto", containIntrinsicSize: "500px" }}
+            >
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-16 md:py-20 text-center">
-                    <div
-                        className="
-              relative overflow-hidden
-              p-8 sm:p-12
-              rounded-3xl
-              bg-gradient-to-br from-[#2C2418] via-[#221c13] to-[#1a1510]
-              shadow-2xl
-            "
-                    >
+                    <div className="relative overflow-hidden p-8 sm:p-12 rounded-3xl bg-gradient-to-br from-[#2C2418] via-[#221c13] to-[#1a1510] shadow-2xl">
                         {/* الگوی تزئینی */}
                         <div
+                            aria-hidden="true"
                             className="absolute inset-0 opacity-20 pointer-events-none"
                             style={{
-                                backgroundImage: `radial-gradient(circle at 20% 30%, rgba(198,161,76,0.3) 0%, transparent 45%), radial-gradient(circle at 80% 70%, rgba(198,161,76,0.25) 0%, transparent 45%)`,
+                                backgroundImage:
+                                    "radial-gradient(circle at 20% 30%, rgba(198,161,76,0.3) 0%, transparent 45%), radial-gradient(circle at 80% 70%, rgba(198,161,76,0.25) 0%, transparent 45%)",
                             }}
                         />
 
                         <div className="relative">
                             <div className="flex justify-center mb-5">
-                                <div
-                                    className="
-                    w-14 h-14 rounded-2xl
-                    bg-gradient-to-br from-gold-400 to-gold-600
-                    flex items-center justify-center
-                    shadow-lg shadow-gold-500/40
-                  "
-                                >
+                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center shadow-lg shadow-gold-500/40">
                                     <PiRocketLaunch className="w-6 h-6 text-white" />
                                 </div>
                             </div>
@@ -443,19 +334,8 @@ export default function AboutPage() {
                             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                                 <Link
                                     href="/halls"
-                                    className="
-                    group inline-flex items-center justify-center gap-2
-                    px-6 py-3 rounded-xl
-                    text-sm font-bold text-white
-                    bg-gradient-to-b from-gold-400 to-gold-600
-                    hover:from-gold-500 hover:to-gold-700
-                    shadow-md shadow-gold-500/30
-                    hover:shadow-lg hover:shadow-gold-500/50
-                    hover:-translate-y-0.5
-                    active:scale-95
-                    transition-all duration-300
-                    w-full sm:w-auto
-                  "
+                                    prefetch
+                                    className="group inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-b from-gold-400 to-gold-600 hover:from-gold-500 hover:to-gold-700 shadow-md shadow-gold-500/30 hover:shadow-lg hover:shadow-gold-500/50 hover:-translate-y-0.5 active:scale-95 transition-all duration-300 w-full sm:w-auto"
                                 >
                                     <span>مشاهده تالارها</span>
                                     <PiArrowLeft className="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-1" />
@@ -463,19 +343,8 @@ export default function AboutPage() {
 
                                 <Link
                                     href="/contact"
-                                    className="
-                    inline-flex items-center justify-center gap-2
-                    px-6 py-3 rounded-xl
-                    text-sm font-bold
-                    text-white
-                    bg-white/10 backdrop-blur-md
-                    ring-1 ring-white/20
-                    hover:bg-white/20 hover:ring-white/30
-                    hover:-translate-y-0.5
-                    active:scale-95
-                    transition-all duration-300
-                    w-full sm:w-auto
-                  "
+                                    prefetch
+                                    className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-white bg-white/10 backdrop-blur-md ring-1 ring-white/20 hover:bg-white/20 hover:ring-white/30 hover:-translate-y-0.5 active:scale-95 transition-all duration-300 w-full sm:w-auto"
                                 >
                                     تماس با ما
                                 </Link>
@@ -483,7 +352,7 @@ export default function AboutPage() {
                         </div>
                     </div>
                 </div>
-            </div>
+            </section>
         </div>
     );
 }

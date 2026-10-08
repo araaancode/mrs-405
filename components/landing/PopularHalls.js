@@ -1,64 +1,42 @@
 // components/landing/PopularHalls.jsx
 'use client'
 
-import { motion, AnimatePresence } from 'framer-motion'
+import { useRef, useState, useCallback, useMemo, memo } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import {
-    useRef,
-    useState,
-    useEffect,
-    useCallback,
-    memo,
-    Suspense,
-    lazy,
-} from 'react'
+    PiCrownSimpleFill,
+    PiMapPinFill,
+    PiUsersThreeFill,
+    PiCalendarBlank,
+    PiTagFill,
+    PiArrowRight,
+    PiArrowLeft,
+    PiArrowCircleRight,
+    PiWarningCircle,
+    PiCaretLeft,
+    PiCaretRight,
+} from 'react-icons/pi'
 
 /* ============================================================
-   Lazy load icons
+   Formatters — یک بار در ماژول
    ============================================================ */
-const PiCrownSimpleFill = lazy(() =>
-    import('react-icons/pi').then((mod) => ({ default: mod.PiCrownSimpleFill }))
-)
-const PiMapPinFill = lazy(() =>
-    import('react-icons/pi').then((mod) => ({ default: mod.PiMapPinFill }))
-)
-const PiUsersThreeFill = lazy(() =>
-    import('react-icons/pi').then((mod) => ({ default: mod.PiUsersThreeFill }))
-)
-const PiCalendarBlank = lazy(() =>
-    import('react-icons/pi').then((mod) => ({ default: mod.PiCalendarBlank }))
-)
-const PiTagFill = lazy(() =>
-    import('react-icons/pi').then((mod) => ({ default: mod.PiTagFill }))
-)
-const PiArrowRight = lazy(() =>
-    import('react-icons/pi').then((mod) => ({ default: mod.PiArrowRight }))
-)
-const PiArrowLeft = lazy(() =>
-    import('react-icons/pi').then((mod) => ({ default: mod.PiArrowLeft }))
-)
-const PiArrowCircleRight = lazy(() =>
-    import('react-icons/pi').then((mod) => ({ default: mod.PiArrowCircleRight }))
-)
-const PiWarningCircle = lazy(() =>
-    import('react-icons/pi').then((mod) => ({ default: mod.PiWarningCircle }))
-)
-const PiCaretLeft = lazy(() =>
-    import('react-icons/pi').then((mod) => ({ default: mod.PiCaretLeft }))
-)
-const PiCaretRight = lazy(() =>
-    import('react-icons/pi').then((mod) => ({ default: mod.PiCaretRight }))
-)
+const faNumFormatter = new Intl.NumberFormat('fa-IR')
+const faNum = (n) => faNumFormatter.format(Number(n) || 0)
 
 /* ============================================================
    Helpers
    ============================================================ */
-function normalizeImageUrl(url, fallback = '/images/placeholder-hall.jpg') {
+const PLACEHOLDER = '/images/placeholder-hall.jpg'
+
+const isRemote = (url) =>
+    typeof url === 'string' && /^https?:\/\//i.test(url)
+
+function normalizeImageUrl(url, fallback = PLACEHOLDER) {
     if (!url || typeof url !== 'string') return fallback
     const trimmed = url.trim()
     if (!trimmed) return fallback
-    if (trimmed.startsWith('http://') || trimmed.startsWith('https://'))
-        return trimmed
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed
     if (trimmed.startsWith('data:')) return trimmed
     if (trimmed.startsWith('./')) return '/' + trimmed.slice(2)
     if (!trimmed.startsWith('/')) return '/' + trimmed
@@ -80,11 +58,10 @@ function getHallImages(hall) {
 }
 
 /* ============================================================
-   PhotoSlider — اسلایدر با دکمه‌های طلایی در هاور
+   PhotoSlider — بدون framer-motion، با CSS transition
    ============================================================ */
-const PhotoSlider = memo(({ images, alt, index }) => {
+const PhotoSlider = memo(function PhotoSlider({ images, alt, index }) {
     const [current, setCurrent] = useState(0)
-    const [direction, setDirection] = useState(0)
     const touchStartX = useRef(null)
     const touchEndX = useRef(null)
 
@@ -95,7 +72,6 @@ const PhotoSlider = memo(({ images, alt, index }) => {
         (e) => {
             e?.preventDefault()
             e?.stopPropagation()
-            setDirection(1)
             setCurrent((c) => (c + 1) % total)
         },
         [total]
@@ -105,45 +81,44 @@ const PhotoSlider = memo(({ images, alt, index }) => {
         (e) => {
             e?.preventDefault()
             e?.stopPropagation()
-            setDirection(-1)
             setCurrent((c) => (c - 1 + total) % total)
         },
         [total]
     )
 
-    /* Swipe */
-    const onTouchStart = (e) => {
+    /* Swipe با RAF throttle */
+    const rafRef = useRef(null)
+    const onTouchStart = useCallback((e) => {
         touchEndX.current = null
         touchStartX.current = e.targetTouches[0].clientX
-    }
-    const onTouchMove = (e) => {
-        touchEndX.current = e.targetTouches[0].clientX
-    }
-    const onTouchEnd = () => {
+    }, [])
+    const onTouchMove = useCallback((e) => {
+        if (rafRef.current) return
+        rafRef.current = requestAnimationFrame(() => {
+            touchEndX.current = e.targetTouches[0].clientX
+            rafRef.current = null
+        })
+    }, [])
+    const onTouchEnd = useCallback(() => {
         if (touchStartX.current == null || touchEndX.current == null) return
         const distance = touchStartX.current - touchEndX.current
         if (distance > 50) goNext()
         else if (distance < -50) goPrev()
         touchStartX.current = null
         touchEndX.current = null
-    }
-
-    const variants = {
-        enter: (dir) => ({ x: dir > 0 ? '100%' : '-100%', opacity: 0 }),
-        center: { x: 0, opacity: 1 },
-        exit: (dir) => ({ x: dir < 0 ? '100%' : '-100%', opacity: 0 }),
-    }
+    }, [goNext, goPrev])
 
     /* حالت بدون تصویر */
     if (total === 0) {
         return (
             <div className="relative h-44 overflow-hidden rounded-t-2xl bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                <Suspense fallback={<div className="w-12 h-12 bg-gray-400 rounded" />}>
-                    <PiCrownSimpleFill className="w-12 h-12 text-gray-400" />
-                </Suspense>
+                <PiCrownSimpleFill className="w-12 h-12 text-gray-400" />
             </div>
         )
     }
+
+    const currentSrc = images[current]
+    const remote = isRemote(currentSrc)
 
     return (
         <div
@@ -152,83 +127,62 @@ const PhotoSlider = memo(({ images, alt, index }) => {
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
         >
-            <AnimatePresence initial={false} custom={direction} mode="popLayout">
-                <motion.div
-                    key={current}
-                    custom={direction}
-                    variants={variants}
-                    initial="enter"
-                    animate="center"
-                    exit="exit"
-                    transition={{
-                        x: { type: 'spring', stiffness: 300, damping: 30 },
-                        opacity: { duration: 0.2 },
-                    }}
-                    className="absolute inset-0"
-                >
-                    <img
-                        src={images[current]}
-                        alt={`${alt} - تصویر ${current + 1}`}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105 will-change-transform"
-                        loading={index < 3 ? 'eager' : 'lazy'}
-                        fetchPriority={index < 3 ? 'high' : 'low'}
-                        decoding="async"
-                    />
-                </motion.div>
-            </AnimatePresence>
+            {/* همه تصاویر رندر می‌شوند، فقط opacity تغییر می‌کند */}
+            {images.map((img, i) => {
+                const isActive = i === current
+                const isFirst = i === 0
+                const imgRemote = isRemote(img)
+                return (
+                    <div
+                        key={`${i}-${img}`}
+                        className={`absolute inset-0 transition-opacity duration-500 ${
+                            isActive ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+                        }`}
+                        aria-hidden={!isActive}
+                    >
+                        <Image
+                            src={img}
+                            alt={`${alt} - تصویر ${i + 1}`}
+                            fill
+                            sizes="300px"
+                            quality={75}
+                            priority={index < 3 && isFirst}
+                            loading={index < 3 && isFirst ? 'eager' : 'lazy'}
+                            unoptimized={!imgRemote}
+                            className="object-cover transition-transform duration-500 group-hover/card:scale-105"
+                        />
+                    </div>
+                )
+            })}
 
             {/* گرادیانت */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent pointer-events-none z-10" />
+
+            {/* شمارنده تصویر */}
+            {hasMultiple && (
+                <div className="absolute bottom-2 right-2 z-20 px-2 py-0.5 rounded-full bg-black/50 backdrop-blur-md text-white text-[10px] font-bold">
+                    {faNum(current + 1)} / {faNum(total)}
+                </div>
+            )}
 
             {/* دکمه‌های ناوبری */}
             {hasMultiple && (
                 <>
-                    {/* دکمه راست (تصویر بعدی) */}
                     <button
                         type="button"
                         onClick={goNext}
                         aria-label="تصویر بعدی"
-                        className="
-              absolute right-2 top-1/2 -translate-y-1/2 z-20
-              w-8 h-8 rounded-full
-              flex items-center justify-center
-              bg-white/25 hover:bg-[#C6A14C]
-              backdrop-blur-md
-              text-white
-              ring-1 ring-white/40 hover:ring-[#C6A14C]
-              shadow-md hover:shadow-lg hover:shadow-[#C6A14C]/50
-              hover:scale-110 active:scale-95
-              transition-all duration-200
-              cursor-pointer
-            "
+                        className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full flex items-center justify-center bg-white/25 hover:bg-[#C6A14C] backdrop-blur-md text-white ring-1 ring-white/40 hover:ring-[#C6A14C] shadow-md hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer"
                     >
-                        <Suspense fallback={<div className="w-4 h-4" />}>
-                            <PiCaretRight className="w-4 h-4" strokeWidth={2.5} />
-                        </Suspense>
+                        <PiCaretRight className="w-4 h-4" strokeWidth={2.5} />
                     </button>
-
-                    {/* دکمه چپ (تصویر قبلی) */}
                     <button
                         type="button"
                         onClick={goPrev}
                         aria-label="تصویر قبلی"
-                        className="
-              absolute left-2 top-1/2 -translate-y-1/2 z-20
-              w-8 h-8 rounded-full
-              flex items-center justify-center
-              bg-white/25 hover:bg-[#C6A14C]
-              backdrop-blur-md
-              text-white
-              ring-1 ring-white/40 hover:ring-[#C6A14C]
-              shadow-md hover:shadow-lg hover:shadow-[#C6A14C]/50
-              hover:scale-110 active:scale-95
-              transition-all duration-200
-              cursor-pointer
-            "
+                        className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full flex items-center justify-center bg-white/25 hover:bg-[#C6A14C] backdrop-blur-md text-white ring-1 ring-white/40 hover:ring-[#C6A14C] shadow-md hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer"
                     >
-                        <Suspense fallback={<div className="w-4 h-4" />}>
-                            <PiCaretLeft className="w-4 h-4" strokeWidth={2.5} />
-                        </Suspense>
+                        <PiCaretLeft className="w-4 h-4" strokeWidth={2.5} />
                     </button>
                 </>
             )}
@@ -236,44 +190,30 @@ const PhotoSlider = memo(({ images, alt, index }) => {
     )
 })
 
-PhotoSlider.displayName = 'PhotoSlider'
-
 /* ============================================================
-   HallCard
+   HallCard — memoized
    ============================================================ */
-const HallCard = memo(({ hall, index }) => {
-    const images = getHallImages(hall)
+const HallCard = memo(function HallCard({ hall, index }) {
+    /* تصاویر — یک بار محاسبه */
+    const images = useMemo(() => getHallImages(hall), [hall.images, hall.image, hall.thumbnail])
+
+    const hasDiscount = hall.sans_discount > 0
+    const hasMainPrice = hall.main_price && hall.main_price > hall.sans_price
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 25 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: Math.min(index * 0.03, 0.3) }}
-            viewport={{ once: true, margin: '-50px' }}
-            className="
-        group/card bg-white rounded-2xl
-        border border-gray-100
-        shadow-md hover:shadow-lg
-        transition-all duration-300
-        flex flex-col flex-shrink-0 w-[300px]
-        hover:-translate-y-1 will-change-transform
-        overflow-hidden
-      "
+        <div
+            className="group/card bg-white rounded-2xl border border-gray-100 shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col flex-shrink-0 w-[300px] hover:-translate-y-1 overflow-hidden"
+            style={{ willChange: 'transform' }}
         >
-            {/* اسلایدر عکس */}
             <PhotoSlider images={images} alt={hall.title} index={index} />
 
-            {/* محتوای کارت */}
             <div className="p-4 flex flex-col flex-grow">
-                {/* عنوان و موقعیت */}
                 <div className="mb-2">
                     <h3 className="text-base font-bold line-clamp-1 text-[#2C2418]">
                         {hall.title}
                     </h3>
                     <div className="flex items-center text-xs gap-1 text-gray-500 mt-1">
-                        <Suspense fallback={<div className="w-3 h-3" />}>
-                            <PiMapPinFill className="w-3 h-3 text-[#C6A14C]" />
-                        </Suspense>
+                        <PiMapPinFill className="w-3 h-3 text-[#C6A14C]" />
                         <span>{hall.city}</span>
                         {hall.province && (
                             <span className="text-gray-400">| {hall.province}</span>
@@ -281,24 +221,18 @@ const HallCard = memo(({ hall, index }) => {
                     </div>
                 </div>
 
-                {/* توضیحات */}
                 <p className="text-xs text-gray-600 mb-3 line-clamp-2 leading-relaxed">
                     {hall.description || 'لورم ایپسوم متن تستی برای توضیحات تالار'}
                 </p>
 
-                {/* ویژگی‌ها */}
                 <div className="flex flex-wrap gap-x-3 gap-y-1.5 text-xs text-gray-500 mb-3">
                     <span className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-lg">
-                        <Suspense fallback={<div className="w-3.5 h-3.5" />}>
-                            <PiUsersThreeFill className="w-3.5 h-3.5 text-[#C6A14C]" />
-                        </Suspense>
-                        {hall.capacity?.toLocaleString()} نفر
+                        <PiUsersThreeFill className="w-3.5 h-3.5 text-[#C6A14C]" />
+                        {faNum(hall.capacity)} نفر
                     </span>
                     {hall.duration && (
                         <span className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-lg">
-                            <Suspense fallback={<div className="w-3.5 h-3.5" />}>
-                                <PiCalendarBlank className="w-3.5 h-3.5 text-[#C6A14C]" />
-                            </Suspense>
+                            <PiCalendarBlank className="w-3.5 h-3.5 text-[#C6A14C]" />
                             {hall.duration} ساعت
                         </span>
                     )}
@@ -309,27 +243,23 @@ const HallCard = memo(({ hall, index }) => {
                     )}
                 </div>
 
-                {/* نشان تخفیف */}
-                {hall.sans_discount > 0 && (
+                {hasDiscount && (
                     <div className="text-xs text-green-600 flex items-center gap-1 mb-2 bg-green-50 px-2 py-1 rounded-lg w-fit">
-                        <Suspense fallback={<div className="w-3.5 h-3.5" />}>
-                            <PiTagFill className="w-3.5 h-3.5" />
-                        </Suspense>
+                        <PiTagFill className="w-3.5 h-3.5" />
                         <span className="font-bold">{hall.sans_discount}%</span>
                         <span>تخفیف ویژه</span>
                     </div>
                 )}
 
-                {/* قیمت و دکمه */}
                 <div className="flex items-center justify-between mt-auto pt-2 border-t border-gray-100">
                     <div>
                         <span className="text-sm font-black text-[#C6A14C]">
-                            {hall.sans_price?.toLocaleString()}
+                            {faNum(hall.sans_price)}
                         </span>
                         <span className="text-[10px] text-gray-400 mr-1">تومان</span>
-                        {hall.main_price && hall.main_price > hall.sans_price && (
+                        {hasMainPrice && (
                             <div className="text-[10px] text-gray-400 line-through">
-                                {hall.main_price?.toLocaleString()} تومان
+                                {faNum(hall.main_price)} تومان
                             </div>
                         )}
                     </div>
@@ -337,138 +267,106 @@ const HallCard = memo(({ hall, index }) => {
                     <Link
                         href={`/halls/${hall._id}`}
                         prefetch={false}
-                        className="
-              group/btn text-xs border-2 border-[#C6A14C]
-              px-4 py-1.5 rounded-lg font-medium
-              text-[#C6A14C]
-              hover:bg-[#C6A14C] hover:text-white
-              transition-all duration-200 hover:shadow-md
-            "
+                        className="group/btn text-xs border-2 border-[#C6A14C] px-4 py-1.5 rounded-lg font-medium text-[#C6A14C] hover:bg-[#C6A14C] hover:text-white transition-colors duration-200 hover:shadow-md"
                     >
                         مشاهده و رزرو
                     </Link>
                 </div>
             </div>
-        </motion.div>
+        </div>
     )
 })
 
-HallCard.displayName = 'HallCard'
-
 /* ============================================================
-   Loading skeleton
+   LoadingSkeleton
    ============================================================ */
-const LoadingSkeleton = () => (
-    <section className="py-16 md:py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-                <div className="h-10 w-64 bg-gray-200 rounded-lg mx-auto mb-3 animate-pulse" />
-                <div className="w-20 h-1 bg-gray-200 rounded-full mx-auto" />
-                <div className="h-4 w-48 bg-gray-200 rounded-lg mx-auto mt-4 animate-pulse" />
-            </div>
-            <div className="flex flex-col items-center justify-center py-20">
-                <div className="w-12 h-12 border-4 border-[#C6A14C] border-t-transparent rounded-full animate-spin" />
-                <p className="mt-4 text-gray-500 text-sm">در حال بارگذاری تالارها...</p>
-            </div>
-        </div>
-    </section>
-)
-
-/* ============================================================
-   Empty state
-   ============================================================ */
-const EmptyState = () => (
-    <section className="py-16 md:py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-                <h2 className="text-3xl md:text-4xl font-black text-[#2C2418] mb-3">
-                    محبوب‌ترین تالارها
-                </h2>
-                <div className="w-20 h-1 bg-gradient-to-r from-[#C6A14C] to-[#A8853A] rounded-full mx-auto" />
-            </div>
-            <div className="flex flex-col items-center justify-center py-16 px-4">
-                <div className="w-20 h-20 rounded-full bg-amber-50 flex items-center justify-center mb-4">
-                    <Suspense fallback={<div className="w-10 h-10" />}>
-                        <PiWarningCircle className="w-10 h-10 text-[#C6A14C]" />
-                    </Suspense>
+const LoadingSkeleton = memo(function LoadingSkeleton() {
+    return (
+        <section className="py-16 md:py-20">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="text-center mb-12">
+                    <div className="h-10 w-64 bg-gray-200 rounded-lg mx-auto mb-3 animate-pulse" />
+                    <div className="w-20 h-1 bg-gray-200 rounded-full mx-auto" />
+                    <div className="h-4 w-48 bg-gray-200 rounded-lg mx-auto mt-4 animate-pulse" />
                 </div>
-                <h3 className="text-xl font-bold text-[#2C2418] mb-2">
-                    هنوز تالاری اضافه نشده است
-                </h3>
-                <p className="text-gray-500 text-center max-w-md mb-6">
-                    در حال حاضر هیچ تالاری در این بخش وجود ندارد.
-                </p>
-                <Link
-                    href="/halls"
-                    className="inline-flex items-center gap-2 bg-[#C6A14C] text-white px-6 py-2.5 rounded-lg font-medium hover:bg-[#A8853A] transition-all duration-200"
-                >
-                    <span>مشاهده همه تالارها</span>
-                    <Suspense fallback={<div className="w-4 h-4" />}>
-                        <PiArrowLeft className="w-4 h-4" />
-                    </Suspense>
-                </Link>
+                <div className="flex flex-col items-center justify-center py-20">
+                    <div className="w-12 h-12 border-4 border-[#C6A14C] border-t-transparent rounded-full animate-spin" />
+                    <p className="mt-4 text-gray-500 text-sm">در حال بارگذاری تالارها...</p>
+                </div>
             </div>
-        </div>
-    </section>
-)
+        </section>
+    )
+})
+
+/* ============================================================
+   EmptyState
+   ============================================================ */
+const EmptyState = memo(function EmptyState() {
+    return (
+        <section className="py-16 md:py-20">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="text-center mb-12">
+                    <h2 className="text-3xl md:text-4xl font-black text-[#2C2418] mb-3">
+                        محبوب‌ترین تالارها
+                    </h2>
+                    <div className="w-20 h-1 bg-gradient-to-r from-[#C6A14C] to-[#A8853A] rounded-full mx-auto" />
+                </div>
+                <div className="flex flex-col items-center justify-center py-16 px-4">
+                    <div className="w-20 h-20 rounded-full bg-amber-50 flex items-center justify-center mb-4">
+                        <PiWarningCircle className="w-10 h-10 text-[#C6A14C]" />
+                    </div>
+                    <h3 className="text-xl font-bold text-[#2C2418] mb-2">
+                        هنوز تالاری اضافه نشده است
+                    </h3>
+                    <p className="text-gray-500 text-center max-w-md mb-6">
+                        در حال حاضر هیچ تالاری در این بخش وجود ندارد.
+                    </p>
+                    <Link
+                        href="/halls"
+                        className="inline-flex items-center gap-2 bg-[#C6A14C] text-white px-6 py-2.5 rounded-lg font-medium hover:bg-[#A8853A] transition-colors duration-200"
+                    >
+                        <span>مشاهده همه تالارها</span>
+                        <PiArrowLeft className="w-4 h-4" />
+                    </Link>
+                </div>
+            </div>
+        </section>
+    )
+})
 
 /* ============================================================
    PopularHalls
    ============================================================ */
 export default function PopularHalls({ halls = [] }) {
-    const [loading, setLoading] = useState(true)
-    const [popularHalls, setPopularHalls] = useState([])
     const scrollContainerRef = useRef(null)
-    const [isMounted, setIsMounted] = useState(false)
 
-    useEffect(() => {
-        setIsMounted(true)
-    }, [])
-
-    useEffect(() => {
-        if (!isMounted) return
-
-        const loadData = () => {
-            if (Array.isArray(halls) && halls.length > 0) {
-                setPopularHalls(halls.slice(0, 10))
-            } else if (Array.isArray(halls)) {
-                setPopularHalls([])
-            } else {
-                console.warn('PopularHalls: halls is not an array:', halls)
-                setPopularHalls([])
-            }
-            setLoading(false)
-        }
-
-        loadData()
-    }, [halls, isMounted])
+    /* slice در useMemo، بدون useEffect و isMounted */
+    const popularHalls = useMemo(
+        () => (Array.isArray(halls) ? halls.slice(0, 10) : []),
+        [halls]
+    )
 
     const scroll = useCallback((direction) => {
-        if (scrollContainerRef.current) {
-            const scrollAmount = 380
-            scrollContainerRef.current.scrollBy({
-                left: direction === 'right' ? scrollAmount : -scrollAmount,
-                behavior: 'smooth',
-            })
-        }
+        const el = scrollContainerRef.current
+        if (!el) return
+        const scrollAmount = 380
+        el.scrollBy({
+            left: direction === 'right' ? scrollAmount : -scrollAmount,
+            behavior: 'smooth',
+        })
     }, [])
 
     const scrollToIndex = useCallback((index) => {
-        if (scrollContainerRef.current) {
-            scrollContainerRef.current.scrollTo({
-                left: index * 380,
-                behavior: 'smooth',
-            })
-        }
+        const el = scrollContainerRef.current
+        if (!el) return
+        el.scrollTo({ left: index * 380, behavior: 'smooth' })
     }, [])
 
-    if (loading) return <LoadingSkeleton />
     if (popularHalls.length === 0) return <EmptyState />
 
     return (
         <section className="py-16 md:py-20">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* هدر */}
                 <div className="text-center mb-12">
                     <h2 className="text-2xl md:text-4xl font-black text-[#2C2418] mb-3">
                         محبوب‌ترین تالارها
@@ -480,11 +378,10 @@ export default function PopularHalls({ halls = [] }) {
                 </div>
 
                 <div className="relative">
-                    {/* نوار بالای اسلایدر */}
                     <div className="flex justify-between items-center mb-4 px-2">
                         <div className="text-sm text-gray-400">
                             <span className="font-medium text-[#C6A14C]">
-                                {popularHalls.length}
+                                {faNum(popularHalls.length)}
                             </span>{' '}
                             تالار ویژه
                         </div>
@@ -492,38 +389,21 @@ export default function PopularHalls({ halls = [] }) {
                         <div className="flex gap-2">
                             <button
                                 onClick={() => scroll('left')}
-                                className="
-                  bg-white border border-gray-200 rounded-full p-2
-                  shadow-sm hover:shadow-md
-                  transition-all duration-200
-                  hover:bg-[#C6A14C] hover:border-[#C6A14C]
-                  group cursor-pointer
-                "
+                                className="bg-white border border-gray-200 rounded-full p-2 shadow-sm hover:shadow-md transition-all duration-200 hover:bg-[#C6A14C] hover:border-[#C6A14C] group cursor-pointer"
                                 aria-label="Scroll right"
                             >
-                                <Suspense fallback={<div className="w-4 h-4" />}>
-                                    <PiArrowRight className="w-4 h-4 text-[#2C2418] group-hover:text-white transition-colors" />
-                                </Suspense>
+                                <PiArrowRight className="w-4 h-4 text-[#2C2418] group-hover:text-white transition-colors" />
                             </button>
                             <button
                                 onClick={() => scroll('right')}
-                                className="
-                  bg-white border border-gray-200 rounded-full p-2
-                  shadow-sm hover:shadow-md
-                  transition-all duration-200
-                  hover:bg-[#C6A14C] hover:border-[#C6A14C]
-                  group cursor-pointer
-                "
+                                className="bg-white border border-gray-200 rounded-full p-2 shadow-sm hover:shadow-md transition-all duration-200 hover:bg-[#C6A14C] hover:border-[#C6A14C] group cursor-pointer"
                                 aria-label="Scroll left"
                             >
-                                <Suspense fallback={<div className="w-4 h-4" />}>
-                                    <PiArrowLeft className="w-4 h-4 text-[#2C2418] group-hover:text-white transition-colors" />
-                                </Suspense>
+                                <PiArrowLeft className="w-4 h-4 text-[#2C2418] group-hover:text-white transition-colors" />
                             </button>
                         </div>
                     </div>
 
-                    {/* اسلایدر افقی */}
                     <div
                         ref={scrollContainerRef}
                         className="flex gap-5 overflow-x-auto scroll-smooth pb-6 px-2 hide-scrollbar"
@@ -531,64 +411,43 @@ export default function PopularHalls({ halls = [] }) {
                     >
                         {popularHalls.map((hall, index) => (
                             <HallCard
-                                key={hall._id || index}
+                                key={hall._id || `idx-${index}`}
                                 hall={hall}
                                 index={index}
                             />
                         ))}
 
-                        {/* کارت مشاهده بیشتر */}
                         <Link
                             href="/halls"
                             prefetch={false}
-                            className="
-                flex-shrink-0 w-[260px]
-                flex items-center justify-center
-                border-2 border-dashed border-[#C6A14C]
-                rounded-2xl bg-white/50 hover:bg-white
-                transition-all duration-200
-                group/more
-              "
+                            className="flex-shrink-0 w-[260px] flex items-center justify-center border-2 border-dashed border-[#C6A14C] rounded-2xl bg-white/50 hover:bg-white transition-colors duration-200 group/more"
                         >
                             <div className="flex flex-col items-center gap-3 text-center p-6">
-                                <div className="w-14 h-14 rounded-full bg-[#C6A14C]/10 flex items-center justify-center group-hover/more:bg-[#C6A14C] transition-all duration-200">
-                                    <Suspense fallback={<div className="w-7 h-7" />}>
-                                        <PiArrowCircleRight className="w-7 h-7 text-[#C6A14C] group-hover/more:text-white transition-colors" />
-                                    </Suspense>
+                                <div className="w-14 h-14 rounded-full bg-[#C6A14C]/10 flex items-center justify-center group-hover/more:bg-[#C6A14C] transition-colors duration-200">
+                                    <PiArrowCircleRight className="w-7 h-7 text-[#C6A14C] group-hover/more:text-white transition-colors" />
                                 </div>
                                 <span className="font-bold text-[#2C2418] group-hover/more:text-[#C6A14C] transition-colors">
                                     مشاهده تالارهای بیشتر
                                 </span>
                                 <span className="text-xs text-gray-400">
-                                    بیش از {popularHalls.length * 10}+ تالار لوکس
+                                    بیش از {faNum(popularHalls.length * 10)}+ تالار لوکس
                                 </span>
                             </div>
                         </Link>
                     </div>
                 </div>
 
-                {/* نشانگرهای اسکرول موبایل */}
                 <div className="flex justify-center gap-1.5 mt-6 md:hidden">
                     {popularHalls.slice(0, 5).map((_, idx) => (
                         <button
                             key={idx}
                             onClick={() => scrollToIndex(idx)}
-                            className="w-1.5 h-1.5 rounded-full bg-gray-300 hover:bg-[#C6A14C] transition-all cursor-pointer"
+                            className="w-1.5 h-1.5 rounded-full bg-gray-300 hover:bg-[#C6A14C] transition-colors cursor-pointer"
                             aria-label={`Go to slide ${idx + 1}`}
                         />
                     ))}
                 </div>
             </div>
-
-            <style jsx global>{`
-        .hide-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-        .hide-scrollbar {
-          scrollbar-width: none;
-          -ms-overflow-style: none;
-        }
-      `}</style>
         </section>
     )
 }
