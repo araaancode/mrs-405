@@ -1,4 +1,4 @@
-import CreateHallWizard from "./components/CreateHallWizard";
+import HallWizard from "./components/HallWizard";
 
 export const metadata = {
   title: "ایجاد تالار جدید",
@@ -6,5 +6,5 @@ export const metadata = {
 };
 
 export default function CreateHallPage() {
-  return <CreateHallWizard />;
+  return <HallWizard mode="create" />;
 }

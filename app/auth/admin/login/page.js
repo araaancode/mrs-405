@@ -18,8 +18,8 @@ import {
   PiWarningCircleFill,
   PiArrowCounterClockwiseFill,
   PiKeyFill,
+  PiCrownSimpleFill,
   PiSpinnerGap,
-  PiShieldCheckFill,
 } from "react-icons/pi";
 
 /* ============================================================
@@ -77,7 +77,8 @@ function InputField({
             w-full
             ${Icon ? "pr-10" : "pr-3.5"} ${isPassword ? "pl-10" : "pl-3.5"}
             py-2.5
-            bg-white border border-slate-200 rounded-xl
+            bg-white
+            border border-slate-200 rounded-xl
             text-[13.5px] text-slate-900
             placeholder:text-slate-400
             hover:border-gold-300
@@ -97,7 +98,6 @@ function InputField({
               w-7 h-7 rounded-lg
               flex items-center justify-center
               text-slate-400 hover:text-gold-500 hover:bg-gold-50
-              active:scale-90
               transition-all duration-200
             "
           >
@@ -158,9 +158,9 @@ function Alert({ type = "error", children }) {
 }
 
 /* ============================================================
-   SubmitButton — طلایی روشن
+   SubmitButton
    ============================================================ */
-function SubmitButton({ loading, loadingText, text, icon: Icon }) {
+function SubmitButton({ loading, loadingText, text }) {
   return (
     <button
       type="submit"
@@ -188,22 +188,22 @@ function SubmitButton({ loading, loadingText, text, icon: Icon }) {
           {loadingText}
         </>
       ) : (
-        <>
-          {Icon && <Icon className="w-4 h-4" />}
-          {text}
-          <PiArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-300" />
-        </>
+        text
       )}
     </button>
   );
 }
 
 /* ============================================================
-   FooterLinks — بدون ثبت‌نام (مخصوص ادمین)
+   FooterLinks — مخصوص ادمین (بدون ثبت‌نام)
    ============================================================ */
 function FooterLinks() {
   return (
-    <div className="mt-6 pt-5 border-t border-slate-100">
+    <div className="mt-6 pt-5 border-t border-slate-100 space-y-3">
+      <p className="text-center text-[12.5px] text-slate-500">
+        دسترسی ادمین فقط از طریق مدیر ارشد امکان‌پذیر است
+      </p>
+
       <p className="text-center">
         <Link
           href="/"
@@ -251,7 +251,7 @@ export default function AdminLoginPage() {
     }
   }, [resendTimer]);
 
-  /* -------- Handlers -------- */
+  /* -------- Handle Type Change -------- */
   const handleTypeChange = useCallback((type) => {
     setLoginType(type);
     setError("");
@@ -259,6 +259,7 @@ export default function AdminLoginPage() {
     setOtpStep("form");
   }, []);
 
+  /* -------- Handle Back to OTP Form -------- */
   const handleBackToForm = useCallback(() => {
     setOtpStep("form");
     setPhone("");
@@ -267,11 +268,16 @@ export default function AdminLoginPage() {
     setSuccess("");
   }, []);
 
+  /* -------- Input Icon -------- */
   const inputIcon = useMemo(() => {
     if (identifier.includes("@")) return PiEnvelopeFill;
     if (/^09\d{9}$/.test(identifier)) return PiDeviceMobileFill;
     return PiUserFill;
   }, [identifier]);
+
+  /* ============================================================
+     Submit Handlers
+     ============================================================ */
 
   /* --- ایمیل/نام کاربری + رمز --- */
   const handlePasswordLogin = useCallback(
@@ -451,35 +457,19 @@ export default function AdminLoginPage() {
           transition={{ duration: 0.5 }}
           className="text-center mb-6"
         >
-          {/* جعبه آیکون طلایی با نشان ADMIN */}
+          {/* آیکون تاج */}
           <div className="flex justify-center mb-5">
-            <div className="relative">
-              <div
-                className="
-                  relative w-16 h-16 rounded-2xl
-                  bg-gradient-to-br from-gold-400 to-gold-600
-                  flex items-center justify-center
-                  shadow-lg shadow-gold-500/30
-                  ring-4 ring-gold-100/50
-                "
-              >
-                <div className="absolute inset-0 rounded-2xl bg-gold-500/20 blur-xl" />
-                <PiShieldCheckFill className="relative w-7 h-7 text-white" />
-              </div>
-
-              {/* نشان ADMIN */}
-              <span
-                className="
-                  absolute -top-1.5 -left-1.5
-                  px-2 py-0.5 rounded-full
-                  bg-gradient-to-l from-slate-700 to-slate-900
-                  text-white text-[9px] font-black
-                  shadow-md shadow-slate-900/40
-                  ring-2 ring-white
-                "
-              >
-                ADMIN
-              </span>
+            <div
+              className="
+                relative w-16 h-16 rounded-2xl
+                bg-gradient-to-br from-gold-400 to-gold-600
+                flex items-center justify-center
+                shadow-lg shadow-gold-500/30
+                ring-4 ring-gold-100/50
+              "
+            >
+              <div className="absolute inset-0 rounded-2xl bg-gold-500/20 blur-xl" />
+              <PiCrownSimpleFill className="relative w-7 h-7 text-white" />
             </div>
           </div>
 
@@ -570,13 +560,10 @@ export default function AdminLoginPage() {
                 className="p-5 sm:p-7 space-y-4"
               >
                 <InputField
-                  label="ایمیل / نام کاربری"
+                  label="ایمیل یا نام کاربری"
                   icon={inputIcon}
                   value={identifier}
-                  onChange={(e) => {
-                    setIdentifier(e.target.value);
-                    if (error) setError("");
-                  }}
+                  onChange={(e) => setIdentifier(e.target.value)}
                   placeholder="admin@example.com"
                   dir="ltr"
                   required
@@ -587,10 +574,7 @@ export default function AdminLoginPage() {
                   label="رمز عبور"
                   icon={PiLockKeyFill}
                   value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    if (error) setError("");
-                  }}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
                   isPassword
@@ -605,7 +589,6 @@ export default function AdminLoginPage() {
                   loading={loading}
                   loadingText="در حال ورود..."
                   text="ورود به پنل مدیریت"
-                  icon={PiShieldCheckFill}
                 />
 
                 <FooterLinks />
@@ -627,10 +610,7 @@ export default function AdminLoginPage() {
                   label="شماره همراه"
                   icon={PiDeviceMobileFill}
                   value={phone}
-                  onChange={(e) => {
-                    setPhone(e.target.value);
-                    if (error) setError("");
-                  }}
+                  onChange={(e) => setPhone(e.target.value)}
                   placeholder="09123456789"
                   dir="ltr"
                   inputMode="tel"
@@ -642,10 +622,7 @@ export default function AdminLoginPage() {
                   label="رمز عبور"
                   icon={PiLockKeyFill}
                   value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    if (error) setError("");
-                  }}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
                   isPassword
@@ -660,7 +637,6 @@ export default function AdminLoginPage() {
                   loading={loading}
                   loadingText="در حال ورود..."
                   text="ورود به پنل مدیریت"
-                  icon={PiShieldCheckFill}
                 />
 
                 <FooterLinks />
@@ -692,10 +668,7 @@ export default function AdminLoginPage() {
                         label="شماره همراه"
                         icon={PiDeviceMobileFill}
                         value={phone}
-                        onChange={(e) => {
-                          setPhone(e.target.value);
-                          if (error) setError("");
-                        }}
+                        onChange={(e) => setPhone(e.target.value)}
                         placeholder="09123456789"
                         dir="ltr"
                         inputMode="tel"
@@ -710,7 +683,6 @@ export default function AdminLoginPage() {
                         loading={loading}
                         loadingText="در حال ارسال کد..."
                         text="ارسال کد تایید"
-                        icon={PiKeyFill}
                       />
 
                       <FooterLinks />
@@ -776,7 +748,6 @@ export default function AdminLoginPage() {
                         loading={loading}
                         loadingText="در حال تایید..."
                         text="تایید و ورود"
-                        icon={PiCheckCircleFill}
                       />
 
                       <div className="text-center">
@@ -804,33 +775,6 @@ export default function AdminLoginPage() {
               </motion.div>
             )}
           </AnimatePresence>
-        </motion.div>
-
-        {/* ==================== پیام امنیتی ادمین ==================== */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 0.25 }}
-          className="
-            mt-5
-            p-3.5 rounded-2xl
-            bg-gradient-to-br from-gold-50/60 via-white to-white
-            border border-gold-100
-            flex items-start gap-2.5
-          "
-        >
-          <div className="w-8 h-8 rounded-lg bg-gold-100 flex items-center justify-center flex-shrink-0">
-            <PiShieldCheckFill className="w-4 h-4 text-gold-600" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[11.5px] font-bold text-slate-700 mb-0.5">
-              دسترسی امن ادمین
-            </p>
-            <p className="text-[10.5px] text-slate-500 leading-relaxed">
-              این صفحه مخصوص مدیران سیستم است. تمام فعالیت‌ها ثبت و نظارت
-              می‌شوند.
-            </p>
-          </div>
         </motion.div>
       </div>
     </div>
