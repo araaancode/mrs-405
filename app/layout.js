@@ -121,8 +121,9 @@ export default function RootLayout({ children }) {
                 />
             </head>
 
+            {/* ✅ تغییر: گرادیانت روی body — یکنواخت در کل صفحه */}
             <body
-                className="antialiased bg-[#FDFCF9] text-slate-900 min-h-screen flex flex-col"
+                className="antialiased text-slate-900 min-h-screen flex flex-col bg-gradient-to-br from-[#FDFCF9] via-[#FAF8F2] to-[#F7F3E8]"
                 style={{ fontFamily: "'IranianSans', system-ui, sans-serif" }}
             >
                 <AuthProvider>
@@ -160,7 +161,7 @@ export default function RootLayout({ children }) {
                             <Footer />
                         </Suspense>
 
-                        {/*  ToastContainer — همه‌ی toast های برنامه */}
+                        {/* ToastContainer — همه‌ی toast های برنامه */}
                         <ToastProvider />
                     </NotificationProvider>
                 </AuthProvider>

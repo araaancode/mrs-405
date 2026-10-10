@@ -224,7 +224,7 @@ async function seed() {
         });
 
         console.log(` ${createdHalls.length} halls created successfully`);
-        console.log("🎉 Seeder executed successfully - 1000 users + 1000 halls");
+        console.log(" Seeder executed successfully - 1000 users + 1000 halls");
         process.exit(0);
 
     } catch (error) {

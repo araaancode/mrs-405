@@ -199,7 +199,8 @@ export default function HallOwnerLayout({ children }) {
         setOpenDropdown((prev) => (prev === key ? null : key));
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-[#FDFCF9] via-[#FAF8F2] to-[#F7F3E8] relative">
+        /* ✅ تغییر: حذف گرادیانت — پس‌زمینه از body می‌آید */
+        <div className="min-h-screen relative">
             <div
                 className="fixed inset-0 pointer-events-none opacity-[0.5]"
                 style={{
