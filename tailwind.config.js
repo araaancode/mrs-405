@@ -1,19 +1,27 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    './pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './components/**/*.{js,ts,jsx,tsx,mdx}',
+    // ✅ حذف ./pages/** چون App Router داری
     './app/**/*.{js,ts,jsx,tsx,mdx}',
+    './components/**/*.{js,ts,jsx,tsx,mdx}',
+    // اگر کد در src/ است، این را هم اضافه کن:
+    // './src/**/*.{js,ts,jsx,tsx,mdx}',
   ],
+
+  // ✅ جلوگیری از حذف کلاس‌های پویا (اگر className را با متغیر می‌سازی)
+  safelist: [
+    // اگر کلاس‌هایی داری که فقط در runtime ساخته می‌شوند، اینجا اضافه کن
+    // مثال:
+    // { pattern: /bg-(gold|slate)-(50|100|500|600)/ },
+  ],
+
   theme: {
     extend: {
       colors: {
-        /* رنگ‌های اصلی برند */
         primary: '#3B2F2F',
         secondary: '#6E5B4C',
         accent: '#C6A14C',
 
-        /* پالت gold بر اساس #C6A14C */
         gold: {
           50: '#FBF7EC',
           100: '#F6EED5',
@@ -46,16 +54,13 @@ module.exports = {
         sans: ['Shabnam', 'Vazirmatn', 'system-ui', 'sans-serif'],
       },
 
+      // ✅ فقط انیمیشن‌هایی که واقعاً استفاده می‌کنی نگه دار
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',
-        'fade-out': 'fadeOut 0.5s ease-in-out',
         'slide-up': 'slideUp 0.5s ease-out',
         'slide-down': 'slideDown 0.5s ease-out',
         'slide-in-right': 'slideInRight 0.5s ease-out',
         'slide-in-left': 'slideInLeft 0.5s ease-out',
-        'bounce-in': 'bounceIn 0.6s ease-out',
-        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'spin-slow': 'spin 3s linear infinite',
         float: 'float 6s ease-in-out infinite',
         shimmer: 'shimmer 2s infinite',
       },
@@ -64,10 +69,6 @@ module.exports = {
         fadeIn: {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
-        },
-        fadeOut: {
-          '0%': { opacity: '1' },
-          '100%': { opacity: '0' },
         },
         slideUp: {
           '0%': { transform: 'translateY(20px)', opacity: '0' },
@@ -84,11 +85,6 @@ module.exports = {
         slideInLeft: {
           '0%': { transform: 'translateX(-20px)', opacity: '0' },
           '100%': { transform: 'translateX(0)', opacity: '1' },
-        },
-        bounceIn: {
-          '0%': { transform: 'scale(0.3)', opacity: '0' },
-          '50%': { transform: 'scale(1.05)', opacity: '0.8' },
-          '100%': { transform: 'scale(1)', opacity: '1' },
         },
         float: {
           '0%, 100%': { transform: 'translateY(0)' },
@@ -109,7 +105,6 @@ module.exports = {
         xl: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
         inner: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)',
 
-        /* سایه‌های طلایی با پالت جدید #C6A14C */
         accent: '0 0 20px rgba(198, 161, 76, 0.3)',
         'accent-large': '0 0 40px rgba(198, 161, 76, 0.5)',
         'gold-sm': '0 2px 8px rgba(198, 161, 76, 0.15)',
@@ -149,5 +144,11 @@ module.exports = {
       },
     },
   },
+
   plugins: [],
+
+  // ✅ در Tailwind 3.4+ برای build سریع‌تر
+  future: {
+    hoverOnlyWhenSupported: true,
+  },
 };

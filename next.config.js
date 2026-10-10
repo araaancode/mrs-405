@@ -3,11 +3,9 @@
 
 const nextConfig = {
     /* ============================================================
-       1. بهینه‌سازی باندل — مهم‌ترین بخش
+       1. بهینه‌سازی باندل
        ============================================================ */
     experimental: {
-        // این تنظیم حیاتی است: فقط ماژول‌های استفاده‌شده در باندل می‌آیند
-        // بدون این، react-icons می‌تواند صدها KB اضافه کند
         optimizePackageImports: [
             "react-icons",
             "react-icons/pi",
@@ -20,66 +18,61 @@ const nextConfig = {
             "@headlessui/react",
             "@heroicons/react",
         ],
+        // ✅ فعال‌سازی بهینه‌سازی CSS (نیاز به نصب critters)
+        optimizeCss: true,
     },
 
     /* ============================================================
        2. بهینه‌سازی تصاویر
        ============================================================ */
     images: {
-        // فرمت‌های مدرن — مرورگر بهترین را انتخاب می‌کند
         formats: ["image/avif", "image/webp"],
-
-        // سایزهای دستگاه — مرورگر مناسب‌ترین را دانلود می‌کند
         deviceSizes: [360, 480, 640, 768, 1024, 1280, 1536, 1920],
         imageSizes: [16, 32, 48, 64, 96, 128, 180, 256, 384],
-
-        // کش تصاویر به مدت ۳۰ روز
         minimumCacheTTL: 60 * 60 * 24 * 30,
 
-        // دامنه‌های مجاز برای تصاویر remote
-        // ⚠️ اگر دامنه‌ی مشخص داری، جایگزین کن برای امنیت + کش مؤثرتر
+        // ✅ دامنه‌های دقیق — اینجا را با دامنه‌های خودت پر کن
+        // ⚠️ اگر خالی بماند، تصاویر remote (https://...) لود نمی‌شوند
         remotePatterns: [
-            { protocol: "https", hostname: "**" },
-            { protocol: "http", hostname: "**" },
+            // اگر روی Vercel هستی:
+            { protocol: "https", hostname: "*.public.blob.vercel-storage.com" },
+            // اگر از Cloudinary استفاده می‌کنی:
+            // { protocol: "https", hostname: "res.cloudinary.com" },
+            // اگر از S3 استفاده می‌کنی:
+            // { protocol: "https", hostname: "*.s3.amazonaws.com" },
+            // اگر از CDN خودت استفاده می‌کنی:
+            // { protocol: "https", hostname: "cdn.yoursite.com" },
+            // ⚠️ اگر دامنه‌ی خاصی نداری و می‌خواهی همه‌چیز باز باشد (ناامن ولی کار می‌کند):
+            // { protocol: "https", hostname: "**" },
         ],
 
-        // جلوگیری از SVG مخرب
         dangerouslyAllowSVG: false,
+        // unoptimized: false حذف شد (پیش‌فرض همین است)
     },
 
     /* ============================================================
-       3. حذف console در production — باندل کوچک‌تر
+       3. کامپایلر
        ============================================================ */
     compiler: {
         removeConsole:
             process.env.NODE_ENV === "production"
                 ? { exclude: ["error", "warn"] }
                 : false,
-
-        // حذف prop-types در production (چون از PropTypes استفاده می‌کردی)
-        reactRemoveProperties:
-            process.env.NODE_ENV === "production"
-                ? { properties: ["^data-testid$"] }
-                : false,
     },
 
     /* ============================================================
-       4. فشرده‌سازی و بهینه‌سازی خروجی
+       4. فشرده‌سازی و خروجی
        ============================================================ */
     compress: true,
     poweredByHeader: false,
     productionBrowserSourceMaps: false,
     reactStrictMode: true,
 
-    // در Next.js 14: به جای swcMinify (که همیشه true است)
-    // swcMinify به طور پیش‌فرض فعال است
-
     /* ============================================================
-       5. هدرهای کش برای assets استاتیک
+       5. هدرهای کش
        ============================================================ */
     async headers() {
         return [
-            // تصاویر — کش ۱ ساله
             {
                 source: "/images/:path*",
                 headers: [
@@ -89,7 +82,6 @@ const nextConfig = {
                     },
                 ],
             },
-            // فونت‌ها — کش ۱ ساله
             {
                 source: "/fonts/:path*",
                 headers: [
@@ -99,7 +91,6 @@ const nextConfig = {
                     },
                 ],
             },
-            // فایل‌های استاتیک Next.js — کش ۱ ساله
             {
                 source: "/_next/static/:path*",
                 headers: [
@@ -113,59 +104,10 @@ const nextConfig = {
     },
 
     /* ============================================================
-       6. Redirects — جلوگیری از لینک‌های قدیمی
+       6. Redirects
        ============================================================ */
     async redirects() {
-        return [
-            // اگر /search بدون پارامتر آمد، به /halls برود
-            // (اختیاری — بر اساس نیاز پروژه)
-        ];
-    },
-
-    /* ============================================================
-       7. Webpack — تنظیمات پیشرفته (اختیاری)
-       ============================================================ */
-    webpack: (config, { isServer, dev }) => {
-        // در production، پکیج‌های حجیم را به chunk های جدا تقسیم می‌کنیم
-        if (!isServer && !dev) {
-            config.optimization.splitChunks = {
-                chunks: "all",
-                cacheGroups: {
-                    // framer-motion در chunk جدا
-                    framer: {
-                        test: /[\\/]node_modules[\\/]framer-motion[\\/]/,
-                        name: "framer-motion",
-                        priority: 30,
-                    },
-                    // react-icons در chunk جدا
-                    icons: {
-                        test: /[\\/]node_modules[\\/]react-icons[\\/]/,
-                        name: "react-icons",
-                        priority: 25,
-                    },
-                    // date-picker در chunk جدا (فقط در صفحاتی که لود می‌شود)
-                    datepicker: {
-                        test: /[\\/]node_modules[\\/](react-multi-date-picker|react-date-object)[\\/]/,
-                        name: "date-picker",
-                        priority: 20,
-                    },
-                    // toast
-                    toast: {
-                        test: /[\\/]node_modules[\\/]react-hot-toast[\\/]/,
-                        name: "toast",
-                        priority: 15,
-                    },
-                    // vendor عمومی
-                    vendor: {
-                        test: /[\\/]node_modules[\\/]/,
-                        name: "vendors",
-                        priority: 10,
-                    },
-                },
-            };
-        }
-
-        return config;
+        return [];
     },
 };
 
