@@ -1,8 +1,8 @@
 "use client";
 
-import { memo, useMemo, useCallback } from "react";
+import { memo, useMemo } from "react";
 import Image from "next/image";
-import { PiCamera, PiCheckCircle } from "react-icons/pi";
+import { PiCheckCircle } from "react-icons/pi";
 
 /* ============================================================
    Constants — یک بار در ماژول
@@ -38,20 +38,16 @@ function computeCompletion(form) {
 
 function computeInitials(form) {
     const source = form?.full_name || form?.username || "؟";
-    const parts = source.split(" ");
+    const parts = String(source).trim().split(/\s+/);
     const first = parts[0]?.[0] || "";
     const second = parts[1]?.[0] || "";
-    return (first + second) || "؟";
+    return (first + second).toUpperCase() || "؟";
 }
 
 /* ============================================================
-   ProfileHeader — memoized
+   ProfileHeader — فقط نمایش؛ آواتار در AvatarUploader مدیریت می‌شود
    ============================================================ */
-export const ProfileHeader = memo(function ProfileHeader({
-    form,
-    isDirty,
-    onAvatarClick,
-}) {
+export const ProfileHeader = memo(function ProfileHeader({ form, isDirty }) {
     /* محاسبه‌ها — یک بار در تغییر form */
     const { filled, completion, initials } = useMemo(() => {
         const f = computeCompletion(form);
@@ -65,25 +61,15 @@ export const ProfileHeader = memo(function ProfileHeader({
     /* strokeDasharray — یک بار */
     const strokeDash = useMemo(() => `${completion}, 100`, [completion]);
 
-    /* handler پایدار */
-    const handleAvatarClick = useCallback(
-        () => onAvatarClick?.(),
-        [onAvatarClick]
-    );
-
     const displayName = form?.full_name || "کاربر بدون نام";
     const displayContact = form?.email || form?.username || "—";
     const avatarSrc = form?.avatar;
 
     return (
         <div className="mb-6 pb-6 border-b border-slate-100">
-            <div className="flex flex-col sm:flex-row items-center sm:items-center gap-5">
-                {/* آواتار */}
-                <button
-                    type="button"
-                    onClick={handleAvatarClick}
-                    className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gold-50 ring-1 ring-gold-100 flex items-center justify-center text-2xl sm:text-3xl font-bold text-gold-600 hover:scale-[1.02] hover:ring-gold-200 transition-transform duration-200 group overflow-hidden flex-shrink-0"
-                >
+            <div className="flex flex-col sm:flex-row items-center gap-5">
+                {/* آواتار — فقط نمایش */}
+                <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gold-50 ring-1 ring-gold-100 flex items-center justify-center text-2xl sm:text-3xl font-bold text-gold-600 overflow-hidden flex-shrink-0">
                     {avatarSrc ? (
                         <Image
                             src={avatarSrc}
@@ -98,11 +84,7 @@ export const ProfileHeader = memo(function ProfileHeader({
                     ) : (
                         <span className="select-none">{initials}</span>
                     )}
-
-                    <span className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <PiCamera className="w-5 h-5 text-white" />
-                    </span>
-                </button>
+                </div>
 
                 {/* اطلاعات */}
                 <div className="flex-1 text-center sm:text-right min-w-0">

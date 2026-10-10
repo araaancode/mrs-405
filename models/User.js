@@ -144,6 +144,22 @@ const userSchema = new mongoose.Schema(
             minlength: [2, "نام شهر باید حداقل 2 کاراکتر باشد"],
             maxlength: [50, "نام شهر نمی‌تواند بیشتر از 50 کاراکتر باشد"],
         },
+        // models/User.js — اضافه کردن فیلد avatar
+avatar: {
+    type: String,
+    trim: true,
+    default: null,
+    validate: {
+        validator: function (v) {
+            if (!v) return true;
+            return (
+                /^https?:\/\/.+\.(jpg|jpeg|png|webp|gif)$/i.test(v) ||
+                /^\/uploads\/avatars\/.+\.(jpg|jpeg|png|webp|gif)$/i.test(v)
+            );
+        },
+        message: "آدرس آواتار معتبر نیست",
+    },
+},
 
         // جنسیت
         gender: {
