@@ -5,7 +5,7 @@ import Image from "next/image";
 import { PiCheckCircle } from "react-icons/pi";
 
 /* ============================================================
-   Constants — یک بار در ماژول
+   Constants
    ============================================================ */
 const PROFILE_FIELDS = [
     "full_name",
@@ -45,10 +45,9 @@ function computeInitials(form) {
 }
 
 /* ============================================================
-   ProfileHeader — فقط نمایش؛ آواتار در AvatarUploader مدیریت می‌شود
+   ProfileHeader — فقط نمایش
    ============================================================ */
 export const ProfileHeader = memo(function ProfileHeader({ form, isDirty }) {
-    /* محاسبه‌ها — یک بار در تغییر form */
     const { filled, completion, initials } = useMemo(() => {
         const f = computeCompletion(form);
         return {
@@ -58,7 +57,6 @@ export const ProfileHeader = memo(function ProfileHeader({ form, isDirty }) {
         };
     }, [form]);
 
-    /* strokeDasharray — یک بار */
     const strokeDash = useMemo(() => `${completion}, 100`, [completion]);
 
     const displayName = form?.full_name || "کاربر بدون نام";
@@ -93,7 +91,6 @@ export const ProfileHeader = memo(function ProfileHeader({ form, isDirty }) {
                             {displayName}
                         </h1>
 
-                        {/* Badge وضعیت */}
                         {isDirty ? (
                             <span className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-full bg-gold-50 border border-gold-200 text-gold-700 text-[11px] font-medium self-center sm:self-auto">
                                 <span className="w-1.5 h-1.5 rounded-full bg-gold-500" />
@@ -145,7 +142,9 @@ export const ProfileHeader = memo(function ProfileHeader({ form, isDirty }) {
                             </span>
                         </div>
                         <div className="text-right">
-                            <p className="text-xs text-slate-500">تکمیل پروفایل</p>
+                            <p className="text-xs text-slate-500">
+                                تکمیل پروفایل
+                            </p>
                             <p className="text-sm font-bold text-slate-800">
                                 {filled} از {FIELDS_COUNT} فیلد
                             </p>

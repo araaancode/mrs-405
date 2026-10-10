@@ -170,7 +170,7 @@ export default function CreateHallWizard() {
      Submit
      ============================================================ */
   const onSubmit = async (values) => {
-    console.log("✅ onSubmit called!");
+    console.log(" onSubmit called!");
     console.log("📤 values:", values);
     console.log("📸 images count:", images.length);
     console.log("📅 dates count:", dates.length);
@@ -239,7 +239,7 @@ export default function CreateHallWizard() {
 
       const { data } = await axios.post("/api/hall_owner/halls", payload);
 
-      console.log("✅ Response:", data);
+      console.log(" Response:", data);
 
       if (data.success) {
         toast.update(toastId, {

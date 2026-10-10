@@ -400,7 +400,7 @@ hallSchema.index({ hall_owner_phone: 1 });
 hallSchema.index({ hall_phone: 1 });
 
 /* ============================================================
-   ✅ Pre-save Hook — سازگار با Mongoose 7+
+    Pre-save Hook — سازگار با Mongoose 7+
    بدون next() — فقط mutation مستقیم روی سند
    ============================================================ */
 hallSchema.pre("save", function () {

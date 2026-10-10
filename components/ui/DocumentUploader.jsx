@@ -2,7 +2,6 @@
 
 import { useCallback, useRef, useState, memo, useMemo } from "react";
 import Image from "next/image";
-import toast from "react-hot-toast";
 import {
     PiUploadSimple,
     PiFilePdf,
@@ -13,8 +12,15 @@ import {
     PiEye,
 } from "react-icons/pi";
 
+import { notify } from "@/lib/toast";
+
 /* ============================================================
-   Constants — یک بار در ماژول
+   موقعیت ثابت toast برای این کامپوننت
+   ============================================================ */
+const TOAST_POSITION = "top-left";
+
+/* ============================================================
+   Constants
    ============================================================ */
 const DEFAULT_ACCEPTED = [
     "image/jpeg",
@@ -42,7 +48,7 @@ const FileIcon = memo(function FileIcon({ type, className = "w-5 h-5" }) {
 });
 
 /* ============================================================
-   formatBytes — بیرون از کامپوننت
+   formatBytes
    ============================================================ */
 const SIZE_UNITS = ["B", "KB", "MB", "GB"];
 function formatBytes(bytes) {
@@ -55,18 +61,16 @@ function formatBytes(bytes) {
     return `${(bytes / Math.pow(k, i)).toFixed(1)} ${SIZE_UNITS[i]}`;
 }
 
-/* ============================================================
-   isRemote — تشخیص داده/بلاب/آدرس
-   ============================================================ */
 const isRemote = (url) =>
     typeof url === "string" && /^https?:\/\//i.test(url);
 
 /* ============================================================
-   uploadToServer — بیرون از کامپوننت
+   uploadToServer — یک فایل
    ============================================================ */
-async function uploadToServer(file) {
+async function uploadToServer(file, uploadType = "documents") {
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("images", file);
+    formData.append("type", uploadType);
 
     const res = await fetch("/api/upload", {
         method: "POST",
@@ -75,15 +79,22 @@ async function uploadToServer(file) {
 
     if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || "خطا در آپلود فایل");
+        throw new Error(err.error || err.message || "خطا در آپلود فایل");
     }
 
     const data = await res.json();
+
+    const url = data.url ?? data.urls?.[0];
+    if (!url) {
+        throw new Error("پاسخ سرور نامعتبر است");
+    }
+
     return {
-        url: data.url,
+        url,
         name: file.name,
         size: file.size,
         type: file.type,
+        uploaded_at: new Date().toISOString(),
     };
 }
 
@@ -93,7 +104,6 @@ async function uploadToServer(file) {
 const DocumentRow = memo(function DocumentRow({ doc, index, onRemove }) {
     const isImage = doc.type?.startsWith("image/");
 
-    /* محاسبه‌های نمایشی — یک بار */
     const meta = useMemo(() => {
         const sizeLabel = formatBytes(doc.size);
         const ext = doc.type ? doc.type.split("/")[1]?.toUpperCase() : null;
@@ -173,26 +183,31 @@ export const DocumentUploader = memo(function DocumentUploader({
     maxFiles = DEFAULT_MAX_FILES,
     maxSizeMB = DEFAULT_MAX_SIZE_MB,
     acceptedTypes = DEFAULT_ACCEPTED,
+    uploadType = "documents",
 }) {
     const [isDragging, setIsDragging] = useState(false);
     const [uploading, setUploading] = useState(false);
     const inputRef = useRef(null);
 
-    /* برای جلوگیری از گم شدن batch ها در آپلود موازی */
     const documentsRef = useRef(documents);
     documentsRef.current = documents;
 
     /* ============================================================
-       اعتبارسنجی — useCallback وابسته به props
+       Validation
        ============================================================ */
     const validateFile = useCallback(
         (file) => {
             if (!acceptedTypes.includes(file.type)) {
-                toast.error(`فرمت فایل ${file.name} پشتیبانی نمی‌شود`);
+                notify.error(`فرمت فایل ${file.name} پشتیبانی نمی‌شود`, {
+                    position: TOAST_POSITION,
+                });
                 return false;
             }
             if (file.size > maxSizeMB * 1024 * 1024) {
-                toast.error(`حجم فایل ${file.name} بیشتر از ${maxSizeMB}MB است`);
+                notify.error(
+                    `حجم فایل ${file.name} بیشتر از ${maxSizeMB}MB است`,
+                    { position: TOAST_POSITION }
+                );
                 return false;
             }
             return true;
@@ -201,7 +216,7 @@ export const DocumentUploader = memo(function DocumentUploader({
     );
 
     /* ============================================================
-       پردازش فایل‌ها
+       پردازش فایل‌ها — آپلود دسته‌ای
        ============================================================ */
     const handleFiles = useCallback(
         async (fileList) => {
@@ -210,7 +225,9 @@ export const DocumentUploader = memo(function DocumentUploader({
 
             const remaining = maxFiles - documentsRef.current.length;
             if (remaining <= 0) {
-                toast.error(`حداکثر ${maxFiles} فایل مجاز است`);
+                notify.error(`حداکثر ${maxFiles} فایل مجاز است`, {
+                    position: TOAST_POSITION,
+                });
                 return;
             }
 
@@ -218,27 +235,43 @@ export const DocumentUploader = memo(function DocumentUploader({
             if (!valid.length) return;
 
             setUploading(true);
-            const toastId = toast.loading("در حال آپلود...");
+
+            /* ✅ toast لودینگ با موقعیت چپ بالا */
+            const toastId = notify.loading("در حال آپلود...", {
+                position: TOAST_POSITION,
+            });
 
             try {
-                const uploaded = await Promise.all(valid.map(uploadToServer));
-                /* از ref استفاده می‌کنیم تا آخرین مقدار را داشته باشیم */
-                onChange([...documentsRef.current, ...uploaded]);
-                toast.success(
-                    `${uploaded.length} فایل با موفقیت آپلود شد`,
-                    { id: toastId }
+                const uploaded = await Promise.all(
+                    valid.map((f) => uploadToServer(f, uploadType))
                 );
+
+                onChange([...documentsRef.current, ...uploaded]);
+
+                /* ✅ تبدیل به موفقیت — با موقعیت چپ بالا */
+                notify.update(toastId, {
+                    message: `${uploaded.length} فایل با موفقیت آپلود شد`,
+                    type: "success",
+                    duration: 4000,
+                    position: TOAST_POSITION,
+                });
             } catch (err) {
-                toast.error(err.message || "خطا در آپلود", { id: toastId });
+                /* ✅ تبدیل به خطا — با موقعیت چپ بالا */
+                notify.update(toastId, {
+                    message: err.message || "خطا در آپلود",
+                    type: "error",
+                    duration: 6000,
+                    position: TOAST_POSITION,
+                });
             } finally {
                 setUploading(false);
             }
         },
-        [maxFiles, validateFile, onChange]
+        [maxFiles, validateFile, onChange, uploadType]
     );
 
     /* ============================================================
-       Drag & Drop — useCallback برای پراپ‌های پایدار
+       Drag & Drop
        ============================================================ */
     const onDrop = useCallback(
         (e) => {
@@ -278,7 +311,11 @@ export const DocumentUploader = memo(function DocumentUploader({
         (index) => {
             const next = documentsRef.current.filter((_, i) => i !== index);
             onChange(next);
-            toast.success("فایل حذف شد");
+
+            /* ✅ toast حذف — با موقعیت چپ بالا */
+            notify.success("فایل حذف شد", {
+                position: TOAST_POSITION,
+            });
         },
         [onChange]
     );

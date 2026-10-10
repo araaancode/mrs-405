@@ -1,15 +1,17 @@
 // app/api/notifications/unread-count/route.js
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/db";
 import Notification from "@/models/Notification";
 
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
     try {
         await dbConnect();
+
         const session = await getServerSession(authOptions);
         if (!session?.user?.id) {
             return NextResponse.json({ unreadCount: 0 });
@@ -21,7 +23,8 @@ export async function GET() {
         });
 
         return NextResponse.json({ unreadCount });
-    } catch {
+    } catch (err) {
+        console.error("[GET /api/notifications/unread-count]", err);
         return NextResponse.json({ unreadCount: 0 }, { status: 500 });
     }
 }

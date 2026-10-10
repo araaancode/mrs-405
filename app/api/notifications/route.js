@@ -1,9 +1,12 @@
 // app/api/notifications/route.js
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/db";
 import Notification from "@/models/Notification";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 /* ============================================================
    GET — لیست نوتیفیکیشن‌ها
@@ -14,11 +17,17 @@ export async function GET(req) {
 
         const session = await getServerSession(authOptions);
         if (!session?.user?.id) {
-            return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+            return NextResponse.json(
+                { message: "Unauthorized" },
+                { status: 401 }
+            );
         }
 
         const { searchParams } = new URL(req.url);
-        const limit = Math.min(Number(searchParams.get("limit")) || 20, 100);
+        const limit = Math.min(
+            Number(searchParams.get("limit")) || 20,
+            100
+        );
         const page = Math.max(Number(searchParams.get("page")) || 1, 1);
         const onlyUnread = searchParams.get("unread") === "true";
         const typeFilter = searchParams.get("type");
@@ -65,7 +74,10 @@ export async function PATCH(req) {
 
         const session = await getServerSession(authOptions);
         if (!session?.user?.id) {
-            return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+            return NextResponse.json(
+                { message: "Unauthorized" },
+                { status: 401 }
+            );
         }
 
         const body = await req.json().catch(() => ({}));
@@ -106,7 +118,10 @@ export async function DELETE(req) {
 
         const session = await getServerSession(authOptions);
         if (!session?.user?.id) {
-            return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+            return NextResponse.json(
+                { message: "Unauthorized" },
+                { status: 401 }
+            );
         }
 
         const { searchParams } = new URL(req.url);
@@ -121,7 +136,10 @@ export async function DELETE(req) {
                 user_id: session.user.id,
             });
         } else {
-            return NextResponse.json({ message: "ID required" }, { status: 400 });
+            return NextResponse.json(
+                { message: "ID required" },
+                { status: 400 }
+            );
         }
 
         const unreadCount = await Notification.countDocuments({

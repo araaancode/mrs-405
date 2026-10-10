@@ -185,7 +185,7 @@ export default function HeroSlider() {
                                 }}
                             />
 
-                            {/* ✅ گرادیانت‌های متعادل — کمی روشن‌تر */}
+                            {/*  گرادیانت‌های متعادل — کمی روشن‌تر */}
                             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/35 via-40% to-transparent" />
                             <div className="absolute inset-0 bg-gradient-to-l from-slate-950/45 via-slate-950/10 to-transparent" />
                             <div

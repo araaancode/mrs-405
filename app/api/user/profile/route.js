@@ -1,59 +1,48 @@
+// app/api/user/profile/route.js
+import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/db";
 import User from "@/models/User";
 
-/* ============================================================
-   Whitelist فیلدهای مجاز برای به‌روزرسانی توسط کاربر
-   ============================================================ */
-const ALLOWED_FIELDS = [
-    "full_name",
-    "username",
-    "email",
-    "phone",
-    "national_code",
-    "birth_certificate",
-    "birth_date",
-    "gender",
-    "province",
-    "city",
-    "avatar",
-    "documents",
-];
-
-function pickAllowedFields(data) {
-    const filtered = {};
-    for (const key of ALLOWED_FIELDS) {
-        if (data[key] !== undefined) filtered[key] = data[key];
-    }
-    return filtered;
-}
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 /* ============================================================
-   GET — دریافت پروفایل
+   GET — دریافت پروفایل کاربر
    ============================================================ */
-export async function GET() {
+export async function GET(req) {
     try {
         await dbConnect();
 
+        /* لاگ‌های تشخیصی — بعداً می‌توانید حذف کنید */
+        console.log("=== /api/user/profile GET ===");
+        console.log("Cookie header:", req.headers.get("cookie"));
+        console.log("NEXTAUTH_SECRET exists:", !!process.env.NEXTAUTH_SECRET);
+
         const session = await getServerSession(authOptions);
+        console.log("Session:", JSON.stringify(session, null, 2));
+
         if (!session?.user?.id) {
-            return Response.json({ message: "Unauthorized" }, { status: 401 });
+            return NextResponse.json(
+                { message: "Unauthorized" },
+                { status: 401 }
+            );
         }
 
-        const user = await User.findById(session.user.id)
-            .select("-password -otp_code -otp_expires")
-            .lean();
-
+        const user = await User.findById(session.user.id);
         if (!user) {
-            return Response.json({ message: "User not found" }, { status: 404 });
+            return NextResponse.json(
+                { message: "کاربر یافت نشد" },
+                { status: 404 }
+            );
         }
 
-        return Response.json({ user });
-    } catch (err) {
-        console.error("[GET /api/user/profile]", err);
-        return Response.json(
-            { message: "Internal server error" },
+        return NextResponse.json({ user });
+    } catch (error) {
+        console.error("GET /api/user/profile error:", error);
+        return NextResponse.json(
+            { message: "خطا در دریافت اطلاعات" },
             { status: 500 }
         );
     }
@@ -68,71 +57,102 @@ export async function PUT(req) {
 
         const session = await getServerSession(authOptions);
         if (!session?.user?.id) {
-            return Response.json({ message: "Unauthorized" }, { status: 401 });
-        }
-
-        const body = await req.json();
-        const updates = pickAllowedFields(body);
-
-        if (Object.keys(updates).length === 0) {
-            return Response.json(
-                { message: "هیچ فیلد معتبری برای به‌روزرسانی ارسال نشده" },
-                { status: 400 }
+            return NextResponse.json(
+                { message: "Unauthorized" },
+                { status: 401 }
             );
         }
 
-        /* بررسی یکتا بودن username / email / phone */
-        const uniqueFields = ["username", "email", "phone"];
-        for (const field of uniqueFields) {
-            if (updates[field]) {
-                const exists = await User.findOne({
-                    [field]: updates[field],
-                    _id: { $ne: session.user.id },
-                }).lean();
-                if (exists) {
-                    return Response.json(
-                        { message: `${field} قبلاً استفاده شده است` },
-                        { status: 409 }
-                    );
-                }
+        const data = await req.json();
+
+        const forbiddenFields = [
+            "_id",
+            "__v",
+            "password",
+            "role",
+            "createdAt",
+            "updatedAt",
+            "otp_code",
+            "otp_expires",
+            "is_active",
+            "verified_at",
+            "last_login",
+        ];
+
+        const nullableFields = [
+            "documents",
+            "avatar",
+            "birth_certificate",
+            "national_code",
+            "province",
+            "city",
+            "gender",
+            "birth_date",
+        ];
+
+        const cleanData = {};
+
+        for (const [key, value] of Object.entries(data)) {
+            if (forbiddenFields.includes(key)) continue;
+
+            if (nullableFields.includes(key)) {
+                cleanData[key] = value;
+                continue;
             }
+
+            if (value === "" || value === null || value === undefined) continue;
+            cleanData[key] = value;
         }
 
         const user = await User.findByIdAndUpdate(
             session.user.id,
-            { $set: updates },
-            { new: true, runValidators: true }
-        )
-            .select("-password -otp_code -otp_expires")
-            .lean();
+            cleanData,
+            {
+                returnDocument: "after",
+                runValidators: true,
+            }
+        );
 
         if (!user) {
-            return Response.json({ message: "User not found" }, { status: 404 });
+            return NextResponse.json(
+                { message: "کاربر یافت نشد" },
+                { status: 404 }
+            );
         }
 
-        return Response.json({ message: "updated", user });
-    } catch (err) {
-        /* خطاهای اعتبارسنجی Mongoose */
-        if (err.name === "ValidationError") {
-            const errors = Object.fromEntries(
-                Object.entries(err.errors).map(([k, v]) => [k, v.message])
-            );
-            return Response.json(
-                { message: "خطای اعتبارسنجی", errors },
-                { status: 422 }
-            );
-        }
-        /* خطای duplicate key */
-        if (err.code === 11000) {
-            const field = Object.keys(err.keyPattern)[0];
-            return Response.json(
-                { message: `${field} تکراری است` },
-                { status: 409 }
+        return NextResponse.json({
+            message: "پروفایل با موفقیت به‌روزرسانی شد",
+            user,
+        });
+    } catch (error) {
+        console.error("PUT /api/user/profile error:", error);
+
+        if (error.name === "ValidationError") {
+            const messages = Object.values(error.errors).map((e) => e.message);
+            return NextResponse.json(
+                { message: messages.join(" | ") },
+                { status: 400 }
             );
         }
-        console.error("[PUT /api/user/profile]", err);
-        return Response.json(
-            { message: "Internal server error" },
+
+        if (error.code === 11000) {
+            const field = Object.keys(error.keyPattern)[0];
+            const fieldMap = {
+                email: "ایمیل",
+                username: "نام کاربری",
+                phone: "شماره همراه",
+                national_code: "کد ملی",
+            };
+            return NextResponse.json(
+                {
+                    message: `${fieldMap[field] || field} قبلاً استفاده شده است`,
+                },
+                { status: 400 }
+            );
+        }
+
+        return NextResponse.json(
+            { message: error.message || "خطا در به‌روزرسانی" },
             { status: 500 }
         );
     }

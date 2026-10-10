@@ -1083,130 +1083,201 @@
 
 /* ============================================
    React Toastify — بازنویسی استایل پیش‌فرض
+   ✅ همه‌ی toast ها: پس‌زمینه سفید، فقط border رنگی
+   ✅ موقعیت: سمت چپ بالا
    ============================================ */
 
-/* کانتینر اصلی */
+/* ---------- کانتینر اصلی ---------- */
 .Toastify__toast-container {
   font-family: 'IranianSans', system-ui, sans-serif !important;
   direction: rtl !important;
   padding: 0 !important;
   width: 380px !important;
   max-width: calc(100vw - 32px) !important;
+  z-index: 9999 !important;
 }
 
-/* خود toast */
+/* ---------- موقعیت — سمت چپ بالا ---------- */
+.Toastify__toast-container--top-left {
+  top: 1rem !important;
+  left: 1rem !important;
+  right: auto !important;
+  bottom: auto !important;
+}
+
+/* ---------- خود toast ---------- */
 .Toastify__toast {
   font-family: 'IranianSans', system-ui, sans-serif !important;
   direction: rtl !important;
+  text-align: right !important;
   border-radius: 14px !important;
   padding: 14px 18px !important;
   min-height: 56px !important;
   font-size: 13.5px !important;
   font-weight: 500 !important;
+  margin-bottom: 10px !important;
+
+  /* ✅ پس‌زمینه سفید برای همه */
+  background: #ffffff !important;
+  color: #1e293b !important;
+
+  overflow: hidden !important;
   box-shadow:
-    0 20px 40px -12px rgba(198, 161, 76, 0.25),
-    0 4px 6px -4px rgba(0, 0, 0, 0.08) !important;
+    0 10px 15px -3px rgba(0, 0, 0, 0.08),
+    0 4px 6px -4px rgba(0, 0, 0, 0.06) !important;
 }
 
-/* متن toast */
+/* ---------- بدنه‌ی toast ---------- */
 .Toastify__toast-body {
   font-family: 'IranianSans', system-ui, sans-serif !important;
   direction: rtl !important;
+  text-align: right !important;
   font-size: 13.5px !important;
+  font-weight: 500 !important;
   padding: 0 !important;
   margin: 0 !important;
   align-items: center !important;
+  line-height: 1.6 !important;
 }
 
-/* نوع‌های مختلف */
+/* ============================================
+   انواع toast — فقط border و color متفاوت
+   پس‌زمینه در همه سفید است
+   ============================================ */
+
+/* موفقیت */
 .Toastify__toast--success {
-  background: #ECFDF5 !important;
-  color: #065F46 !important;
-  border: 1px solid #A7F3D0 !important;
+  background: #ffffff !important;
+  color: #065f46 !important;
+  border: 2px solid #10b981 !important;
 }
 
+/* خطا */
 .Toastify__toast--error {
-  background: #FEF2F2 !important;
-  color: #991B1B !important;
-  border: 1px solid #FCA5A5 !important;
+  background: #ffffff !important;
+  color: #991b1b !important;
+  border: 2px solid #ef4444 !important;
 }
 
+/* اطلاع */
 .Toastify__toast--info {
-  background: #EFF6FF !important;
-  color: #1E40AF !important;
-  border: 1px solid #BFDBFE !important;
+  background: #ffffff !important;
+  color: #1e40af !important;
+  border: 2px solid #3b82f6 !important;
 }
 
+/* هشدار */
 .Toastify__toast--warning {
-  background: #FFFBEB !important;
-  color: #92400E !important;
-  border: 1px solid #FDE68A !important;
+  background: #ffffff !important;
+  color: #92400e !important;
+  border: 2px solid #f59e0b !important;
 }
 
+/* در حال بارگذاری */
 .Toastify__toast--loading {
-  background: #FFFFFF !important;
-  color: #1E293B !important;
-  border: 1px solid rgba(198, 161, 76, 0.2) !important;
+  background: #ffffff !important;
+  color: #475569 !important;
+  border: 2px solid #cbd5e1 !important;
 }
 
-/* آیکون */
+/* پیش‌فرض */
+.Toastify__toast--default {
+  background: #ffffff !important;
+  color: #1e293b !important;
+  border: 2px solid #e2e8f0 !important;
+}
+
+/* ============================================
+   آیکون — رنگ بر اساس نوع
+   ============================================ */
 .Toastify__toast-icon {
   margin-left: 10px !important;
   margin-right: 0 !important;
   width: 20px !important;
+  height: 20px !important;
   flex-shrink: 0 !important;
 }
 
-/* نوار پیشرفت */
+.Toastify__toast--success .Toastify__toast-icon svg {
+  fill: #10b981 !important;
+}
+
+.Toastify__toast--error .Toastify__toast-icon svg {
+  fill: #ef4444 !important;
+}
+
+.Toastify__toast--info .Toastify__toast-icon svg {
+  fill: #3b82f6 !important;
+}
+
+.Toastify__toast--warning .Toastify__toast-icon svg {
+  fill: #f59e0b !important;
+}
+
+.Toastify__toast--loading .Toastify__toast-icon svg {
+  fill: #94a3b8 !important;
+}
+
+/* ============================================
+   نوار پیشرفت — رنگ بر اساس نوع
+   ============================================ */
 .Toastify__progress-bar {
-  background: linear-gradient(to left, #C6A14C, #A8853A) !important;
   height: 3px !important;
   border-radius: 0 0 14px 14px !important;
+  opacity: 0.7 !important;
+  background: linear-gradient(to left, #c6a14c, #a8853a) !important;
 }
 
 .Toastify__progress-bar--success {
-  background: linear-gradient(to left, #10B981, #059669) !important;
+  background: linear-gradient(to left, #10b981, #059669) !important;
 }
 
 .Toastify__progress-bar--error {
-  background: linear-gradient(to left, #EF4444, #DC2626) !important;
+  background: linear-gradient(to left, #ef4444, #dc2626) !important;
 }
 
 .Toastify__progress-bar--info {
-  background: linear-gradient(to left, #3B82F6, #2563EB) !important;
+  background: linear-gradient(to left, #3b82f6, #2563eb) !important;
 }
 
 .Toastify__progress-bar--warning {
-  background: linear-gradient(to left, #F59E0B, #D97706) !important;
+  background: linear-gradient(to left, #f59e0b, #d97706) !important;
 }
 
-/* دکمه بستن */
+.Toastify__progress-bar--default {
+  background: linear-gradient(to left, #94a3b8, #64748b) !important;
+}
+
+/* ============================================
+   دکمه‌ی بستن
+   ============================================ */
 .Toastify__close-button {
   color: currentColor !important;
-  opacity: 0.5 !important;
+  opacity: 0.45 !important;
   transition: opacity 0.2s ease !important;
   align-self: center !important;
+  margin-inline-start: 4px !important;
+  margin-inline-end: 0 !important;
 }
 
 .Toastify__close-button:hover {
   opacity: 1 !important;
 }
 
-/* انیمیشن ورود */
-@keyframes toast-slide-down {
-  from {
-    transform: translateY(-100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+/* ============================================
+   انیمیشن — نرم‌تر
+   ============================================ */
+.Toastify__slide-enter--top-left,
+.Toastify__slide-exit--top-left {
+  animation-duration: 0.3s !important;
 }
 
-/* ریسپانسیو */
+/* ============================================
+   ریسپانسیو — موبایل
+   ============================================ */
 @media (max-width: 480px) {
-  .Toastify__toast-container {
+  .Toastify__toast-container,
+  .Toastify__toast-container--top-left {
     width: calc(100vw - 24px) !important;
     left: 12px !important;
     right: 12px !important;
@@ -1217,6 +1288,7 @@
     padding: 12px 14px !important;
     font-size: 13px !important;
     border-radius: 12px !important;
+    min-height: 48px !important;
   }
 
   .Toastify__toast-body {

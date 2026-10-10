@@ -4,7 +4,7 @@ module.exports = {
     "postcss-import": {},
     tailwindcss: {},
     autoprefixer: {},
-    // ✅ فشرده‌سازی CSS فقط در production
+    //  فشرده‌سازی CSS فقط در production
     ...(process.env.NODE_ENV === "production"
       ? {
           cssnano: {

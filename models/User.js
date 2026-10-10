@@ -75,23 +75,6 @@ const userSchema = new mongoose.Schema(
             required: [true, "نقش کاربر الزامی است"],
         },
 
-        // مدارک کاربر
-        documents: [
-            {
-                type: String,
-                trim: true,
-                validate: {
-                    validator: function (v) {
-                        if (!v) return true;
-                        return (
-                            /^(https?:\/\/.*\.(pdf|jpg|jpeg|png|doc|docx))$/i.test(v) ||
-                            /^\/uploads\/.*\.(pdf|jpg|jpeg|png|doc|docx)$/i.test(v)
-                        );
-                    },
-                    message: "آدرس فایل مدرک معتبر نیست",
-                },
-            },
-        ],
 
         // شناسنامه
         birth_certificate: {
@@ -144,7 +127,43 @@ const userSchema = new mongoose.Schema(
             minlength: [2, "نام شهر باید حداقل 2 کاراکتر باشد"],
             maxlength: [50, "نام شهر نمی‌تواند بیشتر از 50 کاراکتر باشد"],
         },
-        // models/User.js — اضافه کردن فیلد avatar
+       
+        /* ============================================================
+   مدارک کاربر —  ساختار جدید (آبجکت)
+   ============================================================ */
+/* ============================================================
+   مدارک کاربر — ساختار آبجکتی
+   ============================================================ */
+documents: [
+    {
+        url: {
+            type: String,
+            required: true,
+            trim: true,
+            validate: {
+                validator: function (v) {
+                    if (!v) return false;
+                    return (
+                        /^https?:\/\/.+\.(pdf|jpg|jpeg|png|webp|doc|docx)$/i.test(v) ||
+                        /^\/uploads\/.+\.(pdf|jpg|jpeg|png|webp|doc|docx)$/i.test(v)
+                    );
+                },
+                message: "آدرس فایل مدرک معتبر نیست",
+            },
+        },
+        name: { type: String, trim: true },
+        size: { type: Number, min: 0 },
+        type: { type: String, trim: true },
+        uploaded_at: { type: Date, default: Date.now },
+    },
+],
+
+/* ============================================================
+   آواتار —  با پشتیبانی از webp
+   ============================================================ */
+/* ============================================================
+   آواتار
+   ============================================================ */
 avatar: {
     type: String,
     trim: true,

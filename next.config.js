@@ -18,7 +18,7 @@ const nextConfig = {
             "@headlessui/react",
             "@heroicons/react",
         ],
-        // ✅ فعال‌سازی بهینه‌سازی CSS (نیاز به نصب critters)
+        //  فعال‌سازی بهینه‌سازی CSS (نیاز به نصب critters)
         optimizeCss: true,
     },
 
@@ -31,7 +31,7 @@ const nextConfig = {
         imageSizes: [16, 32, 48, 64, 96, 128, 180, 256, 384],
         minimumCacheTTL: 60 * 60 * 24 * 30,
 
-        // ✅ دامنه‌های دقیق — اینجا را با دامنه‌های خودت پر کن
+        //  دامنه‌های دقیق — اینجا را با دامنه‌های خودت پر کن
         remotePatterns: [
             // اگر روی Vercel هستی:
             { protocol: "https", hostname: "*.public.blob.vercel-storage.com" },

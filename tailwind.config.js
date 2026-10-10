@@ -2,7 +2,7 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    // ✅ حذف ./pages چون App Router داری
+    //  حذف ./pages چون App Router داری
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     // اگر کد در src/ است، این را هم اضافه کن:
@@ -53,7 +53,7 @@ module.exports = {
         sans: ["Shabnam", "Vazirmatn", "system-ui", "sans-serif"],
       },
 
-      // ✅ فقط انیمیشن‌های استفاده‌شده
+      //  فقط انیمیشن‌های استفاده‌شده
       animation: {
         "fade-in": "fadeIn 0.5s ease-in-out",
         "slide-up": "slideUp 0.5s ease-out",

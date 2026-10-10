@@ -1,6 +1,6 @@
 // app/api/hall_owner/profile/route.js
 import { getServerSession } from "next-auth";
-import { authOptions } from "../../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/db";
 import User from "@/models/User";
 
@@ -12,7 +12,7 @@ export async function GET() {
         await dbConnect();
 
         const session = await getServerSession(authOptions);
-        if (!session) {
+        if (!session?.user?.id) {
             return Response.json({ message: "Unauthorized" }, { status: 401 });
         }
 
@@ -42,14 +42,12 @@ export async function PUT(req) {
         await dbConnect();
 
         const session = await getServerSession(authOptions);
-        if (!session) {
+        if (!session?.user?.id) {
             return Response.json({ message: "Unauthorized" }, { status: 401 });
         }
 
         const data = await req.json();
 
-        /*  پاکسازی مقادیر خالی و فیلدهای غیرمجاز */
-        const cleanData = {};
         const forbiddenFields = [
             "_id",
             "__v",
@@ -57,20 +55,43 @@ export async function PUT(req) {
             "role",
             "createdAt",
             "updatedAt",
+            "otp_code",
+            "otp_expires",
+            "is_active",
+            "verified_at",
+            "last_login",
         ];
+
+        const nullableFields = [
+            "documents",
+            "avatar",
+            "birth_certificate",
+            "national_code",
+            "province",
+            "city",
+            "gender",
+            "birth_date",
+        ];
+
+        const cleanData = {};
 
         for (const [key, value] of Object.entries(data)) {
             if (forbiddenFields.includes(key)) continue;
+
+            if (nullableFields.includes(key)) {
+                cleanData[key] = value;
+                continue;
+            }
+
             if (value === "" || value === null || value === undefined) continue;
             cleanData[key] = value;
         }
 
-        /*  استفاده از returnDocument به‌جای new */
         const user = await User.findByIdAndUpdate(
             session.user.id,
             cleanData,
             {
-                returnDocument: "after", //  جایگزین new: true
+                returnDocument: "after",
                 runValidators: true,
             }
         );
@@ -89,7 +110,6 @@ export async function PUT(req) {
     } catch (error) {
         console.error("PUT /api/hall_owner/profile error:", error);
 
-        /*  مدیریت خطاهای Validation */
         if (error.name === "ValidationError") {
             const messages = Object.values(error.errors).map((e) => e.message);
             return Response.json(
@@ -99,7 +119,6 @@ export async function PUT(req) {
         }
 
         if (error.code === 11000) {
-            // Duplicate key error (ایمیل، نام کاربری، شماره تلفن تکراری)
             const field = Object.keys(error.keyPattern)[0];
             const fieldMap = {
                 email: "ایمیل",
@@ -108,7 +127,9 @@ export async function PUT(req) {
                 national_code: "کد ملی",
             };
             return Response.json(
-                { message: `${fieldMap[field] || field} قبلاً استفاده شده است` },
+                {
+                    message: `${fieldMap[field] || field} قبلاً استفاده شده است`,
+                },
                 { status: 400 }
             );
         }

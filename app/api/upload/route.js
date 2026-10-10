@@ -1,12 +1,18 @@
 // app/api/upload/route.js
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../../../../lib/auth"
-import fs from "fs";
-import path from "path";
+import { authOptions } from "@/lib/auth";
+import { writeFile, mkdir } from "fs/promises";
+import { join } from "path";
+import { randomUUID } from "crypto";
+import dbConnect from "@/lib/db";
+import User from "@/models/User";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const MAX_SIZE = 5 * 1024 * 1024;
+const MAX_FILES = 10;
 
 const ALLOWED_TYPES = [
     "image/jpeg",
@@ -16,8 +22,13 @@ const ALLOWED_TYPES = [
     "application/pdf",
 ];
 
-const MAX_SIZE = 5 * 1024 * 1024;
-const MAX_FILES = 10;
+const EXT_MAP = {
+    "image/jpeg": "jpg",
+    "image/jpg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+    "application/pdf": "pdf",
+};
 
 const UPLOAD_FOLDERS = {
     documents: "uploads/documents",
@@ -28,8 +39,10 @@ const UPLOAD_FOLDERS = {
 
 export async function POST(request) {
     try {
+        await dbConnect();
+
         const session = await getServerSession(authOptions);
-        if (!session) {
+        if (!session?.user?.id) {
             return NextResponse.json(
                 { error: "Unauthorized" },
                 { status: 401 }
@@ -41,6 +54,7 @@ export async function POST(request) {
         const files = [
             ...formData.getAll("images"),
             ...formData.getAll("file"),
+            ...formData.getAll("documents"),
         ].filter(
             (f) =>
                 f &&
@@ -67,12 +81,10 @@ export async function POST(request) {
 
         const folderKey =
             UPLOAD_FOLDERS[uploadType] || UPLOAD_FOLDERS.documents;
-        const uploadDir = path.join(process.cwd(), "public", folderKey);
+        const uploadDir = join(process.cwd(), "public", folderKey);
 
         try {
-            if (!fs.existsSync(uploadDir)) {
-                fs.mkdirSync(uploadDir, { recursive: true });
-            }
+            await mkdir(uploadDir, { recursive: true });
         } catch (mkdirErr) {
             console.error("Cannot create upload dir:", mkdirErr);
             return NextResponse.json(
@@ -99,29 +111,30 @@ export async function POST(request) {
                 );
             }
 
-            const timestamp = Date.now();
-            const randomNum = Math.floor(Math.random() * 1e6);
-            const baseName = path
-                .parse(file.name)
-                .name.replace(/[^a-zA-Z0-9_-]/g, "_")
-                .slice(0, 40);
-            const ext = path.extname(file.name).toLowerCase();
-            const uniqueFilename = `${timestamp}_${randomNum}_${baseName}${ext}`;
+            const ext = EXT_MAP[file.type] || "bin";
+            const filename = `${session.user.id}-${randomUUID()}.${ext}`;
+            const filepath = join(uploadDir, filename);
 
             const bytes = await file.arrayBuffer();
-            const buffer = Buffer.from(bytes);
-            const filePath = path.join(uploadDir, uniqueFilename);
+            await writeFile(filepath, Buffer.from(bytes));
 
-            fs.writeFileSync(filePath, buffer);
-
-            const url = `/${folderKey}/${uniqueFilename}`;
+            const url = `/${folderKey}/${filename}`;
             uploadedUrls.push(url);
             uploadedFiles.push({
                 url,
                 name: file.name,
                 size: file.size,
                 type: file.type,
+                uploaded_at: new Date(),
             });
+        }
+
+        if (uploadType === "documents") {
+            await User.findByIdAndUpdate(
+                session.user.id,
+                { $push: { documents: { $each: uploadedFiles } } },
+                { new: true, runValidators: true }
+            );
         }
 
         return NextResponse.json({
