@@ -15,43 +15,48 @@ import {
     PiCaretRight,
     PiCrownSimpleFill,
     PiArrowLeft,
+    PiSparkle,
 } from "react-icons/pi";
 
 /* ============================================================
-   Slides Data
+   Slides Data — فقط تالار
    ============================================================ */
 const SLIDES = [
     {
         id: 1,
-        title: "مراسم خود را خاص برگزار کنید",
-        subtitle: "بهترین تالارهای لوکس با امکانات مدرن",
-        bgImage: "/images/landing/halls/hero1.png",
+        title: "مراسم خود را در بهترین تالارها برگزار کنید",
+        subtitle: "منتخب لوکس‌ترین تالارهای ایران با امکانات مدرن",
+        bgImage: "/images/landing/hero/hero1.png",
         ctaText: "رزرو تالار",
         ctaLink: "/halls",
+        badge: "ویژه",
     },
     {
         id: 2,
-        title: "سفر گروهی با اتوبوس‌های لوکس",
-        subtitle: "ناوگان مدرن با رانندگان حرفه‌ای",
-        bgImage: "/images/landing/halls/hero2.png",
-        ctaText: "رزرو اتوبوس",
-        ctaLink: "/buses",
+        title: "تالار رویایی‌تان را پیدا کنید",
+        subtitle: "از سالن‌های کوچک تا باغ‌تالارهای باشکوه",
+        bgImage: "/images/landing/hero/hero2.png",
+        ctaText: "مشاهده تالارها",
+        ctaLink: "/halls",
+        badge: "منتخب",
     },
     {
         id: 3,
-        title: "طعم واقعی غذاهای خانگی",
-        subtitle: "مواد اولیه تازه و ارگانیک",
-        bgImage: "/images/landing/halls/hero3.png",
-        ctaText: "سفارش غذا",
-        ctaLink: "/foods",
+        title: "لحظه‌های خاص را ماندگار کنید",
+        subtitle: "تالارهای مجهز با خدمات کامل و قیمت منصفانه",
+        bgImage: "/images/landing/hero/hero3.png",
+        ctaText: "شروع رزرو",
+        ctaLink: "/halls",
+        badge: "لوکس",
     },
     {
         id: 4,
-        title: "اقامت در لوکس‌ترین ویلاها",
-        subtitle: "تجربه‌ای به‌یادماندنی از اقامت",
-        bgImage: "/images/landing/halls/hero4.png",
-        ctaText: "اجاره ویلا",
-        ctaLink: "/properties",
+        title: "هر مراسمی، در جای خودش",
+        subtitle: "عروسی، تولد، همایش و هر مناسبت دیگری",
+        bgImage: "/images/landing/hero/hero4.png",
+        ctaText: "جستجوی تالار",
+        ctaLink: "/halls",
+        badge: "همه‌کاره",
     },
 ];
 
@@ -60,7 +65,7 @@ const AUTO_PLAY_MS = 6000;
 const RESUME_MS = 10000;
 
 /* ============================================================
-   Dot — memoized
+   Dot
    ============================================================ */
 const Dot = memo(function Dot({ index, isActive, onSelect }) {
     const handleClick = useCallback(() => onSelect(index), [onSelect, index]);
@@ -70,12 +75,16 @@ const Dot = memo(function Dot({ index, isActive, onSelect }) {
             onClick={handleClick}
             aria-label={`رفتن به اسلاید ${index + 1}`}
             aria-current={isActive ? "true" : "false"}
-            className={`cursor-pointer rounded-full transition-all duration-300 ${
+            className={`group relative cursor-pointer transition-all duration-500 ease-out ${
                 isActive
-                    ? "w-8 sm:w-10 h-2 sm:h-2.5 bg-gradient-to-r from-gold-400 to-gold-600 shadow-lg shadow-gold-500/40"
-                    : "w-2 sm:w-2.5 h-2 sm:h-2.5 bg-white/50 hover:bg-white/90 hover:scale-125"
+                    ? "w-12 sm:w-14 h-2.5 rounded-full overflow-hidden bg-white/20 ring-1 ring-white/30"
+                    : "w-2.5 h-2.5 rounded-full bg-white/50 hover:bg-white hover:scale-125 ring-1 ring-white/20"
             }`}
-        />
+        >
+            {isActive && (
+                <span className="absolute inset-0 rounded-full bg-gradient-to-r from-gold-400 via-gold-500 to-gold-600 shadow-[0_0_20px_rgba(198,161,76,0.6)]" />
+            )}
+        </button>
     );
 });
 
@@ -87,14 +96,7 @@ export default function HeroSlider() {
 
     const autoPlayTimerRef = useRef(null);
     const resumeTimerRef = useRef(null);
-    const currentIndexRef = useRef(0);
 
-    /* برای دکمه‌های ناوبری: از مقدار به‌روز استفاده کنیم */
-    currentIndexRef.current = currentIndex;
-
-    /* ============================================================
-       Auto Play — یک تایمر با cleanup تمیز
-       ============================================================ */
     useEffect(() => {
         autoPlayTimerRef.current = setInterval(() => {
             setCurrentIndex((prev) => (prev + 1) % SLIDES_COUNT);
@@ -105,9 +107,6 @@ export default function HeroSlider() {
         };
     }, []);
 
-    /* ============================================================
-       Pause + Resume
-       ============================================================ */
     const pauseAndResume = useCallback(() => {
         if (autoPlayTimerRef.current) clearInterval(autoPlayTimerRef.current);
 
@@ -127,9 +126,6 @@ export default function HeroSlider() {
         };
     }, []);
 
-    /* ============================================================
-       Navigation
-       ============================================================ */
     const goToSlide = useCallback(
         (index) => {
             setCurrentIndex(index);
@@ -150,141 +146,196 @@ export default function HeroSlider() {
 
     const currentSlide = SLIDES[currentIndex];
 
-    /* ============================================================
-       Render
-       ============================================================ */
     return (
         <div className="w-full px-3 sm:px-4 md:px-6 lg:px-8 pt-20 sm:pt-24 md:pt-28">
-            <div className="relative overflow-hidden h-[80vh] min-h-[520px] sm:h-[85vh] sm:min-h-[560px] md:h-[85vh] md:min-h-[620px] lg:h-[88vh] rounded-2xl sm:rounded-3xl shadow-2xl shadow-slate-900/20">
-                {/* ==================== Slides — همه رندر، فقط opacity تغییر ==================== */}
-                <div className="absolute inset-0">
-                    {SLIDES.map((slide, i) => {
-                        const isActive = i === currentIndex;
-                        const isFirst = i === 0;
-                        return (
-                            <div
-                                key={slide.id}
-                                className={`absolute inset-0 transition-opacity duration-700 ease-out ${
-                                    isActive ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
-                                }`}
-                                aria-hidden={!isActive}
-                            >
-                                <Image
-                                    src={slide.bgImage}
-                                    alt={slide.title}
-                                    fill
-                                    sizes="100vw"
-                                    quality={80}
-                                    priority={isFirst}
-                                    loading={isFirst ? "eager" : "lazy"}
-                                    className="object-cover"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-br from-slate-950/80 via-slate-900/50 to-slate-900/30" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/20 to-transparent" />
-                            </div>
-                        );
-                    })}
+            <div
+                className="relative overflow-hidden h-[80vh] min-h-[520px] sm:h-[85vh] sm:min-h-[560px] md:h-[85vh] md:min-h-[620px] lg:h-[88vh] rounded-3xl sm:rounded-[2rem] shadow-[0_30px_80px_-20px_rgba(15,23,42,0.6)] ring-1 ring-white/10"
+                style={{ position: "relative" }}
+            >
+                {/* ==================== Slides ==================== */}
+                {SLIDES.map((slide, i) => {
+                    const isActive = i === currentIndex;
+                    const isFirst = i === 0;
+                    return (
+                        <div
+                            key={slide.id}
+                            className={`absolute inset-0 transition-all duration-1000 ease-out ${
+                                isActive
+                                    ? "opacity-100 scale-100 z-0"
+                                    : "opacity-0 scale-105 z-0 pointer-events-none"
+                            }`}
+                            aria-hidden={!isActive}
+                            style={{
+                                position: "absolute",
+                                inset: 0,
+                            }}
+                        >
+                            <Image
+                                src={slide.bgImage}
+                                alt={slide.title}
+                                width={1920}
+                                height={1080}
+                                sizes="100vw"
+                                quality={85}
+                                priority={isFirst}
+                                loading={isFirst ? "eager" : "lazy"}
+                                className="absolute inset-0 w-full h-full object-cover"
+                                style={{
+                                    filter: "brightness(1.05) contrast(1.05)",
+                                }}
+                            />
 
-                    {/* الگوی نقطه‌ای — یک بار در والد */}
-                    <div
-                        aria-hidden="true"
-                        className="absolute inset-0 opacity-[0.08] pointer-events-none z-20"
-                        style={{
-                            backgroundImage:
-                                "radial-gradient(circle at 2px 2px, white 1px, transparent 1px)",
-                            backgroundSize: "40px 40px",
-                        }}
-                    />
-                </div>
+                            {/* ✅ گرادیانت‌های متعادل — کمی روشن‌تر */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/35 via-40% to-transparent" />
+                            <div className="absolute inset-0 bg-gradient-to-l from-slate-950/45 via-slate-950/10 to-transparent" />
+                            <div
+                                className="absolute inset-0 pointer-events-none"
+                                style={{
+                                    background:
+                                        "radial-gradient(ellipse at center, transparent 0%, rgba(2,6,23,0.2) 60%, rgba(2,6,23,0.55) 100%)",
+                                }}
+                            />
+                            <div
+                                className="absolute inset-0 pointer-events-none"
+                                style={{
+                                    background:
+                                        "linear-gradient(to bottom, rgba(2,6,23,0.3) 0%, transparent 22%, transparent 78%, rgba(2,6,23,0.55) 100%)",
+                                }}
+                            />
+                        </div>
+                    );
+                })}
+
+                {/* الگوی نقطه‌ای */}
+                <div
+                    aria-hidden="true"
+                    className="absolute inset-0 opacity-[0.04] pointer-events-none z-[3]"
+                    style={{
+                        backgroundImage:
+                            "radial-gradient(circle at 2px 2px, white 1.2px, transparent 1.2px)",
+                        backgroundSize: "48px 48px",
+                    }}
+                />
+
+                {/* گرادیانت طلایی ملایم پایین */}
+                <div
+                    aria-hidden="true"
+                    className="absolute bottom-0 right-0 left-0 h-40 bg-gradient-to-t from-gold-500/10 to-transparent pointer-events-none z-[3]"
+                />
 
                 {/* ==================== Content ==================== */}
-                <div className="relative z-30 h-full flex items-center justify-center px-4 sm:px-6 md:px-8">
+                <div className="relative z-[4] h-full flex items-center justify-center px-4 sm:px-6 md:px-8">
                     <div className="text-center max-w-4xl mx-auto w-full">
                         <div
                             key={currentIndex}
-                            className="space-y-5 sm:space-y-6 animate-[heroFadeIn_500ms_ease-out]"
+                            className="space-y-6 sm:space-y-7 animate-[heroFadeIn_700ms_ease-out]"
                         >
+                            {/* Badge */}
+                            <div className="flex justify-center">
+                                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md ring-1 ring-white/20 shadow-lg">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-gold-400 animate-pulse" />
+                                    <span className="text-[11px] sm:text-xs font-bold text-white/95 tracking-wider">
+                                        {currentSlide.badge}
+                                    </span>
+                                </div>
+                            </div>
+
                             {/* آیکون تاج */}
                             <div className="flex justify-center">
-                                <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center shadow-lg shadow-gold-500/40 ring-4 ring-white/10">
-                                    <PiCrownSimpleFill className="relative w-7 h-7 sm:w-8 sm:h-8 text-white" />
+                                <div className="relative">
+                                    <div className="absolute inset-0 rounded-3xl bg-gold-500/40 blur-2xl" />
+                                    <div className="absolute inset-0 rounded-2xl bg-gold-400/30 blur-xl" />
+                                    <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-gold-300 via-gold-500 to-gold-700 flex items-center justify-center shadow-[0_10px_40px_-8px_rgba(198,161,76,0.6)] ring-4 ring-white/20">
+                                        <PiCrownSimpleFill className="relative w-8 h-8 sm:w-10 sm:h-10 text-white drop-shadow-md" />
+                                    </div>
                                 </div>
                             </div>
 
                             {/* عنوان */}
-                            <h1 className="text-[26px] sm:text-3xl md:text-5xl lg:text-6xl font-black text-white leading-[1.25] sm:leading-tight px-2 tracking-tight">
+                            <h1 className="text-[28px] sm:text-4xl md:text-5xl lg:text-6xl font-black text-white leading-[1.2] sm:leading-tight px-2 tracking-tight [text-shadow:0_4px_20px_rgba(0,0,0,0.7),0_2px_4px_rgba(0,0,0,0.5)]">
                                 {currentSlide.title}
                             </h1>
 
+                            {/* جداکننده */}
+                            <div className="flex items-center justify-center gap-3">
+                                <div className="w-12 sm:w-16 h-[2px] bg-gradient-to-r from-transparent to-gold-400/80" />
+                                <PiSparkle className="w-4 h-4 text-gold-400" />
+                                <div className="w-12 sm:w-16 h-[2px] bg-gradient-to-l from-transparent to-gold-400/80" />
+                            </div>
+
                             {/* زیرعنوان */}
-                            <p className="text-base sm:text-lg md:text-xl lg:text-2xl font-medium bg-gradient-to-r from-gold-300 via-gold-400 to-gold-300 bg-clip-text text-transparent px-4 leading-relaxed">
+                            <p className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold bg-gradient-to-r from-gold-200 via-gold-300 to-gold-200 bg-clip-text text-transparent px-4 leading-relaxed [filter:drop-shadow(0_2px_10px_rgba(0,0,0,0.7))]">
                                 {currentSlide.subtitle}
                             </p>
 
                             {/* متن کوچک */}
-                            <p className="text-xs sm:text-sm md:text-base text-slate-300/80 max-w-xl mx-auto px-4">
+                            <p className="text-xs sm:text-sm md:text-base text-white/80 max-w-xl mx-auto px-4 [text-shadow:0_2px_8px_rgba(0,0,0,0.8)]">
                                 بیش از ۱۰٬۰۰۰ مراسم موفق با رزرو تالار
                             </p>
 
                             {/* دکمه CTA */}
-                            <div className="pt-3 sm:pt-4 flex justify-center">
+                            <div className="pt-4 sm:pt-5 flex justify-center">
                                 <Link
                                     href={currentSlide.ctaLink}
-                                    prefetch={false}
-                                    className="group inline-flex items-center justify-center gap-2 px-6 sm:px-7 py-3 sm:py-3.5 rounded-xl text-sm sm:text-base font-bold text-white bg-gradient-to-b from-gold-400 to-gold-600 hover:from-gold-500 hover:to-gold-700 shadow-lg shadow-gold-500/30 hover:shadow-xl hover:shadow-gold-500/50 ring-1 ring-white/10 hover:-translate-y-0.5 active:scale-95 focus:outline-none focus:ring-4 focus:ring-gold-500/40 transition-all duration-300"
+                                    prefetch
+                                    className="group relative inline-flex items-center justify-center gap-2 px-7 sm:px-9 py-3.5 sm:py-4 rounded-2xl text-sm sm:text-base font-bold text-slate-900 bg-gradient-to-b from-gold-300 via-gold-400 to-gold-600 hover:from-gold-200 hover:via-gold-300 hover:to-gold-500 shadow-[0_10px_40px_-8px_rgba(198,161,76,0.6)] hover:shadow-[0_20px_60px_-10px_rgba(198,161,76,0.8)] ring-1 ring-white/40 hover:-translate-y-1 active:scale-95 focus:outline-none focus:ring-4 focus:ring-gold-500/50 transition-all duration-300 overflow-hidden"
                                 >
-                                    <span>{currentSlide.ctaText}</span>
-                                    <PiArrowLeft className="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-1" />
+                                    <span className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                    <span className="relative">{currentSlide.ctaText}</span>
+                                    <PiArrowLeft className="relative w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 group-hover:-translate-x-1" />
                                 </Link>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* ==================== Navigation Buttons ==================== */}
+                {/* ==================== Navigation Buttons — z پایین‌تر ==================== */}
                 <button
                     type="button"
                     onClick={prevSlide}
                     aria-label="اسلاید قبلی"
-                    className="absolute right-3 sm:right-5 md:right-6 top-1/2 -translate-y-1/2 z-40 w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full flex items-center justify-center bg-white/15 hover:bg-gold-500 backdrop-blur-md text-white ring-1 ring-white/30 hover:ring-gold-500 shadow-lg shadow-black/20 hover:shadow-gold-500/40 hover:scale-110 active:scale-95 cursor-pointer transition-all duration-200"
+                    className="group absolute right-4 sm:right-6 md:right-8 top-1/2 -translate-y-1/2 z-[5] w-11 h-11 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 backdrop-blur-xl text-white ring-1 ring-white/30 hover:ring-gold-400/60 shadow-[0_8px_32px_rgba(0,0,0,0.5)] hover:shadow-[0_12px_40px_rgba(198,161,76,0.4)] hover:scale-110 active:scale-95 cursor-pointer transition-all duration-300"
                 >
-                    <PiCaretRight className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2.5} />
+                    <PiCaretRight className="w-5 h-5 sm:w-6 sm:h-6 transition-transform group-hover:scale-110" strokeWidth={2.5} />
                 </button>
 
                 <button
                     type="button"
                     onClick={nextSlide}
                     aria-label="اسلاید بعدی"
-                    className="absolute left-3 sm:left-5 md:left-6 top-1/2 -translate-y-1/2 z-40 w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full flex items-center justify-center bg-white/15 hover:bg-gold-500 backdrop-blur-md text-white ring-1 ring-white/30 hover:ring-gold-500 shadow-lg shadow-black/20 hover:shadow-gold-500/40 hover:scale-110 active:scale-95 cursor-pointer transition-all duration-200"
+                    className="group absolute left-4 sm:left-6 md:left-8 top-1/2 -translate-y-1/2 z-[5] w-11 h-11 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 backdrop-blur-xl text-white ring-1 ring-white/30 hover:ring-gold-400/60 shadow-[0_8px_32px_rgba(0,0,0,0.5)] hover:shadow-[0_12px_40px_rgba(198,161,76,0.4)] hover:scale-110 active:scale-95 cursor-pointer transition-all duration-300"
                 >
-                    <PiCaretLeft className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2.5} />
+                    <PiCaretLeft className="w-5 h-5 sm:w-6 sm:h-6 transition-transform group-hover:scale-110" strokeWidth={2.5} />
                 </button>
 
-                {/* ==================== Dots ==================== */}
-                <div className="absolute bottom-5 sm:bottom-6 md:bottom-7 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 sm:gap-2.5">
-                    {SLIDES.map((_, index) => (
-                        <Dot
-                            key={index}
-                            index={index}
-                            isActive={currentIndex === index}
-                            onSelect={goToSlide}
-                        />
-                    ))}
+                {/* ==================== Dots + شمارنده در یک ردیف ==================== */}
+                <div className="absolute bottom-6 sm:bottom-7 md:bottom-8 left-1/2 -translate-x-1/2 z-[5] flex items-center gap-3 sm:gap-4">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        {SLIDES.map((_, index) => (
+                            <Dot
+                                key={index}
+                                index={index}
+                                isActive={currentIndex === index}
+                                onSelect={goToSlide}
+                            />
+                        ))}
+                    </div>
                 </div>
 
-                {/* ==================== Progress Bar (CSS animation) ==================== */}
+                {/* ==================== Progress Bar ==================== */}
                 <div
                     key={`progress-${currentIndex}`}
-                    className="absolute bottom-0 right-0 left-0 h-1 bg-gradient-to-r from-gold-400 via-gold-500 to-gold-600 z-40 origin-right animate-[heroProgress_6000ms_linear]"
-                />
+                    className="absolute bottom-0 right-0 left-0 h-[3px] z-[5] origin-right animate-[heroProgress_6000ms_linear]"
+                >
+                    <div className="h-full bg-gradient-to-r from-gold-300 via-gold-500 to-gold-600 shadow-[0_0_20px_rgba(198,161,76,0.8)]" />
+                </div>
             </div>
 
-            {/* کیفریم‌های محلی — یک بار در کل صفحه */}
             <style jsx>{`
                 @keyframes heroFadeIn {
                     from {
                         opacity: 0;
-                        transform: translateY(24px);
+                        transform: translateY(30px);
                     }
                     to {
                         opacity: 1;
