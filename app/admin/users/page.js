@@ -3,7 +3,6 @@
 
 import { useEffect, useState, useMemo, useCallback } from "react";
 import axios from "axios";
-import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   PiUsersThree,
@@ -20,16 +19,17 @@ import {
   PiCaretDoubleRight,
   PiIdentificationCard,
   PiCalendarBlank,
-  PiGenderIntersex,
   PiShieldCheckFill,
   PiUserCircleFill,
   PiMagnifyingGlass,
   PiX,
   PiCrownSimpleFill,
-  PiBuildings,
-  PiSpinnerGap,
+  PiPower,
 } from "react-icons/pi";
 import { notify } from "@/lib/toast";
+import ConfirmStatusModal from "@/components/admin/ConfirmStatusModal";
+import EditUserModal from "@/components/admin/EditUserModal";
+import DeleteUserModal from "@/components/admin/DeleteUserModal";
 
 /* ============================================================
    Constants
@@ -373,7 +373,7 @@ function Pagination({ currentPage, totalPages, onChange }) {
 /* ============================================================
    UserCard — موبایل
    ============================================================ */
-function UserCard({ user, index }) {
+function UserCard({ user, index, onToggleClick, onEditClick, onDeleteClick }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -448,25 +448,10 @@ function UserCard({ user, index }) {
       </div>
 
       {/* اکشن‌ها */}
-      <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-slate-100">
-        <Link
-          href={`/admin/users/${user._id}`}
-          className="
-            inline-flex items-center justify-center gap-1.5
-            px-3 py-2 rounded-lg
-            text-[11.5px] font-bold
-            text-slate-600 bg-white
-            ring-1 ring-slate-200
-            hover:bg-gold-50 hover:ring-gold-200 hover:text-gold-700
-            active:scale-95
-            transition-all duration-200
-          "
-        >
-          <PiEye className="w-3.5 h-3.5" />
-          مشاهده
-        </Link>
-        <Link
-          href={`/admin/users/${user._id}/edit`}
+      <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-100">
+        <button
+          type="button"
+          onClick={() => onEditClick(user)}
           className="
             inline-flex items-center justify-center gap-1.5
             px-3 py-2 rounded-lg
@@ -480,11 +465,34 @@ function UserCard({ user, index }) {
         >
           <PiPencilSimple className="w-3.5 h-3.5" />
           ویرایش
-        </Link>
+        </button>
+
         <button
           type="button"
-          onClick={() => notify.warning("حذف کاربر به‌زودی")}
+          onClick={() => onToggleClick(user)}
+          className={`
+            inline-flex items-center justify-center gap-1.5
+            px-3 py-2 rounded-lg
+            text-[11.5px] font-bold
+            ring-1
+            active:scale-95
+            transition-all duration-200
+            ${
+              user.is_active
+                ? "text-rose-600 bg-rose-50 ring-rose-100 hover:bg-rose-500 hover:text-white hover:ring-rose-500"
+                : "text-emerald-600 bg-emerald-50 ring-emerald-100 hover:bg-emerald-500 hover:text-white hover:ring-emerald-500"
+            }
+          `}
+        >
+          <PiPower className="w-3.5 h-3.5" />
+          {user.is_active ? "غیرفعال" : "فعال"}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onDeleteClick(user)}
           className="
+            col-span-2
             inline-flex items-center justify-center gap-1.5
             px-3 py-2 rounded-lg
             text-[11.5px] font-bold
@@ -496,7 +504,7 @@ function UserCard({ user, index }) {
           "
         >
           <PiTrash className="w-3.5 h-3.5" />
-          حذف
+          حذف کاربر
         </button>
       </div>
     </motion.div>
@@ -506,7 +514,15 @@ function UserCard({ user, index }) {
 /* ============================================================
    UserRow — دسکتاپ
    ============================================================ */
-function UserRow({ user, index, currentPage, itemsPerPage }) {
+function UserRow({
+  user,
+  index,
+  currentPage,
+  itemsPerPage,
+  onToggleClick,
+  onEditClick,
+  onDeleteClick,
+}) {
   return (
     <motion.tr
       initial={{ opacity: 0, y: 10 }}
@@ -544,22 +560,11 @@ function UserRow({ user, index, currentPage, itemsPerPage }) {
       </td>
       <td className="px-4 py-3.5">
         <div className="flex items-center gap-1.5">
-          <Link
-            href={`/admin/users/${user._id}`}
-            aria-label="مشاهده"
-            className="
-              w-8 h-8 rounded-lg flex items-center justify-center
-              text-slate-500 bg-white ring-1 ring-slate-200
-              hover:bg-gold-50 hover:ring-gold-200 hover:text-gold-700
-              active:scale-95
-              transition-all duration-200
-            "
-          >
-            <PiEye className="w-4 h-4" />
-          </Link>
-          <Link
-            href={`/admin/users/${user._id}/edit`}
+          <button
+            type="button"
+            onClick={() => onEditClick(user)}
             aria-label="ویرایش"
+            title="ویرایش"
             className="
               w-8 h-8 rounded-lg flex items-center justify-center
               text-gold-700 bg-gold-50 ring-1 ring-gold-100
@@ -569,11 +574,33 @@ function UserRow({ user, index, currentPage, itemsPerPage }) {
             "
           >
             <PiPencilSimple className="w-4 h-4" />
-          </Link>
+          </button>
+
           <button
             type="button"
-            onClick={() => notify.warning("حذف کاربر به‌زودی")}
+            onClick={() => onToggleClick(user)}
+            aria-label={user.is_active ? "غیرفعال کردن" : "فعال کردن"}
+            title={user.is_active ? "غیرفعال کردن" : "فعال کردن"}
+            className={`
+              w-8 h-8 rounded-lg flex items-center justify-center
+              ring-1
+              active:scale-95
+              transition-all duration-200
+              ${
+                user.is_active
+                  ? "text-rose-600 bg-rose-50 ring-rose-100 hover:bg-rose-500 hover:text-white hover:ring-rose-500"
+                  : "text-emerald-600 bg-emerald-50 ring-emerald-100 hover:bg-emerald-500 hover:text-white hover:ring-emerald-500"
+              }
+            `}
+          >
+            <PiPower className="w-4 h-4" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onDeleteClick(user)}
             aria-label="حذف"
+            title="حذف"
             className="
               w-8 h-8 rounded-lg flex items-center justify-center
               text-rose-600 bg-rose-50 ring-1 ring-rose-100
@@ -605,6 +632,16 @@ export default function AdminUsersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchField, setSearchField] = useState("all");
 
+  /* ============ State مربوط به Modalها ============ */
+  const [toggleTarget, setToggleTarget] = useState(null);
+  const [toggleLoading, setToggleLoading] = useState(false);
+
+  const [editTarget, setEditTarget] = useState(null);
+  const [editLoading, setEditLoading] = useState(false);
+
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
   /* ============================================================
      Load Users
      ============================================================ */
@@ -631,6 +668,141 @@ export default function AdminUsersPage() {
   useEffect(() => {
     loadUsers();
   }, [loadUsers]);
+
+  /* ============================================================
+     Toggle Active Handlers
+     ============================================================ */
+  const openToggleModal = (user) => {
+    setToggleTarget(user);
+  };
+
+  const closeToggleModal = () => {
+    if (toggleLoading) return;
+    setToggleTarget(null);
+  };
+
+  const confirmToggle = async () => {
+    if (!toggleTarget) return;
+
+    setToggleLoading(true);
+    const willActivate = !toggleTarget.is_active;
+
+    try {
+      const res = await axios.patch(
+        `/api/admin/users/${toggleTarget._id}`,
+        {
+          action: willActivate ? "approve" : "deactivate",
+        },
+        { withCredentials: true }
+      );
+
+      // به‌روزرسانی خوش‌بینانه
+      setUsers((prev) =>
+        prev.map((u) =>
+          u._id === toggleTarget._id
+            ? { ...u, is_active: willActivate }
+            : u
+        )
+      );
+
+      notify.success(
+        res.data.message ||
+          (willActivate ? "کاربر فعال شد" : "کاربر غیرفعال شد")
+      );
+
+      setToggleTarget(null);
+    } catch (err) {
+      console.error("TOGGLE ERROR:", err);
+      notify.error(
+        err.response?.data?.message || "خطا در تغییر وضعیت کاربر"
+      );
+    } finally {
+      setToggleLoading(false);
+    }
+  };
+
+  /* ============================================================
+     Edit Handlers
+     ============================================================ */
+  const openEditModal = (user) => {
+    setEditTarget(user);
+  };
+
+  const closeEditModal = () => {
+    if (editLoading) return;
+    setEditTarget(null);
+  };
+
+  const confirmEdit = async (formData) => {
+    if (!editTarget) return;
+
+    setEditLoading(true);
+    try {
+      const res = await axios.patch(
+        `/api/admin/users/${editTarget._id}`,
+        formData,
+        { withCredentials: true }
+      );
+
+      // به‌روزرسانی لیست با اطلاعات جدید
+      setUsers((prev) =>
+        prev.map((u) =>
+          u._id === editTarget._id
+            ? { ...u, ...res.data.user }
+            : u
+        )
+      );
+
+      notify.success(res.data.message || "اطلاعات کاربر ذخیره شد");
+      setEditTarget(null);
+    } catch (err) {
+      console.error("EDIT ERROR:", err);
+      notify.error(
+        err.response?.data?.message || "خطا در ذخیره تغییرات"
+      );
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  /* ============================================================
+     Delete Handlers
+     ============================================================ */
+  const openDeleteModal = (user) => {
+    setDeleteTarget(user);
+  };
+
+  const closeDeleteModal = () => {
+    if (deleteLoading) return;
+    setDeleteTarget(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+
+    setDeleteLoading(true);
+    try {
+      const res = await axios.delete(
+        `/api/admin/users/${deleteTarget._id}`,
+        { withCredentials: true }
+      );
+
+      // حذف از لیست local
+      setUsers((prev) =>
+        prev.filter((u) => u._id !== deleteTarget._id)
+      );
+
+      notify.success(res.data.message || "کاربر حذف شد");
+      setDeleteTarget(null);
+    } catch (err) {
+      console.error("DELETE ERROR:", err);
+      notify.error(
+        err.response?.data?.message || "خطا در حذف کاربر"
+      );
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
 
   /* ============================================================
      Filter + Search
@@ -949,7 +1121,9 @@ export default function AdminUsersPage() {
               </span>{" "}
               تا{" "}
               <span className="font-bold text-slate-700">
-                {faNum(Math.min(currentPage * itemsPerPage, filteredUsers.length))}
+                {faNum(
+                  Math.min(currentPage * itemsPerPage, filteredUsers.length)
+                )}
               </span>{" "}
               از{" "}
               <span className="font-bold text-slate-700">
@@ -994,6 +1168,9 @@ export default function AdminUsersPage() {
                         index={index}
                         currentPage={currentPage}
                         itemsPerPage={itemsPerPage}
+                        onToggleClick={openToggleModal}
+                        onEditClick={openEditModal}
+                        onDeleteClick={openDeleteModal}
                       />
                     ))}
                   </AnimatePresence>
@@ -1010,6 +1187,9 @@ export default function AdminUsersPage() {
                   key={user._id}
                   user={user}
                   index={(currentPage - 1) * itemsPerPage + index + 1}
+                  onToggleClick={openToggleModal}
+                  onEditClick={openEditModal}
+                  onDeleteClick={openDeleteModal}
                 />
               ))}
             </AnimatePresence>
@@ -1023,6 +1203,31 @@ export default function AdminUsersPage() {
           />
         </>
       )}
+
+      {/* ==================== Modalها ==================== */}
+      <ConfirmStatusModal
+        isOpen={!!toggleTarget}
+        onClose={closeToggleModal}
+        onConfirm={confirmToggle}
+        user={toggleTarget}
+        loading={toggleLoading}
+      />
+
+      <EditUserModal
+        isOpen={!!editTarget}
+        onClose={closeEditModal}
+        onSave={confirmEdit}
+        user={editTarget}
+        loading={editLoading}
+      />
+
+      <DeleteUserModal
+        isOpen={!!deleteTarget}
+        onClose={closeDeleteModal}
+        onConfirm={confirmDelete}
+        user={deleteTarget}
+        loading={deleteLoading}
+      />
     </div>
   );
 }
