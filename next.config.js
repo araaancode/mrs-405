@@ -32,7 +32,6 @@ const nextConfig = {
         minimumCacheTTL: 60 * 60 * 24 * 30,
 
         // ✅ دامنه‌های دقیق — اینجا را با دامنه‌های خودت پر کن
-        // ⚠️ اگر خالی بماند، تصاویر remote (https://...) لود نمی‌شوند
         remotePatterns: [
             // اگر روی Vercel هستی:
             { protocol: "https", hostname: "*.public.blob.vercel-storage.com" },
@@ -42,12 +41,11 @@ const nextConfig = {
             // { protocol: "https", hostname: "*.s3.amazonaws.com" },
             // اگر از CDN خودت استفاده می‌کنی:
             // { protocol: "https", hostname: "cdn.yoursite.com" },
-            // ⚠️ اگر دامنه‌ی خاصی نداری و می‌خواهی همه‌چیز باز باشد (ناامن ولی کار می‌کند):
+            // ⚠️ اگر مطمئن نیستی، این را موقتاً باز کن (ناامن):
             // { protocol: "https", hostname: "**" },
         ],
 
         dangerouslyAllowSVG: false,
-        // unoptimized: false حذف شد (پیش‌فرض همین است)
     },
 
     /* ============================================================

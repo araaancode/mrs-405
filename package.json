@@ -16,7 +16,6 @@
     "axios": "^1.20.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
-    "critters": "^0.0.23",
     "dotenv": "^17.4.2",
     "framer-motion": "^12.43.0",
     "leaflet": "^1.9.4",
@@ -51,7 +50,10 @@
     "@types/axios": "^0.9.36",
     "@types/crypto-js": "^4.2.2",
     "autoprefixer": "^10",
+    "critters": "^0.0.23",
+    "cssnano": "^9.5.0",
     "postcss": "^8",
+    "postcss-import": "^17.0.0",
     "tailwindcss": "^3"
   }
 }
