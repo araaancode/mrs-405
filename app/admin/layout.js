@@ -5,7 +5,8 @@ import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Toaster } from "react-hot-toast";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { useEffect, useState } from "react";
 import {
     PiCrownSimpleFill,
@@ -307,7 +308,6 @@ export default function AdminLayout({ children }) {
                                                     icon: PiBuilding,
                                                     label: "رزرو تالارها",
                                                 },
-                                             
                                             ]}
                                         />
 
@@ -358,29 +358,19 @@ export default function AdminLayout({ children }) {
                     </div>
                 </div>
 
-                <Toaster
+                {/* ✅ React Toastify Container */}
+                <ToastContainer
                     position="top-center"
-                    toastOptions={{
-                        duration: 3500,
-                        style: {
-                            background: "rgba(255, 255, 255, 0.95)",
-                            backdropFilter: "blur(12px)",
-                            color: "#1e293b",
-                            border: "1px solid rgba(198, 161, 76, 0.2)",
-                            padding: "12px 18px",
-                            borderRadius: "14px",
-                            boxShadow: "0 20px 40px -12px rgba(198, 161, 76, 0.2), 0 4px 6px -4px rgba(0,0,0,0.05)",
-                            fontSize: "13.5px",
-                            fontFamily: "inherit",
-                            direction: "rtl",
-                        },
-                        success: {
-                            iconTheme: { primary: "#C6A14C", secondary: "#ffffff" },
-                        },
-                        error: {
-                            iconTheme: { primary: "#ef4444", secondary: "#ffffff" },
-                        },
-                    }}
+                    rtl={true}
+                    autoClose={3500}
+                    hideProgressBar={false}
+                    newestOnTop={true}
+                    closeOnClick={false}
+                    pauseOnFocusLoss={false}
+                    draggable={true}
+                    pauseOnHover={true}
+                    theme="light"
+                    limit={5}
                 />
             </div>
         </div>

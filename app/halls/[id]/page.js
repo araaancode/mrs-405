@@ -8,7 +8,8 @@ import DatePicker from "react-multi-date-picker";
 import persian from "react-date-object/calendars/persian";
 import persian_fa from "react-date-object/locales/persian_fa";
 import "react-multi-date-picker/styles/colors/green.css";
-import toast, { Toaster } from "react-hot-toast";
+import { toast, ToastContainer } from "react-toastify";
+// import "react-toastify/dist/ReactToastify.css";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
@@ -30,6 +31,7 @@ import {
 } from "react-icons/pi";
 
 import Loading from "../../../components/ui/Loading";
+import HallLocationMap from "@/components/halls/HallLocationMap";
 
 /* ============================================================
    Helpers — یک بار در ماژول
@@ -57,22 +59,34 @@ function isRemote(url) {
     return typeof url === "string" && /^https?:\/\//i.test(url);
 }
 
-const TOASTER_OPTIONS = {
-    duration: 3500,
+/* ============================================================
+   Toast Options — یک بار در ماژول
+   موقعیت: چپ-بالا | RTL | فونت IranianSans
+   ============================================================ */
+const TOAST_OPTIONS = {
+    position: "top-left",
+    autoClose: 4000,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+    progress: undefined,
+    rtl: true,
+    theme: "light",
     style: {
+        fontFamily: "'IranianSans', system-ui, sans-serif",
+        direction: "rtl",
+        textAlign: "right",
+        borderRadius: "14px",
+        padding: "14px 18px",
+        minHeight: "56px",
+        fontSize: "13.5px",
+        fontWeight: 500,
         background: "#ffffff",
         color: "#1e293b",
-        border: "1px solid #F6EED5",
-        padding: "12px 18px",
-        borderRadius: "12px",
         boxShadow:
-            "0 20px 40px -12px rgba(198,161,76,0.15), 0 4px 6px -4px rgba(0,0,0,0.05)",
-        fontSize: "13.5px",
-        fontFamily: "inherit",
-        direction: "rtl",
+            "0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.06)",
     },
-    success: { iconTheme: { primary: "#C6A14C", secondary: "#ffffff" } },
-    error: { iconTheme: { primary: "#ef4444", secondary: "#ffffff" } },
 };
 
 /* ============================================================
@@ -179,7 +193,6 @@ const GalleryTile = memo(function GalleryTile({
 const DesktopGallery = memo(function DesktopGallery({ valid, title, onOpen }) {
     const count = valid.length;
 
-    /* ۱ تصویر */
     if (count === 1) {
         return (
             <GalleryTile
@@ -193,7 +206,6 @@ const DesktopGallery = memo(function DesktopGallery({ valid, title, onOpen }) {
         );
     }
 
-    /* ۲ تصویر */
     if (count === 2) {
         return (
             <div className="grid grid-cols-2 gap-3 sm:gap-4">
@@ -212,7 +224,6 @@ const DesktopGallery = memo(function DesktopGallery({ valid, title, onOpen }) {
         );
     }
 
-    /* ۳ تصویر */
     if (count === 3) {
         return (
             <div className="grid grid-cols-2 grid-rows-2 gap-3 sm:gap-4 h-[420px] sm:h-[480px]">
@@ -237,7 +248,6 @@ const DesktopGallery = memo(function DesktopGallery({ valid, title, onOpen }) {
         );
     }
 
-    /* ۴+ تصویر */
     return (
         <div className="grid grid-cols-4 grid-rows-2 gap-3 sm:gap-4 h-[420px] sm:h-[480px]">
             <GalleryTile
@@ -393,7 +403,6 @@ const GalleryModal = memo(function GalleryModal({
     );
     const count = valid.length;
 
-    /* ref برای خواندن مقادیر به‌روز در listener */
     const stateRef = useRef({ current, count, onClose, onNavigate });
     stateRef.current = { current, count, onClose, onNavigate };
 
@@ -534,7 +543,7 @@ export default function HallDetailsPage({ params }) {
                 setHall(data);
             } catch (err) {
                 if (err.name === "AbortError") return;
-                toast.error("خطا در دریافت اطلاعات تالار");
+                toast.error("خطا در دریافت اطلاعات تالار", TOAST_OPTIONS);
             } finally {
                 if (!controller.signal.aborted) setLoading(false);
             }
@@ -548,7 +557,7 @@ export default function HallDetailsPage({ params }) {
        ============================================================ */
     const handleReserve = useCallback(async () => {
         if (!isAuthenticated) {
-            toast.error("لطفاً ابتدا وارد حساب کاربری خود شوید");
+            toast.error("لطفاً ابتدا وارد حساب کاربری خود شوید", TOAST_OPTIONS);
             const returnUrl = encodeURIComponent(`/halls/${hallId}`);
             router.push(`/auth/user/login?callbackUrl=${returnUrl}`);
             return;
@@ -558,7 +567,7 @@ export default function HallDetailsPage({ params }) {
         const gregorianEnd = convertToGregorian(endDate);
 
         if (!gregorianStart || !gregorianEnd || !guests) {
-            toast.error("لطفاً تمام فیلدهای الزامی را پر کنید");
+            toast.error("لطفاً تمام فیلدهای الزامی را پر کنید", TOAST_OPTIONS);
             return;
         }
 
@@ -568,22 +577,30 @@ export default function HallDetailsPage({ params }) {
         today.setHours(0, 0, 0, 0);
 
         if (start < today) {
-            toast.error("تاریخ شروع نمی‌تواند در گذشته باشد");
+            toast.error("تاریخ شروع نمی‌تواند در گذشته باشد", TOAST_OPTIONS);
             return;
         }
         if (end <= start) {
-            toast.error("تاریخ پایان باید بعد از تاریخ شروع باشد");
+            toast.error("تاریخ پایان باید بعد از تاریخ شروع باشد", TOAST_OPTIONS);
             return;
         }
         if (parseInt(guests) > hall.capacity) {
             toast.error(
-                `تعداد مهمان‌ها نمی‌تواند بیشتر از ${faNum(hall.capacity)} نفر باشد`
+                `تعداد مهمان‌ها نمی‌تواند بیشتر از ${faNum(hall.capacity)} نفر باشد`,
+                TOAST_OPTIONS
             );
             return;
         }
 
         try {
             setReserveLoading(true);
+
+            // ۱. شروع لودینگ
+            const toastId = toast.loading(
+                "در حال ثبت رزرو...",
+                TOAST_OPTIONS
+            );
+
             const res = await fetch("/api/user/hall_reservations", {
                 method: "POST",
                 credentials: "include",
@@ -605,7 +622,15 @@ export default function HallDetailsPage({ params }) {
                 throw new Error(errData.message || "خطا در ثبت رزرو");
             }
 
-            toast.success("✓ رزرو با موفقیت ثبت شد");
+            // ۲. تبدیل به موفقیت
+            toast.update(toastId, {
+                render: "✓ رزرو با موفقیت ثبت شد",
+                type: "success",
+                isLoading: false,
+                autoClose: 4000,
+                ...TOAST_OPTIONS,
+            });
+
             setStartDate(null);
             setEndDate(null);
             setGuests("");
@@ -613,7 +638,8 @@ export default function HallDetailsPage({ params }) {
 
             setTimeout(() => router.push("/user/profile"), 2000);
         } catch (err) {
-            toast.error(err.message || "خطا در ثبت رزرو");
+            // ۳. تبدیل به خطا
+            toast.error(err.message || "خطا در ثبت رزرو", TOAST_OPTIONS);
         } finally {
             setReserveLoading(false);
         }
@@ -637,7 +663,7 @@ export default function HallDetailsPage({ params }) {
     if (loading || isLoadingSession) {
         return (
             <>
-                <Toaster position="top-center" />
+                <ToastContainer {...TOAST_OPTIONS} />
                 <Loading />
             </>
         );
@@ -646,7 +672,7 @@ export default function HallDetailsPage({ params }) {
     if (!hall) {
         return (
             <>
-                <Toaster position="top-center" />
+                <ToastContainer {...TOAST_OPTIONS} />
                 <div className="flex flex-col items-center justify-center min-h-[60vh] py-20 px-4 text-center">
                     <div className="w-24 h-24 bg-gradient-to-br from-gold-50 to-gold-100 rounded-3xl flex items-center justify-center mb-6 ring-1 ring-gold-100">
                         <PiBuildings className="w-12 h-12 text-gold-500" />
@@ -671,7 +697,7 @@ export default function HallDetailsPage({ params }) {
 
     return (
         <>
-            <Toaster position="top-center" toastOptions={TOASTER_OPTIONS} />
+            <ToastContainer {...TOAST_OPTIONS} />
 
             <div className="min-h-screen bg-gradient-to-br from-[#FDFCF9] via-[#FAF8F2] to-[#F7F3E8] pt-24 pb-12">
                 <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
@@ -736,28 +762,46 @@ export default function HallDetailsPage({ params }) {
                     {/* محتوای اصلی */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-7">
                         <div className="lg:col-span-2 space-y-5">
-                            {/* موقعیت */}
+                            {/* موقعیت مکانی + نقشه */}
                             <InfoCard title="موقعیت مکانی" icon={PiMapPin}>
                                 <p className="text-slate-700 text-sm leading-relaxed mb-3">
                                     {hall.address}
                                 </p>
-                                <div className="flex flex-wrap gap-2">
+
+                                <div className="flex flex-wrap gap-2 mb-4">
                                     {hall.province && (
                                         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 text-slate-600 text-xs ring-1 ring-slate-100">
-                                            استان: <strong className="text-slate-800">{hall.province}</strong>
+                                            استان:{" "}
+                                            <strong className="text-slate-800">
+                                                {hall.province}
+                                            </strong>
                                         </span>
                                     )}
                                     {hall.city && (
                                         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 text-slate-600 text-xs ring-1 ring-slate-100">
-                                            شهر: <strong className="text-slate-800">{hall.city}</strong>
+                                            شهر:{" "}
+                                            <strong className="text-slate-800">
+                                                {hall.city}
+                                            </strong>
                                         </span>
                                     )}
                                     {hall.postal_code && (
                                         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 text-slate-600 text-xs ring-1 ring-slate-100">
-                                            کد پستی: <strong className="text-slate-800">{hall.postal_code}</strong>
+                                            کد پستی:{" "}
+                                            <strong className="text-slate-800">
+                                                {hall.postal_code}
+                                            </strong>
                                         </span>
                                     )}
                                 </div>
+
+                                <HallLocationMap
+                                    lat={hall.lat}
+                                    lng={hall.lng}
+                                    title={hall.title}
+                                    address={hall.address}
+                                    height={320}
+                                />
                             </InfoCard>
 
                             {/* مشخصات */}

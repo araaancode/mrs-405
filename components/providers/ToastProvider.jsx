@@ -20,6 +20,10 @@ export default function ToastProvider() {
             limit={5}
             toastClassName="custom-toast"
             bodyClassName="custom-toast-body"
+            // ✅ حذف سایه به‌صورت inline
+            style={{
+                boxShadow: "none",
+            }}
         />
     );
 }

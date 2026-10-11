@@ -64,6 +64,28 @@
   --transition-base: 300ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-bounce: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ✅ متغیرهای Toastify — حذف سایه از ریشه */
+  --toastify-color-light: #ffffff;
+  --toastify-color-dark: #ffffff;
+  --toastify-color-info: #ffffff;
+  --toastify-color-success: #ffffff;
+  --toastify-color-warning: #ffffff;
+  --toastify-color-error: #ffffff;
+  --toastify-color-transparent: rgba(255, 255, 255, 0.7);
+
+  --toastify-toast-shadow: none;
+  --toastify-toast-bd-radius: 14px;
+  --toastify-toast-min-height: 56px;
+  --toastify-toast-max-height: 800px;
+  --toastify-toast-width: 380px;
+  --toastify-toast-top: 1rem;
+  --toastify-toast-bottom: 1rem;
+  --toastify-toast-padding: 14px 18px;
+  --toastify-toast-offset: 8px;
+
+  --toastify-font-family: 'IranianSans', system-ui, sans-serif;
+  --toastify-z-index: 9999;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -640,8 +662,10 @@
 }
 
 /* ============================================
-   React Toastify — بازنویسی استایل پیش‌فرض
+   React Toastify — حذف کامل سایه
+   ✅ بازنویسی متغیرها + box-shadow + filter
    ============================================ */
+
 .Toastify__toast-container {
   font-family: 'IranianSans', system-ui, sans-serif !important;
   direction: rtl !important;
@@ -649,6 +673,7 @@
   width: 380px !important;
   max-width: calc(100vw - 32px) !important;
   z-index: 9999 !important;
+  box-shadow: none !important;
 }
 .Toastify__toast-container--top-left {
   top: 1rem !important;
@@ -656,7 +681,11 @@
   right: auto !important;
   bottom: auto !important;
 }
-.Toastify__toast {
+
+.Toastify__toast,
+.Toastify__toast-theme--light,
+.Toastify__toast-theme--dark,
+.Toastify__toast-theme--colored {
   font-family: 'IranianSans', system-ui, sans-serif !important;
   direction: rtl !important;
   text-align: right !important;
@@ -669,10 +698,15 @@
   background: #ffffff !important;
   color: #1e293b !important;
   overflow: hidden !important;
-  box-shadow:
-    0 10px 15px -3px rgba(0, 0, 0, 0.08),
-    0 4px 6px -4px rgba(0, 0, 0, 0.06) !important;
+
+  /* ✅ حذف سایه از همه راه‌ها */
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -moz-box-shadow: none !important;
+  filter: none !important;
+  text-shadow: none !important;
 }
+
 .Toastify__toast-body {
   font-family: 'IranianSans', system-ui, sans-serif !important;
   direction: rtl !important;
@@ -683,13 +717,17 @@
   margin: 0 !important;
   align-items: center !important;
   line-height: 1.6 !important;
+  box-shadow: none !important;
+  filter: none !important;
+  text-shadow: none !important;
 }
-.Toastify__toast--success { background: #ffffff !important; color: #065f46 !important; border: 2px solid #10b981 !important; }
-.Toastify__toast--error   { background: #ffffff !important; color: #991b1b !important; border: 2px solid #ef4444 !important; }
-.Toastify__toast--info    { background: #ffffff !important; color: #1e40af !important; border: 2px solid #3b82f6 !important; }
-.Toastify__toast--warning { background: #ffffff !important; color: #92400e !important; border: 2px solid #f59e0b !important; }
-.Toastify__toast--loading { background: #ffffff !important; color: #475569 !important; border: 2px solid #cbd5e1 !important; }
-.Toastify__toast--default { background: #ffffff !important; color: #1e293b !important; border: 2px solid #e2e8f0 !important; }
+
+.Toastify__toast--success { background: #ffffff !important; color: #065f46 !important; border: 2px solid #10b981 !important; box-shadow: none !important; filter: none !important; }
+.Toastify__toast--error   { background: #ffffff !important; color: #991b1b !important; border: 2px solid #ef4444 !important; box-shadow: none !important; filter: none !important; }
+.Toastify__toast--info    { background: #ffffff !important; color: #1e40af !important; border: 2px solid #3b82f6 !important; box-shadow: none !important; filter: none !important; }
+.Toastify__toast--warning { background: #ffffff !important; color: #92400e !important; border: 2px solid #f59e0b !important; box-shadow: none !important; filter: none !important; }
+.Toastify__toast--loading { background: #ffffff !important; color: #475569 !important; border: 2px solid #cbd5e1 !important; box-shadow: none !important; filter: none !important; }
+.Toastify__toast--default { background: #ffffff !important; color: #1e293b !important; border: 2px solid #e2e8f0 !important; box-shadow: none !important; filter: none !important; }
 
 .Toastify__toast-icon {
   margin-left: 10px !important;
@@ -703,6 +741,13 @@
 .Toastify__toast--info .Toastify__toast-icon svg { fill: #3b82f6 !important; }
 .Toastify__toast--warning .Toastify__toast-icon svg { fill: #f59e0b !important; }
 .Toastify__toast--loading .Toastify__toast-icon svg { fill: #94a3b8 !important; }
+
+.Toastify__progress-bar,
+.Toastify__progress-bar--wrp,
+.Toastify__progress-bar--bg {
+  box-shadow: none !important;
+  filter: none !important;
+}
 
 .Toastify__progress-bar {
   height: 3px !important;
@@ -728,6 +773,23 @@
 
 .Toastify__slide-enter--top-left,
 .Toastify__slide-exit--top-left { animation-duration: 0.3s !important; }
+
+/* ✅ کلاس‌های سفارشی ToastProvider — حذف سایه */
+.custom-toast {
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  filter: none !important;
+  background: #ffffff !important;
+  border: 2px solid #e2e8f0 !important;
+}
+
+.custom-toast-body {
+  font-family: 'IranianSans', system-ui, sans-serif !important;
+  direction: rtl !important;
+  text-align: right !important;
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+}
 
 @media (max-width: 480px) {
   .Toastify__toast-container,

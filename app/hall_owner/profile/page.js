@@ -88,7 +88,7 @@ function ProfileSkeleton() {
 /* ============================================================
    Main
    ============================================================ */
-export default function UserProfilePage() {
+export default function HallOwnerProfilePage() {
   const { data: session, status } = useSession();
   const [form, setForm] = useState({});
   const [originalForm, setOriginalForm] = useState({});
