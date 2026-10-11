@@ -1,38 +1,43 @@
+// app/api/admin/reservations/halls/route.js
+import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../../../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import connectDB from "@/lib/db";
 import HallReservation from "@/models/HallReservation";
+import Hall from "@/models/Hall";       // ⬅️ اضافه کن — حتی اگر مستقیم استفاده نکنی
+import User from "@/models/User";       // ⬅️ اضافه کن — حتی اگر مستقیم استفاده نکنی
 
 export async function GET() {
     try {
+        await connectDB();
+
         const session = await getServerSession(authOptions);
 
-        if (!session || !session.user) {
-            return Response.json(
-                { message: "کاربر وارد نشده است" },
+        if (!session?.user?.id) {
+            return NextResponse.json(
+                { message: "شما وارد حساب کاربری نشده‌اید" },
                 { status: 401 }
             );
         }
 
         if (session.user.role !== "admin") {
-            return Response.json(
-                { message: "دسترسی غیرمجاز" },
+            return NextResponse.json(
+                { message: "شما دسترسی لازم را ندارید" },
                 { status: 403 }
             );
         }
 
-        await connectDB();
-
         const reservations = await HallReservation.find()
-            .populate("user_id", "name email")
-            .populate("hall_id", "title capacity address")
-            .sort({ createdAt: -1 });
+            .populate("user_id", "full_name email phone")
+            .populate("hall_id", "title capacity address province city hall_owner_id")
+            .sort({ createdAt: -1 })
+            .lean();
 
-        return Response.json({ reservations }, { status: 200 });
+        return NextResponse.json({ reservations }, { status: 200 });
     } catch (err) {
-        console.error("HallReservation fetch error:", err);
-        return Response.json(
-            { message: "خطا در دریافت اطلاعات رزروها" },
+        console.error("ADMIN HALL RESERVATIONS ERROR:", err);
+        return NextResponse.json(
+            { message: "خطا در دریافت اطلاعات رزروها", details: err.message },
             { status: 500 }
         );
     }

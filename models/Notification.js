@@ -105,6 +105,12 @@ const notificationSchema = new mongoose.Schema({
         }
     },
 
+    link: {
+        type: String,
+        default: null,
+        trim: true,
+    },
+
     sent_at: {
         type: Date,
         default: null

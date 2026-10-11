@@ -48,6 +48,14 @@ const STATUS_CONFIG = {
     ring: "ring-amber-200",
     dot: "bg-amber-500",
   },
+  answered: {
+    label: "پاسخ داده شده",
+    icon: PiChatCircleDots,
+    bg: "bg-blue-50",
+    text: "text-blue-700",
+    ring: "ring-blue-200",
+    dot: "bg-blue-500",
+  },
   closed: {
     label: "بسته شده",
     icon: PiCheckCircle,
@@ -129,8 +137,17 @@ function formatDateTime(value) {
   }
 }
 
+function getRoleLabel(role) {
+  const map = {
+    user: "کاربر عادی",
+    hall_owner: "تالاردار",
+    admin: "مدیر",
+  };
+  return map[role] || role || null;
+}
+
 /* ============================================================
-   StatusBadge
+   StatusBadge / PriorityBadge
    ============================================================ */
 function StatusBadge({ status }) {
   const config = getStatusConfig(status);
@@ -151,9 +168,6 @@ function StatusBadge({ status }) {
   );
 }
 
-/* ============================================================
-   PriorityBadge
-   ============================================================ */
 function PriorityBadge({ priority }) {
   const config = getPriorityConfig(priority);
   const Icon = config.icon;
@@ -408,12 +422,13 @@ function Pagination({ currentPage, totalPages, onChange }) {
 }
 
 /* ============================================================
-   MessageItem
+   MessageItem — پیام داخل کارت تیکت
    ============================================================ */
 function MessageItem({ message, index }) {
   const isAdmin = message.is_admin_reply;
-  const senderName = message.senderId?.name || "ناشناس";
+  const senderName = message.senderId?.full_name || "ناشناس";
   const senderEmail = message.senderId?.email || "—";
+  const senderRole = getRoleLabel(message.senderId?.role);
 
   return (
     <motion.div
@@ -421,8 +436,7 @@ function MessageItem({ message, index }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, delay: index * 0.03 }}
       className={`
-        rounded-xl p-3.5
-        ring-1
+        rounded-xl p-3.5 ring-1
         ${
           isAdmin
             ? "bg-gold-50/60 ring-gold-100"
@@ -470,7 +484,7 @@ function MessageItem({ message, index }) {
               }
             `}
           >
-            {isAdmin ? "پاسخ ادمین" : "پیام کاربر"}
+            {isAdmin ? "پاسخ ادمین" : senderRole || "پیام کاربر"}
           </span>
           <span className="text-[10.5px] text-slate-400">
             {formatDateTime(message.timestamp)}
@@ -487,16 +501,18 @@ function MessageItem({ message, index }) {
 }
 
 /* ============================================================
-   TicketCard
+   TicketCard — کارت تیکت
    ============================================================ */
 function TicketCard({ ticket, index }) {
   const [expanded, setExpanded] = useState(false);
 
-  const reporterName = ticket.reporterId?.name || "نامعلوم";
+  const reporterName = ticket.reporterId?.full_name || "نامعلوم";
   const reporterEmail = ticket.reporterId?.email || "—";
-  const assigneeName = ticket.assigneeId?.name || "تعیین نشده";
+  const reporterRole = getRoleLabel(ticket.reporterId?.role);
+  const assigneeName = ticket.assigneeId?.full_name || "تعیین نشده";
 
-  const messageCount = ticket.messages?.length || 0;
+  const messages = Array.isArray(ticket.messages) ? ticket.messages : [];
+  const messageCount = messages.length;
 
   return (
     <motion.article
@@ -550,13 +566,29 @@ function TicketCard({ ticket, index }) {
           <div className="flex items-center gap-2 text-[11.5px] text-slate-600">
             <PiUser className="w-3.5 h-3.5 text-gold-500 flex-shrink-0" />
             <span className="truncate">
-              ایجادکننده: <strong className="text-slate-800">{reporterName}</strong>
+              ایجادکننده:{" "}
+              <strong className="text-slate-800">{reporterName}</strong>
+              {reporterRole && (
+                <span
+                  className={`
+                    mr-1.5 text-[9.5px] font-bold px-1.5 py-0.5 rounded-full
+                    ${
+                      ticket.reporterId?.role === "hall_owner"
+                        ? "bg-amber-100 text-amber-700"
+                        : "bg-slate-100 text-slate-600"
+                    }
+                  `}
+                >
+                  {reporterRole}
+                </span>
+              )}
             </span>
           </div>
           <div className="flex items-center gap-2 text-[11.5px] text-slate-600">
             <PiHeadset className="w-3.5 h-3.5 text-gold-500 flex-shrink-0" />
             <span className="truncate">
-              مسئول: <strong className="text-slate-800">{assigneeName}</strong>
+              مسئول:{" "}
+              <strong className="text-slate-800">{assigneeName}</strong>
             </span>
           </div>
         </div>
@@ -620,7 +652,7 @@ function TicketCard({ ticket, index }) {
               className="overflow-hidden"
             >
               <div className="mt-4 pt-4 border-t border-slate-100 space-y-2.5">
-                {ticket.messages.map((msg, i) => (
+                {messages.map((msg, i) => (
                   <MessageItem key={i} message={msg} index={i} />
                 ))}
               </div>
@@ -657,11 +689,15 @@ export default function AdminTicketsPage() {
       const res = await axios.get("/api/admin/tickets", {
         withCredentials: true,
       });
-      setTickets(res.data.tickets || []);
+
+      // ⬅️ محافظ: همیشه آرایه
+      const data = res?.data?.tickets;
+      setTickets(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Error:", err);
       const status = err.response?.status || 500;
       setError(status);
+      setTickets([]);   // ⬅️ در صورت خطا، آرایه خالی
 
       if (status === 401) notify.error("لطفاً وارد حساب شوید");
       else if (status === 403) notify.error("شما دسترسی لازم را ندارید");
@@ -698,14 +734,14 @@ export default function AdminTicketsPage() {
             return ticket.description?.toLowerCase().includes(term);
           case "reporter":
             return (
-              ticket.reporterId?.name?.toLowerCase().includes(term) ||
+              ticket.reporterId?.full_name?.toLowerCase().includes(term) ||
               ticket.reporterId?.email?.toLowerCase().includes(term)
             );
           default:
             return (
               ticket.subject?.toLowerCase().includes(term) ||
               ticket.description?.toLowerCase().includes(term) ||
-              ticket.reporterId?.name?.toLowerCase().includes(term) ||
+              ticket.reporterId?.full_name?.toLowerCase().includes(term) ||
               ticket.reporterId?.email?.toLowerCase().includes(term)
             );
         }
@@ -721,10 +757,10 @@ export default function AdminTicketsPage() {
   const counts = useMemo(() => {
     return tickets.reduce(
       (acc, t) => {
-        acc[t.status] = (acc[t.status] || 0) + 1;
+        if (t?.status) acc[t.status] = (acc[t.status] || 0) + 1;
         return acc;
       },
-      { open: 0, in_progress: 0, closed: 0, pending: 0 }
+      { open: 0, in_progress: 0, answered: 0, closed: 0, pending: 0 }
     );
   }, [tickets]);
 
@@ -818,8 +854,8 @@ export default function AdminTicketsPage() {
     { key: "all", label: "همه" },
     { key: "open", label: "باز", count: counts.open },
     { key: "in_progress", label: "در حال بررسی", count: counts.in_progress },
+    { key: "answered", label: "پاسخ داده شده", count: counts.answered },
     { key: "closed", label: "بسته شده", count: counts.closed },
-    { key: "pending", label: "در انتظار", count: counts.pending },
   ];
 
   const priorityButtons = [

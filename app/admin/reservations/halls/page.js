@@ -3,7 +3,6 @@
 
 import { useEffect, useState, useMemo, useCallback } from "react";
 import axios from "axios";
-import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   PiBuildings,
@@ -12,13 +11,9 @@ import {
   PiCalendarBlank,
   PiClock,
   PiUsersThree,
-  PiCurrencyCircleDollar,
-  PiPercent,
   PiCheckCircle,
   PiWarningCircle,
   PiXCircle,
-  PiEye,
-  PiTrash,
   PiCaretLeft,
   PiCaretRight,
   PiCaretDoubleLeft,
@@ -83,11 +78,6 @@ function getStatusConfig(status) {
 
 function faNum(n) {
   return Number(n || 0).toLocaleString("fa-IR");
-}
-
-function formatPrice(price) {
-  if (!price) return "—";
-  return faNum(price) + " تومان";
 }
 
 function formatDate(date) {
@@ -387,7 +377,7 @@ function ReservationCard({ reservation, index }) {
         <div className="flex items-center gap-2 text-[12.5px] text-slate-600">
           <PiUser className="w-3.5 h-3.5 text-gold-500 flex-shrink-0" />
           <span className="truncate">
-            {reservation.user_id?.name || "کاربر نامشخص"}
+            {reservation.user_id?.full_name || "کاربر نامشخص"}
           </span>
         </div>
 
@@ -408,59 +398,11 @@ function ReservationCard({ reservation, index }) {
           </span>
         </div>
 
+        {/* تعداد مهمان‌ها — برگشت داده شد */}
         <div className="flex items-center gap-2 text-[12.5px] text-slate-600">
           <PiUsersThree className="w-3.5 h-3.5 text-gold-500 flex-shrink-0" />
           <span>{faNum(reservation.guests_count)} نفر</span>
         </div>
-
-        <div className="flex items-center gap-2 text-[12.5px] text-slate-800 font-bold">
-          <PiCurrencyCircleDollar className="w-3.5 h-3.5 text-gold-500 flex-shrink-0" />
-          <span>{formatPrice(reservation.final_price)}</span>
-        </div>
-
-        {reservation.discount > 0 && (
-          <div className="flex items-center gap-2 text-[11.5px] text-emerald-600">
-            <PiPercent className="w-3.5 h-3.5 flex-shrink-0" />
-            <span>{faNum(reservation.discount)}٪ تخفیف</span>
-          </div>
-        )}
-      </div>
-
-      {/* اکشن‌ها */}
-      <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-100">
-        <Link
-          href={`/admin/reservations/halls/${reservation._id}`}
-          className="
-            inline-flex items-center justify-center gap-1.5
-            px-3 py-2 rounded-lg
-            text-[11.5px] font-bold
-            text-slate-600 bg-white
-            ring-1 ring-slate-200
-            hover:bg-gold-50 hover:ring-gold-200 hover:text-gold-700
-            active:scale-95
-            transition-all duration-200
-          "
-        >
-          <PiEye className="w-3.5 h-3.5" />
-          مشاهده
-        </Link>
-        <button
-          type="button"
-          onClick={() => notify.warning("حذف رزرو به‌زودی")}
-          className="
-            inline-flex items-center justify-center gap-1.5
-            px-3 py-2 rounded-lg
-            text-[11.5px] font-bold
-            text-rose-600 bg-rose-50
-            ring-1 ring-rose-100
-            hover:bg-rose-500 hover:text-white hover:ring-rose-500
-            active:scale-95
-            transition-all duration-200
-          "
-        >
-          <PiTrash className="w-3.5 h-3.5" />
-          حذف
-        </button>
       </div>
     </motion.div>
   );
@@ -489,7 +431,7 @@ function ReservationRow({ reservation, index, currentPage, itemsPerPage }) {
         <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mt-1">
           <PiUser className="w-3 h-3 text-gold-500 flex-shrink-0" />
           <span className="truncate">
-            {reservation.user_id?.name || "کاربر نامشخص"}
+            {reservation.user_id?.full_name || "کاربر نامشخص"}
           </span>
         </div>
         {reservation.user_id?.email && (
@@ -518,6 +460,7 @@ function ReservationRow({ reservation, index, currentPage, itemsPerPage }) {
         )}
       </td>
 
+      {/* ستون مهمان‌ها — برگشت داده شد */}
       <td className="px-4 py-3.5">
         <div className="flex items-center gap-1.5 text-[12.5px] text-slate-600">
           <PiUsersThree className="w-3.5 h-3.5 text-gold-500 flex-shrink-0" />
@@ -526,62 +469,7 @@ function ReservationRow({ reservation, index, currentPage, itemsPerPage }) {
       </td>
 
       <td className="px-4 py-3.5">
-        <p className="text-[13px] font-bold text-slate-800">
-          {formatPrice(reservation.final_price)}
-        </p>
-        {reservation.discount > 0 && (
-          <p className="text-[11px] text-emerald-600 mt-0.5 inline-flex items-center gap-1">
-            <PiPercent className="w-3 h-3" />
-            {faNum(reservation.discount)}٪ تخفیف
-          </p>
-        )}
-        {reservation.pre_payment > 0 && (
-          <p className="text-[10.5px] text-slate-400 mt-0.5">
-            پیش‌پرداخت: {formatPrice(reservation.pre_payment)}
-          </p>
-        )}
-      </td>
-
-      <td className="px-4 py-3.5">
         <StatusBadge status={reservation.status} />
-        {reservation.is_confirmed_by_owner && (
-          <p className="text-[10.5px] text-emerald-600 mt-1 inline-flex items-center gap-1">
-            <PiCheckCircle className="w-3 h-3" />
-            تایید مالک
-          </p>
-        )}
-      </td>
-
-      <td className="px-4 py-3.5">
-        <div className="flex items-center gap-1.5">
-          <Link
-            href={`/admin/reservations/halls/${reservation._id}`}
-            aria-label="مشاهده"
-            className="
-              w-8 h-8 rounded-lg flex items-center justify-center
-              text-slate-500 bg-white ring-1 ring-slate-200
-              hover:bg-gold-50 hover:ring-gold-200 hover:text-gold-700
-              active:scale-95
-              transition-all duration-200
-            "
-          >
-            <PiEye className="w-4 h-4" />
-          </Link>
-          <button
-            type="button"
-            onClick={() => notify.warning("حذف رزرو به‌زودی")}
-            aria-label="حذف"
-            className="
-              w-8 h-8 rounded-lg flex items-center justify-center
-              text-rose-600 bg-rose-50 ring-1 ring-rose-100
-              hover:bg-rose-500 hover:text-white hover:ring-rose-500
-              active:scale-95
-              transition-all duration-200
-            "
-          >
-            <PiTrash className="w-4 h-4" />
-          </button>
-        </div>
       </td>
     </motion.tr>
   );
@@ -659,13 +547,13 @@ export default function AdminHallReservationsPage() {
           case "hall":
             return r.hall_id?.title?.toLowerCase().includes(term);
           case "user":
-            return r.user_id?.name?.toLowerCase().includes(term);
+            return r.user_id?.full_name?.toLowerCase().includes(term);
           case "email":
             return r.user_id?.email?.toLowerCase().includes(term);
           default:
             return (
               r.hall_id?.title?.toLowerCase().includes(term) ||
-              r.user_id?.name?.toLowerCase().includes(term) ||
+              r.user_id?.full_name?.toLowerCase().includes(term) ||
               r.user_id?.email?.toLowerCase().includes(term)
             );
         }
@@ -973,7 +861,7 @@ export default function AdminHallReservationsPage() {
           {/* Desktop Table */}
           <div className="hidden lg:block bg-white rounded-2xl ring-1 ring-slate-100 shadow-[0_1px_2px_rgba(15,23,42,0.04)] overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[1100px]">
+              <table className="w-full min-w-[700px]">
                 <thead className="bg-slate-50/60 border-b border-slate-100">
                   <tr>
                     {[
@@ -981,9 +869,7 @@ export default function AdminHallReservationsPage() {
                       "تالار / کاربر",
                       "تاریخ رزرو",
                       "مهمان‌ها",
-                      "قیمت",
                       "وضعیت",
-                      "عملیات",
                     ].map((title) => (
                       <th
                         key={title}

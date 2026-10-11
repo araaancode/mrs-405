@@ -17,9 +17,8 @@ import {
     PiArrowClockwise,
     PiChatCircleDots,
     PiSpinnerGap,
-    PiHourglass
+    PiHourglass,
 } from "react-icons/pi";
-
 
 /* ============================================================
    Status Config
@@ -42,6 +41,14 @@ function getStatusInfo(status) {
             ring: "ring-amber-200",
             dot: "bg-amber-500",
         },
+        answered: {
+            label: "پاسخ داده شده",
+            icon: PiChatCircleDots,
+            bg: "bg-blue-50",
+            text: "text-blue-700",
+            ring: "ring-blue-200",
+            dot: "bg-blue-500",
+        },
         closed: {
             label: "بسته شده",
             icon: PiCheckCircle,
@@ -51,11 +58,6 @@ function getStatusInfo(status) {
             dot: "bg-slate-500",
         },
     };
-
-    // Fallback برای PiHourglass
-    if (status === "in_progress") {
-        map.in_progress.icon = PiClock;
-    }
 
     return (
         map[status] || {
@@ -80,6 +82,13 @@ function getPriorityInfo(priority) {
             bg: "bg-rose-50",
             text: "text-rose-700",
             ring: "ring-rose-200",
+        },
+        critical: {
+            label: "بحرانی",
+            icon: PiWarningCircle,
+            bg: "bg-rose-100",
+            text: "text-rose-800",
+            ring: "ring-rose-300",
         },
         medium: {
             label: "متوسط",
@@ -116,14 +125,15 @@ function StatusBadge({ status }) {
     return (
         <span
             className={`
-        inline-flex items-center gap-1.5
-        px-2.5 py-1 rounded-full
-        text-[11px] font-bold
-        ring-1
-        ${info.bg} ${info.text} ${info.ring}
-      `}
+                inline-flex items-center gap-1.5
+                px-2.5 py-1 rounded-full
+                text-[11px] font-bold ring-1
+                ${info.bg} ${info.text} ${info.ring}
+            `}
         >
-            <span className={`w-1.5 h-1.5 rounded-full ${info.dot} animate-pulse`} />
+            <span
+                className={`w-1.5 h-1.5 rounded-full ${info.dot} animate-pulse`}
+            />
             <Icon className="w-3.5 h-3.5" />
             {info.label}
         </span>
@@ -139,12 +149,11 @@ function PriorityBadge({ priority }) {
     return (
         <span
             className={`
-        inline-flex items-center gap-1.5
-        px-2.5 py-1 rounded-full
-        text-[11px] font-bold
-        ring-1
-        ${info.bg} ${info.text} ${info.ring}
-      `}
+                inline-flex items-center gap-1.5
+                px-2.5 py-1 rounded-full
+                text-[11px] font-bold ring-1
+                ${info.bg} ${info.text} ${info.ring}
+            `}
         >
             <Icon className="w-3.5 h-3.5" />
             {info.label}
@@ -199,13 +208,13 @@ function EmptyState() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
             className="
-        relative overflow-hidden
-        bg-white rounded-3xl
-        ring-1 ring-slate-100
-        shadow-[0_8px_32px_rgba(198,161,76,0.06)]
-        p-8 sm:p-12
-        text-center
-      "
+                relative overflow-hidden
+                bg-white rounded-3xl
+                ring-1 ring-slate-100
+                shadow-[0_8px_32px_rgba(198,161,76,0.06)]
+                p-8 sm:p-12
+                text-center
+            "
         >
             <div
                 className="absolute inset-0 pointer-events-none opacity-40"
@@ -223,23 +232,23 @@ function EmptyState() {
                 هنوز تیکتی ثبت نکرده‌اید
             </h3>
             <p className="relative text-slate-500 text-sm max-w-md mx-auto leading-relaxed mb-7">
-                اگر سوال، مشکل یا درخواستی دارید، می‌توانید با تیم پشتیبانی در ارتباط
-                باشید.
+                اگر سوال، مشکل یا درخواستی دارید، می‌توانید با تیم پشتیبانی در
+                ارتباط باشید.
             </p>
 
             <Link
                 href="/user/tickets/create"
                 className="
-          relative inline-flex items-center gap-2
-          px-6 py-3 rounded-xl
-          text-sm font-bold text-white
-          bg-gradient-to-b from-gold-400 to-gold-600
-          hover:from-gold-500 hover:to-gold-700
-          shadow-md shadow-gold-500/25
-          hover:shadow-lg hover:shadow-gold-500/40
-          hover:-translate-y-0.5
-          transition-all duration-300
-        "
+                    relative inline-flex items-center gap-2
+                    px-6 py-3 rounded-xl
+                    text-sm font-bold text-white
+                    bg-gradient-to-b from-gold-400 to-gold-600
+                    hover:from-gold-500 hover:to-gold-700
+                    shadow-md shadow-gold-500/25
+                    hover:shadow-lg hover:shadow-gold-500/40
+                    hover:-translate-y-0.5
+                    transition-all duration-300
+                "
             >
                 <PiPlusCircle className="w-4 h-4" />
                 ایجاد تیکت جدید
@@ -258,13 +267,13 @@ function TicketCard({ ticket, index }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, delay: index * 0.04 }}
             className="
-        group bg-white rounded-2xl
-        ring-1 ring-slate-100 hover:ring-gold-200/70
-        shadow-[0_1px_2px_rgba(15,23,42,0.04)]
-        hover:shadow-[0_12px_32px_-12px_rgba(198,161,76,0.18)]
-        transition-all duration-400
-        overflow-hidden
-      "
+                group bg-white rounded-2xl
+                ring-1 ring-slate-100 hover:ring-gold-200/70
+                shadow-[0_1px_2px_rgba(15,23,42,0.04)]
+                hover:shadow-[0_12px_32px_-12px_rgba(198,161,76,0.18)]
+                transition-all duration-400
+                overflow-hidden
+            "
         >
             <div className="p-5">
                 {/* ردیف بالا: badges + تاریخ */}
@@ -276,7 +285,9 @@ function TicketCard({ ticket, index }) {
 
                     <div className="inline-flex items-center gap-1.5 text-[11px] text-slate-400">
                         <PiCalendarBlank className="w-3.5 h-3.5" />
-                        {new Date(ticket.createdAt).toLocaleDateString("fa-IR")}
+                        {new Date(ticket.createdAt).toLocaleDateString(
+                            "fa-IR"
+                        )}
                     </div>
                 </div>
 
@@ -302,16 +313,16 @@ function TicketCard({ ticket, index }) {
                     <Link
                         href={`/user/tickets/add_comment/${ticket._id}`}
                         className="
-              inline-flex items-center justify-center gap-1.5
-              px-4 py-2 rounded-lg
-              text-[11.5px] font-bold text-white
-              bg-gradient-to-b from-gold-400 to-gold-600
-              hover:from-gold-500 hover:to-gold-700
-              shadow-sm shadow-gold-500/25
-              hover:shadow-md hover:shadow-gold-500/40
-              transition-all duration-200
-              group/btn
-            "
+                            inline-flex items-center justify-center gap-1.5
+                            px-4 py-2 rounded-lg
+                            text-[11.5px] font-bold text-white
+                            bg-gradient-to-b from-gold-400 to-gold-600
+                            hover:from-gold-500 hover:to-gold-700
+                            shadow-sm shadow-gold-500/25
+                            hover:shadow-md hover:shadow-gold-500/40
+                            transition-all duration-200
+                            group/btn
+                        "
                     >
                         <PiChatCircleDots className="w-3.5 h-3.5" />
                         مشاهده و پاسخ
@@ -330,15 +341,32 @@ export default function UserTicketsPage() {
     const [tickets, setTickets] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    /* ============================================================
+       Fetch Tickets — ✅ اصلاح شد
+       ============================================================ */
     const fetchTickets = async () => {
         setLoading(true);
         try {
             const res = await axios.get("/api/user/tickets", {
                 withCredentials: true,
             });
-            setTickets(res.data || []);
+
+            /* ✅ محافظ کامل: هر ساختاری که API برگرداند */
+            const data = res?.data;
+            let list = [];
+
+            if (Array.isArray(data)) {
+                list = data;
+            } else if (Array.isArray(data?.tickets)) {
+                list = data.tickets;
+            } else if (Array.isArray(data?.data)) {
+                list = data.data;
+            }
+
+            setTickets(list);
         } catch (err) {
             console.error("خطا در دریافت تیکت‌ها", err);
+            setTickets([]);   // ✅ در صورت خطا، آرایه خالی
             toast.error("خطا در بارگذاری تیکت‌ها", {
                 duration: 3000,
                 position: "bottom-center",
@@ -400,16 +428,16 @@ export default function UserTicketsPage() {
                     <Link
                         href="/user/tickets/create"
                         className="
-              inline-flex items-center gap-2
-              px-4 py-2.5 rounded-xl
-              text-xs font-semibold text-white
-              bg-gradient-to-b from-gold-400 to-gold-600
-              hover:from-gold-500 hover:to-gold-700
-              shadow-md shadow-gold-500/25
-              hover:shadow-lg hover:shadow-gold-500/40
-              hover:-translate-y-0.5
-              transition-all duration-300
-            "
+                            inline-flex items-center gap-2
+                            px-4 py-2.5 rounded-xl
+                            text-xs font-semibold text-white
+                            bg-gradient-to-b from-gold-400 to-gold-600
+                            hover:from-gold-500 hover:to-gold-700
+                            shadow-md shadow-gold-500/25
+                            hover:shadow-lg hover:shadow-gold-500/40
+                            hover:-translate-y-0.5
+                            transition-all duration-300
+                        "
                     >
                         <PiPlusCircle className="w-4 h-4" />
                         تیکت جدید
@@ -419,7 +447,7 @@ export default function UserTicketsPage() {
 
             {/* ==================== محتوا ==================== */}
             <AnimatePresence mode="wait">
-                {tickets.length === 0 ? (
+                {!Array.isArray(tickets) || tickets.length === 0 ? (
                     <motion.div
                         key="empty"
                         initial={{ opacity: 0 }}

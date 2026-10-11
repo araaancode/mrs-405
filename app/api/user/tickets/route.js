@@ -1,67 +1,36 @@
 // app/api/user/tickets/route.js
+import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import connectDB from "@/lib/db";
-import User from "@/models/User";
 import Ticket from "@/models/Ticket";
-import { notifyNewTicket } from "@/lib/notificationHelpers";
+import User from "@/models/User";
+import { notify, notifyMany } from "@/lib/notificationService";
 
 /* ============================================================
-   POST — ایجاد تیکت جدید
+   GET — دریافت تیکت‌های کاربر
    ============================================================ */
-export async function POST(req) {
+export async function GET() {
     try {
         await connectDB();
 
         const session = await getServerSession(authOptions);
-
-        if (!session || !session.user?.id) {
-            console.log(" [tickets] No session");
-            return Response.json({ message: "Unauthorized" }, { status: 401 });
+        if (!session?.user?.id) {
+            return NextResponse.json(
+                { message: "Unauthorized" },
+                { status: 401 }
+            );
         }
 
-        const user = await User.findById(session.user.id);
+        const tickets = await Ticket.find({ reporterId: session.user.id })
+            .populate("assigneeId", "full_name email role")
+            .sort({ updatedAt: -1 })
+            .lean();
 
-        if (!user) {
-            console.log(" [tickets] User not found");
-            return Response.json({ message: "User not found" }, { status: 404 });
-        }
-
-        console.log("🔍 [tickets] User role:", user.role);
-
-        if (user.role !== "user") {
-            console.log(" [tickets] Forbidden - role is not user");
-            return Response.json({ message: "Forbidden" }, { status: 403 });
-        }
-
-        const body = await req.json();
-
-        console.log("🔍 [tickets] Creating ticket with:", {
-            subject: body.subject,
-            priority: body.priority,
-        });
-
-        const ticket = await Ticket.create({
-            subject: body.subject,
-            description: body.description,
-            priority: body.priority || "medium",
-            reporterId: user._id,
-        });
-
-        console.log(" [tickets] Ticket created:", ticket._id);
-
-        // 🔔 نوتیفیکیشن به ادمین‌ها
-        try {
-            await notifyNewTicket({ ticket });
-            console.log(" [tickets] Notification sent to admins");
-        } catch (notifErr) {
-            console.error(" [tickets] Notification failed:", notifErr);
-        }
-
-        return Response.json(ticket, { status: 201 });
+        return NextResponse.json({ tickets }, { status: 200 });
     } catch (error) {
-        console.error(" [tickets POST] Error:", error);
-        return Response.json(
+        console.error("[user tickets GET] Error:", error);
+        return NextResponse.json(
             { message: error.message || "خطای سرور" },
             { status: 500 }
         );
@@ -69,36 +38,82 @@ export async function POST(req) {
 }
 
 /* ============================================================
-   GET — لیست تیکت‌های کاربر
+   POST — ساخت تیکت جدید
    ============================================================ */
-export async function GET() {
+export async function POST(req) {
     try {
         await connectDB();
 
         const session = await getServerSession(authOptions);
-
-        if (!session || !session.user?.id) {
-            return Response.json({ message: "Unauthorized" }, { status: 401 });
+        if (!session?.user?.id) {
+            return NextResponse.json(
+                { message: "Unauthorized" },
+                { status: 401 }
+            );
         }
 
-        const user = await User.findById(session.user.id);
+        const { subject, description, priority = "medium" } = await req.json();
 
-        if (!user) {
-            return Response.json({ message: "User not found" }, { status: 404 });
+        if (!subject?.trim() || !description?.trim()) {
+            return NextResponse.json(
+                { message: "موضوع و توضیحات الزامی است" },
+                { status: 400 }
+            );
         }
 
-        if (user.role !== "user") {
-            return Response.json({ message: "Forbidden" }, { status: 403 });
-        }
-
-        const tickets = await Ticket.find({ reporterId: user._id }).sort({
-            createdAt: -1,
+        // ساخت تیکت
+        const ticket = await Ticket.create({
+            reporterId: session.user.id,
+            subject: subject.trim(),
+            description: description.trim(),
+            priority,
+            status: "open",
+            messages: [],
         });
 
-        return Response.json(tickets);
+        /* ==================== 🔔 نوتیفیکیشن ==================== */
+        try {
+            // ۱. نوتیف به کاربر (تأیید ثبت تیکت)
+            await notify({
+                userId: session.user.id,
+                type: "ticket_created",
+                data: {
+                    subject: ticket.subject,
+                    ticketId: ticket._id.toString(),
+                },
+            });
+
+            // ۲. نوتیف به همه ادمین‌ها (تیکت جدید)
+            const admins = await User.find({ role: "admin" })
+                .select("_id")
+                .lean();
+
+            if (admins.length > 0) {
+                // ⚠️ امضای notifyMany در پروژه تو: notifyMany(userIds, payload)
+                await notifyMany(
+                    admins.map((a) => a._id),
+                    {
+                        type: "new_ticket",
+                        data: {
+                            reporterName:
+                                session.user.full_name || "کاربری",
+                            subject: ticket.subject,
+                            ticketId: ticket._id.toString(),
+                        },
+                    }
+                );
+            }
+        } catch (notifErr) {
+            console.error("[user ticket POST] Notify failed:", notifErr);
+        }
+
+        return NextResponse.json(
+            { success: true, ticket },
+            { status: 201 }
+        );
     } catch (error) {
-        console.error(" [tickets GET] Error:", error);
-        return Response.json(
+        console.error("[user ticket POST] Error:", error);
+        return NextResponse.json(
             { message: error.message || "خطای سرور" },
             { status: 500 }
         );
