@@ -3,7 +3,6 @@
 
 import { useEffect, useState, useMemo, useCallback } from "react";
 import axios from "axios";
-import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   PiBuildings,
@@ -11,7 +10,6 @@ import {
   PiUsersThree,
   PiUser,
   PiPhone,
-  PiEye,
   PiTrash,
   PiPencilSimple,
   PiWarningCircle,
@@ -24,16 +22,26 @@ import {
   PiCheckCircle,
   PiXCircle,
   PiBuildingsFill,
-  PiCrownSimpleFill,
-  PiProhibit,
+  PiPower,
 } from "react-icons/pi";
 import { notify } from "@/lib/toast";
+import ConfirmHallStatusModal from "@/components/admin/ConfirmHallStatusModal";
+import EditHallModal from "@/components/admin/EditHallModal";
+import DeleteHallModal from "@/components/admin/DeleteHallModal";
 
 /* ============================================================
    Helpers
    ============================================================ */
 function faNum(n) {
   return Number(n || 0).toLocaleString("fa-IR");
+}
+
+function getOwnerName(hall) {
+  return hall.hall_owner_id?.full_name || "—";
+}
+
+function getOwnerPhone(hall) {
+  return hall.hall_owner_id?.phone || "—";
 }
 
 /* ============================================================
@@ -296,7 +304,13 @@ function Pagination({ currentPage, totalPages, onChange }) {
 /* ============================================================
    HallCard — موبایل
    ============================================================ */
-function HallCard({ hall, index }) {
+function HallCard({
+  hall,
+  index,
+  onToggleClick,
+  onEditClick,
+  onDeleteClick,
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -329,16 +343,16 @@ function HallCard({ hall, index }) {
 
       {/* اطلاعات */}
       <div className="space-y-2 pt-3 border-t border-slate-100">
-        {hall.hall_owner_name && (
+        {getOwnerName(hall) !== "—" && (
           <div className="flex items-center gap-2 text-[12.5px] text-slate-600">
             <PiUser className="w-3.5 h-3.5 text-gold-500 flex-shrink-0" />
-            <span className="truncate">{hall.hall_owner_name}</span>
+            <span className="truncate">{getOwnerName(hall)}</span>
           </div>
         )}
-        {hall.hall_owner_phone && (
+        {getOwnerPhone(hall) !== "—" && (
           <div className="flex items-center gap-2 text-[12.5px] text-slate-600">
             <PiPhone className="w-3.5 h-3.5 text-gold-500 flex-shrink-0" />
-            <span dir="ltr">{hall.hall_owner_phone}</span>
+            <span dir="ltr">{getOwnerPhone(hall)}</span>
           </div>
         )}
         {(hall.province || hall.city) && (
@@ -359,8 +373,9 @@ function HallCard({ hall, index }) {
 
       {/* اکشن‌ها */}
       <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-100">
-        <Link
-          href={`/admin/halls/${hall._id}/edit`}
+        <button
+          type="button"
+          onClick={() => onEditClick(hall)}
           className="
             inline-flex items-center justify-center gap-1.5
             px-3 py-2 rounded-lg
@@ -374,11 +389,34 @@ function HallCard({ hall, index }) {
         >
           <PiPencilSimple className="w-3.5 h-3.5" />
           ویرایش
-        </Link>
+        </button>
+
         <button
           type="button"
-          onClick={() => notify.warning("حذف تالار به‌زودی")}
+          onClick={() => onToggleClick(hall)}
+          className={`
+            inline-flex items-center justify-center gap-1.5
+            px-3 py-2 rounded-lg
+            text-[11.5px] font-bold
+            ring-1
+            active:scale-95
+            transition-all duration-200
+            ${
+              hall.is_active
+                ? "text-rose-600 bg-rose-50 ring-rose-100 hover:bg-rose-500 hover:text-white hover:ring-rose-500"
+                : "text-emerald-600 bg-emerald-50 ring-emerald-100 hover:bg-emerald-500 hover:text-white hover:ring-emerald-500"
+            }
+          `}
+        >
+          <PiPower className="w-3.5 h-3.5" />
+          {hall.is_active ? "غیرفعال" : "فعال"}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onDeleteClick(hall)}
           className="
+            col-span-2
             inline-flex items-center justify-center gap-1.5
             px-3 py-2 rounded-lg
             text-[11.5px] font-bold
@@ -390,7 +428,7 @@ function HallCard({ hall, index }) {
           "
         >
           <PiTrash className="w-3.5 h-3.5" />
-          حذف
+          حذف تالار
         </button>
       </div>
     </motion.div>
@@ -400,7 +438,15 @@ function HallCard({ hall, index }) {
 /* ============================================================
    HallRow — دسکتاپ
    ============================================================ */
-function HallRow({ hall, index, currentPage, itemsPerPage }) {
+function HallRow({
+  hall,
+  index,
+  currentPage,
+  itemsPerPage,
+  onToggleClick,
+  onEditClick,
+  onDeleteClick,
+}) {
   return (
     <motion.tr
       initial={{ opacity: 0, y: 10 }}
@@ -423,13 +469,13 @@ function HallRow({ hall, index, currentPage, itemsPerPage }) {
       <td className="px-4 py-3.5">
         <div className="flex items-center gap-2 text-[12.5px] text-slate-600">
           <PiUser className="w-3.5 h-3.5 text-gold-500 flex-shrink-0" />
-          <span className="truncate">{hall.hall_owner_name || "—"}</span>
+          <span className="truncate">{getOwnerName(hall)}</span>
         </div>
       </td>
       <td className="px-4 py-3.5">
         <div className="flex items-center gap-2 text-[12.5px] text-slate-600">
           <PiPhone className="w-3.5 h-3.5 text-gold-500 flex-shrink-0" />
-          <span dir="ltr">{hall.hall_owner_phone || "—"}</span>
+          <span dir="ltr">{getOwnerPhone(hall)}</span>
         </div>
       </td>
       <td className="px-4 py-3.5">
@@ -437,9 +483,11 @@ function HallRow({ hall, index, currentPage, itemsPerPage }) {
       </td>
       <td className="px-4 py-3.5">
         <div className="flex items-center gap-1.5">
-          <Link
-            href={`/admin/halls/${hall._id}/edit`}
+          <button
+            type="button"
+            onClick={() => onEditClick(hall)}
             aria-label="ویرایش"
+            title="ویرایش"
             className="
               w-8 h-8 rounded-lg flex items-center justify-center
               text-gold-700 bg-gold-50 ring-1 ring-gold-100
@@ -449,11 +497,33 @@ function HallRow({ hall, index, currentPage, itemsPerPage }) {
             "
           >
             <PiPencilSimple className="w-4 h-4" />
-          </Link>
+          </button>
+
           <button
             type="button"
-            onClick={() => notify.warning("حذف تالار به‌زودی")}
+            onClick={() => onToggleClick(hall)}
+            aria-label={hall.is_active ? "غیرفعال کردن" : "فعال کردن"}
+            title={hall.is_active ? "غیرفعال کردن" : "فعال کردن"}
+            className={`
+              w-8 h-8 rounded-lg flex items-center justify-center
+              ring-1
+              active:scale-95
+              transition-all duration-200
+              ${
+                hall.is_active
+                  ? "text-rose-600 bg-rose-50 ring-rose-100 hover:bg-rose-500 hover:text-white hover:ring-rose-500"
+                  : "text-emerald-600 bg-emerald-50 ring-emerald-100 hover:bg-emerald-500 hover:text-white hover:ring-emerald-500"
+              }
+            `}
+          >
+            <PiPower className="w-4 h-4" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onDeleteClick(hall)}
             aria-label="حذف"
+            title="حذف"
             className="
               w-8 h-8 rounded-lg flex items-center justify-center
               text-rose-600 bg-rose-50 ring-1 ring-rose-100
@@ -485,6 +555,16 @@ export default function AdminHallsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchField, setSearchField] = useState("all");
 
+  /* ============ Modal States ============ */
+  const [toggleTarget, setToggleTarget] = useState(null);
+  const [toggleLoading, setToggleLoading] = useState(false);
+
+  const [editTarget, setEditTarget] = useState(null);
+  const [editLoading, setEditLoading] = useState(false);
+
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
   /* ============================================================
      Load Halls
      ============================================================ */
@@ -513,6 +593,127 @@ export default function AdminHallsPage() {
   }, [loadHalls]);
 
   /* ============================================================
+     Toggle Status Handlers
+     ============================================================ */
+  const openToggleModal = (hall) => setToggleTarget(hall);
+
+  const closeToggleModal = () => {
+    if (toggleLoading) return;
+    setToggleTarget(null);
+  };
+
+  const confirmToggle = async () => {
+    if (!toggleTarget) return;
+
+    setToggleLoading(true);
+    const willActivate = !toggleTarget.is_active;
+
+    try {
+      const res = await axios.patch(
+        `/api/admin/halls/${toggleTarget._id}`,
+        { action: willActivate ? "approve" : "reject", reason: willActivate ? undefined : "غیرفعال‌سازی توسط مدیر" },
+        { withCredentials: true }
+      );
+
+      setHalls((prev) =>
+        prev.map((h) =>
+          h._id === toggleTarget._id
+            ? { ...h, is_active: willActivate }
+            : h
+        )
+      );
+
+      notify.success(
+        res.data.message ||
+          (willActivate ? "تالار فعال شد" : "تالار غیرفعال شد")
+      );
+      setToggleTarget(null);
+    } catch (err) {
+      console.error("TOGGLE ERROR:", err);
+      notify.error(
+        err.response?.data?.message || "خطا در تغییر وضعیت تالار"
+      );
+    } finally {
+      setToggleLoading(false);
+    }
+  };
+
+  /* ============================================================
+     Edit Handlers
+     ============================================================ */
+  const openEditModal = (hall) => setEditTarget(hall);
+
+  const closeEditModal = () => {
+    if (editLoading) return;
+    setEditTarget(null);
+  };
+
+  const confirmEdit = async (formData) => {
+    if (!editTarget) return;
+
+    setEditLoading(true);
+    try {
+      const res = await axios.patch(
+        `/api/admin/halls/${editTarget._id}`,
+        formData,
+        { withCredentials: true }
+      );
+
+      setHalls((prev) =>
+        prev.map((h) =>
+          h._id === editTarget._id ? { ...h, ...res.data.hall } : h
+        )
+      );
+
+      notify.success(res.data.message || "اطلاعات تالار ذخیره شد");
+      setEditTarget(null);
+    } catch (err) {
+      console.error("EDIT ERROR:", err);
+      notify.error(
+        err.response?.data?.message || "خطا در ذخیره تغییرات"
+      );
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  /* ============================================================
+     Delete Handlers
+     ============================================================ */
+  const openDeleteModal = (hall) => setDeleteTarget(hall);
+
+  const closeDeleteModal = () => {
+    if (deleteLoading) return;
+    setDeleteTarget(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+
+    setDeleteLoading(true);
+    try {
+      const res = await axios.delete(
+        `/api/admin/halls/${deleteTarget._id}`,
+        { withCredentials: true }
+      );
+
+      setHalls((prev) =>
+        prev.filter((h) => h._id !== deleteTarget._id)
+      );
+
+      notify.success(res.data.message || "تالار حذف شد");
+      setDeleteTarget(null);
+    } catch (err) {
+      console.error("DELETE ERROR:", err);
+      notify.error(
+        err.response?.data?.message || "خطا در حذف تالار"
+      );
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  /* ============================================================
      Filter + Search
      ============================================================ */
   const filteredHalls = useMemo(() => {
@@ -533,20 +734,20 @@ export default function AdminHallsPage() {
             return hall.title?.toLowerCase().includes(term);
           case "owner":
             return (
-              hall.hall_owner_name?.toLowerCase().includes(term) ||
-              hall.hall_owner_phone?.includes(term)
+              hall.hall_owner_id?.full_name?.toLowerCase().includes(term) ||
+              hall.hall_owner_id?.phone?.includes(term)
             );
           case "location":
             return `${hall.province || ""} ${hall.city || ""}`
               .toLowerCase()
               .includes(term);
           case "phone":
-            return hall.hall_owner_phone?.includes(term);
+            return hall.hall_owner_id?.phone?.includes(term);
           default:
             return (
               hall.title?.toLowerCase().includes(term) ||
-              hall.hall_owner_name?.toLowerCase().includes(term) ||
-              hall.hall_owner_phone?.includes(term) ||
+              hall.hall_owner_id?.full_name?.toLowerCase().includes(term) ||
+              hall.hall_owner_id?.phone?.includes(term) ||
               `${hall.province || ""} ${hall.city || ""}`
                 .toLowerCase()
                 .includes(term) ||
@@ -590,7 +791,7 @@ export default function AdminHallsPage() {
   };
 
   /* ============================================================
-     Loading
+     Loading / Error
      ============================================================ */
   if (loading) {
     return (
@@ -600,9 +801,6 @@ export default function AdminHallsPage() {
     );
   }
 
-  /* ============================================================
-     Error
-     ============================================================ */
   if (error) {
     const message =
       error === 401
@@ -786,7 +984,6 @@ export default function AdminHallsPage() {
         />
       ) : (
         <>
-          {/* Controls */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-2 text-[12.5px] text-slate-600">
               <span>نمایش</span>
@@ -871,6 +1068,9 @@ export default function AdminHallsPage() {
                         index={index}
                         currentPage={currentPage}
                         itemsPerPage={itemsPerPage}
+                        onToggleClick={openToggleModal}
+                        onEditClick={openEditModal}
+                        onDeleteClick={openDeleteModal}
                       />
                     ))}
                   </AnimatePresence>
@@ -887,12 +1087,14 @@ export default function AdminHallsPage() {
                   key={hall._id}
                   hall={hall}
                   index={(currentPage - 1) * itemsPerPage + index + 1}
+                  onToggleClick={openToggleModal}
+                  onEditClick={openEditModal}
+                  onDeleteClick={openDeleteModal}
                 />
               ))}
             </AnimatePresence>
           </div>
 
-          {/* Pagination */}
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -900,6 +1102,31 @@ export default function AdminHallsPage() {
           />
         </>
       )}
+
+      {/* ==================== Modals ==================== */}
+      <ConfirmHallStatusModal
+        isOpen={!!toggleTarget}
+        onClose={closeToggleModal}
+        onConfirm={confirmToggle}
+        hall={toggleTarget}
+        loading={toggleLoading}
+      />
+
+      <EditHallModal
+        isOpen={!!editTarget}
+        onClose={closeEditModal}
+        onSave={confirmEdit}
+        hall={editTarget}
+        loading={editLoading}
+      />
+
+      <DeleteHallModal
+        isOpen={!!deleteTarget}
+        onClose={closeDeleteModal}
+        onConfirm={confirmDelete}
+        hall={deleteTarget}
+        loading={deleteLoading}
+      />
     </div>
   );
 }

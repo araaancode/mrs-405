@@ -307,16 +307,7 @@ export default function AdminLayout({ children }) {
                                                     icon: PiBuilding,
                                                     label: "رزرو تالارها",
                                                 },
-                                                {
-                                                    href: "/admin/reservations/buses",
-                                                    icon: PiListChecks,
-                                                    label: "رزرو اتوبوس‌ها",
-                                                },
-                                                {
-                                                    href: "/admin/reservations/properties",
-                                                    icon: PiListChecks,
-                                                    label: "رزرو اقامتگاه‌ها",
-                                                },
+                                             
                                             ]}
                                         />
 
