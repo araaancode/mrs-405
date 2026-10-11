@@ -24,6 +24,12 @@ export default function LocationPicker() {
     const mapInstance = useRef(null);
     const markerRef = useRef(null);
 
+    // نگه‌داشتن lat/lng اولیه برای مقداردهی اولیه نقشه بدون وابستگی
+    const initialLatLngRef = useRef({
+        lat: Number(lat) || 35.6892,
+        lng: Number(lng) || 51.389,
+    });
+
     const NESHAN_KEY = process.env.NEXT_PUBLIC_NESHAN_API_KEY;
 
     /* ============================================================
@@ -73,52 +79,38 @@ export default function LocationPicker() {
     );
 
     /* ============================================================
-       Init Leaflet — فقط یک بار
+       Init Leaflet — یک بار در mount
        ============================================================ */
     useEffect(() => {
         let isCancelled = false;
+        let map = null;
+        let marker = null;
 
-        (async () => {
+        const initMap = async () => {
+            if (typeof window === "undefined") return;
+            if (mapInstance.current) return;
+            if (!mapContainerRef.current) return;
+
+            // پاک‌سازی _leaflet_id قبلی (StrictMode)
+            if (mapContainerRef.current._leaflet_id) {
+                mapContainerRef.current._leaflet_id = null;
+            }
+
             try {
-                if (typeof window === "undefined") return;
-                if (mapInstance.current) return;
-                if (!mapContainerRef.current) return;
-
-                /* پاک کردن _leaflet_id قبلی */
-                if (mapContainerRef.current._leaflet_id) {
-                    console.warn(
-                        "Container already has _leaflet_id — cleaning"
-                    );
-                    mapContainerRef.current._leaflet_id = null;
-                }
-
-                /* Leaflet از npm — نه CDN */
                 const L = (await import("leaflet")).default;
                 if (isCancelled) return;
 
-                /* Fix icons */
-                delete L.Icon.Default.prototype._getIconUrl;
-                L.Icon.Default.mergeOptions({
-                    iconRetinaUrl:
-                        "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-                    iconUrl:
-                        "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-                    shadowUrl:
-                        "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-                });
+                const { lat: initialLat, lng: initialLng } =
+                    initialLatLngRef.current;
 
-                /* Initial center */
-                const initialLat = Number(lat) || 35.6892;
-                const initialLng = Number(lng) || 51.389;
-
-                /* Create map */
-                const map = L.map(mapContainerRef.current, {
+                /* ---------- Create map ---------- */
+                map = L.map(mapContainerRef.current, {
                     center: [initialLat, initialLng],
                     zoom: 13,
                     scrollWheelZoom: true,
                 });
 
-                /* ✅ فقط یک tile layer — OpenStreetMap */
+                /* ---------- Tile layer (OpenStreetMap) ---------- */
                 L.tileLayer(
                     "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
                     {
@@ -129,11 +121,53 @@ export default function LocationPicker() {
                     }
                 ).addTo(map);
 
-                /* Marker */
-                const marker = L.marker([initialLat, initialLng], {
+                /* ---------- Marker با DivIcon ---------- */
+                const markerIcon = L.divIcon({
+                    className: "custom-marker-leaflet",
+                    html: `
+                        <div style="
+                            position: absolute;
+                            left: 0;
+                            top: 0;
+                            width: 32px;
+                            height: 42px;
+                            filter: drop-shadow(0 3px 6px rgba(0,0,0,0.4));
+                            pointer-events: auto;
+                        ">
+                            <div style="
+                                position: absolute;
+                                top: 0;
+                                left: 50%;
+                                transform: translateX(-50%) rotate(-45deg);
+                                width: 28px;
+                                height: 28px;
+                                border-radius: 50% 50% 50% 0;
+                                background: linear-gradient(135deg, #D3B263 0%, #C6A14C 50%, #A8853A 100%);
+                                border: 3px solid #ffffff;
+                            "></div>
+                            <div style="
+                                position: absolute;
+                                top: 9px;
+                                left: 50%;
+                                transform: translateX(-50%);
+                                width: 10px;
+                                height: 10px;
+                                border-radius: 50%;
+                                background: #ffffff;
+                            "></div>
+                        </div>
+                    `,
+                    iconSize: [32, 42],
+                    iconAnchor: [16, 42],
+                });
+
+                marker = L.marker([initialLat, initialLng], {
+                    icon: markerIcon,
                     draggable: true,
+                    zIndexOffset: 1000,
                 }).addTo(map);
 
+                /* ---------- Marker drag ---------- */
                 marker.on("dragend", (e) => {
                     const { lat: newLat, lng: newLng } = e.target.getLatLng();
                     const latStr = newLat.toFixed(6);
@@ -143,6 +177,7 @@ export default function LocationPicker() {
                     fetchAddressFromCoordinates(latStr, lngStr);
                 });
 
+                /* ---------- Map click ---------- */
                 map.on("click", (e) => {
                     const { lat: newLat, lng: newLng } = e.latlng;
                     const latStr = newLat.toFixed(6);
@@ -155,22 +190,48 @@ export default function LocationPicker() {
 
                 mapInstance.current = map;
                 markerRef.current = marker;
-                setMapReady(true);
 
-                setTimeout(() => {
-                    if (map && !isCancelled) map.invalidateSize();
-                }, 200);
+                /* ---------- invalidateSize بعد از رندر کامل ---------- */
+                const invalidate = () => {
+                    if (map && !isCancelled) {
+                        try {
+                            map.invalidateSize({ animate: false });
+                        } catch (e) {
+                            console.warn("invalidateSize error:", e);
+                        }
+                    }
+                };
 
-                console.log("✅ Leaflet Map initialized");
+                requestAnimationFrame(() => {
+                    invalidate();
+                    setMapReady(true);
+                });
+
+                setTimeout(invalidate, 100);
+                setTimeout(invalidate, 300);
+                setTimeout(invalidate, 600);
+                setTimeout(invalidate, 1200);
+
+                /* ---------- ResizeObserver ---------- */
+                if (typeof ResizeObserver !== "undefined") {
+                    const ro = new ResizeObserver(() => invalidate());
+                    ro.observe(mapContainerRef.current);
+                    map._resizeObserver = ro;
+                }
             } catch (err) {
                 console.error("❌ Map init error:", err);
             }
-        })();
+        };
+
+        initMap();
 
         return () => {
             isCancelled = true;
             if (mapInstance.current) {
                 try {
+                    if (mapInstance.current._resizeObserver) {
+                        mapInstance.current._resizeObserver.disconnect();
+                    }
                     mapInstance.current.remove();
                 } catch (e) {
                     console.warn("Map cleanup error:", e);
@@ -185,7 +246,9 @@ export default function LocationPicker() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    /* Update marker when lat/lng change externally */
+    /* ============================================================
+       Update marker when lat/lng change externally
+       ============================================================ */
     useEffect(() => {
         if (!mapInstance.current || !markerRef.current) return;
 
@@ -205,7 +268,9 @@ export default function LocationPicker() {
         }
     }, [lat, lng]);
 
-    /* Search */
+    /* ============================================================
+       Search
+       ============================================================ */
     const handleSearch = useCallback(async () => {
         const q = searchQuery.trim();
         if (!q) {
@@ -241,7 +306,9 @@ export default function LocationPicker() {
         }
     }, [searchQuery]);
 
-    /* Select result */
+    /* ============================================================
+       Select search result
+       ============================================================ */
     const handleSelectResult = useCallback(
         (result) => {
             const newLat = Number(result.lat);
@@ -269,7 +336,9 @@ export default function LocationPicker() {
         setSearchResults([]);
     };
 
-    /* Use current location */
+    /* ============================================================
+       Use current location
+       ============================================================ */
     const handleLocate = () => {
         if (!navigator.geolocation) {
             notify.error("مرورگر از موقعیت‌یابی پشتیبانی نمی‌کند");
@@ -299,10 +368,12 @@ export default function LocationPicker() {
         );
     };
 
-    /* Render */
+    /* ============================================================
+       Render
+       ============================================================ */
     return (
         <div className="space-y-3">
-            {/* Search bar */}
+            {/* ---------- Search bar ---------- */}
             <div className="relative">
                 <div className="flex items-center gap-2">
                     <div className="relative flex-1">
@@ -354,7 +425,7 @@ export default function LocationPicker() {
                     </button>
                 </div>
 
-                {/* Search results */}
+                {/* ---------- Search results ---------- */}
                 {searchResults.length > 0 && (
                     <div className="absolute top-full right-0 left-0 mt-1 bg-white rounded-xl border border-slate-200 shadow-lg z-[1000] max-h-60 overflow-y-auto">
                         {searchResults.map((r) => (
@@ -376,20 +447,34 @@ export default function LocationPicker() {
                 )}
             </div>
 
-            {/* Map container */}
-            <div className="relative rounded-xl overflow-hidden ring-1 ring-slate-200 bg-slate-100">
+            {/* ---------- Map container ---------- */}
+            <div
+                className="relative rounded-xl overflow-hidden ring-1 ring-slate-200 bg-slate-100"
+                style={{
+                    width: "100%",
+                    height: "320px",
+                    maxHeight: "320px",
+                }}
+            >
                 <div
                     ref={mapContainerRef}
-                    className="w-full h-[320px]"
-                    style={{ direction: "ltr", zIndex: 0 }}
+                    style={{
+                        width: "100%",
+                        height: "320px",
+                        maxHeight: "320px",
+                        direction: "ltr",
+                        zIndex: 0,
+                    }}
                 />
+
                 {!mapReady && (
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-slate-100">
                         <p className="text-slate-400 text-sm">
                             در حال بارگذاری نقشه...
                         </p>
                     </div>
                 )}
+
                 {loadingAddress && (
                     <div className="absolute top-2 right-2 bg-white/95 backdrop-blur px-3 py-1.5 rounded-lg shadow text-xs text-slate-600 flex items-center gap-2 pointer-events-none">
                         <span className="w-3 h-3 border-2 border-gold-500 border-t-transparent rounded-full animate-spin" />
@@ -398,7 +483,7 @@ export default function LocationPicker() {
                 )}
             </div>
 
-            {/* Lat/Lng inputs */}
+            {/* ---------- Lat/Lng inputs ---------- */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Controller
                     name="lat"

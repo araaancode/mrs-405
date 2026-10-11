@@ -1,5 +1,8 @@
 // app/layout.js
 import { Suspense } from "react";
+
+// ✅ ترتیب مهم: leaflet اول، بعد globals
+import "leaflet/dist/leaflet.css";
 import "./globals.css";
 
 // Providers
