@@ -8,6 +8,11 @@ import User from "@/models/User";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const isDev = process.env.NODE_ENV !== "production";
+const log = (...args) => {
+    if (isDev) console.log(...args);
+};
+
 /* ============================================================
    GET — دریافت پروفایل کاربر
    ============================================================ */
@@ -15,22 +20,25 @@ export async function GET(req) {
     try {
         await dbConnect();
 
-        /* لاگ‌های تشخیصی — بعداً می‌توانید حذف کنید */
-        console.log("=== /api/user/profile GET ===");
-        console.log("Cookie header:", req.headers.get("cookie"));
-        console.log("NEXTAUTH_SECRET exists:", !!process.env.NEXTAUTH_SECRET);
-
         const session = await getServerSession(authOptions);
-        console.log("Session:", JSON.stringify(session, null, 2));
+
+        log("=== /api/user/profile GET ===", {
+            hasSession: !!session,
+            userId: session?.user?.id,
+            role: session?.user?.role,
+        });
 
         if (!session?.user?.id) {
             return NextResponse.json(
-                { message: "Unauthorized" },
+                { message: "لطفاً وارد حساب کاربری شوید" },
                 { status: 401 }
             );
         }
 
-        const user = await User.findById(session.user.id);
+        const user = await User.findById(session.user.id).select(
+            "-password -otp_code -otp_expires"
+        );
+
         if (!user) {
             return NextResponse.json(
                 { message: "کاربر یافت نشد" },
@@ -56,15 +64,17 @@ export async function PUT(req) {
         await dbConnect();
 
         const session = await getServerSession(authOptions);
+
         if (!session?.user?.id) {
             return NextResponse.json(
-                { message: "Unauthorized" },
+                { message: "لطفاً وارد حساب کاربری شوید" },
                 { status: 401 }
             );
         }
 
         const data = await req.json();
 
+        /* ---------- فیلدهای ممنوع ---------- */
         const forbiddenFields = [
             "_id",
             "__v",
@@ -79,6 +89,7 @@ export async function PUT(req) {
             "last_login",
         ];
 
+        /* ---------- فیلدهای قابل null/خالی ---------- */
         const nullableFields = [
             "documents",
             "avatar",
@@ -95,11 +106,18 @@ export async function PUT(req) {
         for (const [key, value] of Object.entries(data)) {
             if (forbiddenFields.includes(key)) continue;
 
+            // فیلدهای nullable — هر مقداری حتی خالی
             if (nullableFields.includes(key)) {
-                cleanData[key] = value;
+                if (key === "birth_date" && value) {
+                    const d = new Date(value);
+                    if (!isNaN(d.getTime())) cleanData[key] = d;
+                } else {
+                    cleanData[key] = value === "" ? null : value;
+                }
                 continue;
             }
 
+            // بقیه فیلدها — خالی را نادیده بگیر
             if (value === "" || value === null || value === undefined) continue;
             cleanData[key] = value;
         }
@@ -111,7 +129,7 @@ export async function PUT(req) {
                 returnDocument: "after",
                 runValidators: true,
             }
-        );
+        ).select("-password -otp_code -otp_expires");
 
         if (!user) {
             return NextResponse.json(
@@ -128,7 +146,9 @@ export async function PUT(req) {
         console.error("PUT /api/user/profile error:", error);
 
         if (error.name === "ValidationError") {
-            const messages = Object.values(error.errors).map((e) => e.message);
+            const messages = Object.values(error.errors).map(
+                (e) => e.message
+            );
             return NextResponse.json(
                 { message: messages.join(" | ") },
                 { status: 400 }

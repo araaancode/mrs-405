@@ -13,10 +13,7 @@ import {
     PiWarningCircle,
     PiClock,
     PiCheckCircle,
-    PiXCircle,
-    PiArrowClockwise,
     PiChatCircleDots,
-    PiSpinnerGap,
     PiHourglass,
 } from "react-icons/pi";
 
@@ -58,7 +55,6 @@ function getStatusInfo(status) {
             dot: "bg-slate-500",
         },
     };
-
     return (
         map[status] || {
             label: status || "نامشخص",
@@ -71,9 +67,6 @@ function getStatusInfo(status) {
     );
 }
 
-/* ============================================================
-   Priority Config
-   ============================================================ */
 function getPriorityInfo(priority) {
     const map = {
         high: {
@@ -116,20 +109,12 @@ function getPriorityInfo(priority) {
     );
 }
 
-/* ============================================================
-   StatusBadge
-   ============================================================ */
 function StatusBadge({ status }) {
     const info = getStatusInfo(status);
     const Icon = info.icon;
     return (
         <span
-            className={`
-                inline-flex items-center gap-1.5
-                px-2.5 py-1 rounded-full
-                text-[11px] font-bold ring-1
-                ${info.bg} ${info.text} ${info.ring}
-            `}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ring-1 ${info.bg} ${info.text} ${info.ring}`}
         >
             <span
                 className={`w-1.5 h-1.5 rounded-full ${info.dot} animate-pulse`}
@@ -140,20 +125,12 @@ function StatusBadge({ status }) {
     );
 }
 
-/* ============================================================
-   PriorityBadge
-   ============================================================ */
 function PriorityBadge({ priority }) {
     const info = getPriorityInfo(priority);
     const Icon = info.icon;
     return (
         <span
-            className={`
-                inline-flex items-center gap-1.5
-                px-2.5 py-1 rounded-full
-                text-[11px] font-bold ring-1
-                ${info.bg} ${info.text} ${info.ring}
-            `}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ring-1 ${info.bg} ${info.text} ${info.ring}`}
         >
             <Icon className="w-3.5 h-3.5" />
             {info.label}
@@ -161,13 +138,9 @@ function PriorityBadge({ priority }) {
     );
 }
 
-/* ============================================================
-   TicketSkeleton
-   ============================================================ */
 function TicketSkeleton() {
     return (
         <div className="w-full space-y-5 animate-pulse">
-            {/* هدر */}
             <div className="flex items-center justify-between gap-4">
                 <div className="space-y-2">
                     <div className="h-7 w-48 bg-slate-100 rounded-lg" />
@@ -175,8 +148,6 @@ function TicketSkeleton() {
                 </div>
                 <div className="h-10 w-32 bg-slate-100 rounded-xl" />
             </div>
-
-            {/* کارت‌ها */}
             {[1, 2, 3].map((i) => (
                 <div
                     key={i}
@@ -198,23 +169,13 @@ function TicketSkeleton() {
     );
 }
 
-/* ============================================================
-   EmptyState
-   ============================================================ */
 function EmptyState() {
     return (
         <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
-            className="
-                relative overflow-hidden
-                bg-white rounded-3xl
-                ring-1 ring-slate-100
-                shadow-[0_8px_32px_rgba(198,161,76,0.06)]
-                p-8 sm:p-12
-                text-center
-            "
+            className="relative overflow-hidden bg-white rounded-3xl ring-1 ring-slate-100 shadow-[0_8px_32px_rgba(198,161,76,0.06)] p-8 sm:p-12 text-center"
         >
             <div
                 className="absolute inset-0 pointer-events-none opacity-40"
@@ -222,12 +183,10 @@ function EmptyState() {
                     backgroundImage: `radial-gradient(circle at 50% 0%, rgba(198,161,76,0.08) 0%, transparent 50%)`,
                 }}
             />
-
             <div className="relative w-20 h-20 mx-auto mb-5 rounded-3xl bg-gradient-to-br from-gold-50 to-gold-100/60 flex items-center justify-center ring-1 ring-gold-100">
                 <div className="absolute inset-0 rounded-3xl bg-gold-500/5 blur-xl" />
                 <PiTicket className="relative w-10 h-10 text-gold-500" />
             </div>
-
             <h3 className="relative text-lg sm:text-xl font-bold text-slate-900 mb-2">
                 هنوز تیکتی ثبت نکرده‌اید
             </h3>
@@ -235,20 +194,9 @@ function EmptyState() {
                 اگر سوال، مشکل یا درخواستی دارید، می‌توانید با تیم پشتیبانی در
                 ارتباط باشید.
             </p>
-
             <Link
                 href="/user/tickets/create"
-                className="
-                    relative inline-flex items-center gap-2
-                    px-6 py-3 rounded-xl
-                    text-sm font-bold text-white
-                    bg-gradient-to-b from-gold-400 to-gold-600
-                    hover:from-gold-500 hover:to-gold-700
-                    shadow-md shadow-gold-500/25
-                    hover:shadow-lg hover:shadow-gold-500/40
-                    hover:-translate-y-0.5
-                    transition-all duration-300
-                "
+                className="relative inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-b from-gold-400 to-gold-600 hover:from-gold-500 hover:to-gold-700 shadow-md shadow-gold-500/25 hover:shadow-lg hover:shadow-gold-500/40 hover:-translate-y-0.5 transition-all duration-300"
             >
                 <PiPlusCircle className="w-4 h-4" />
                 ایجاد تیکت جدید
@@ -257,32 +205,20 @@ function EmptyState() {
     );
 }
 
-/* ============================================================
-   TicketCard
-   ============================================================ */
 function TicketCard({ ticket, index }) {
     return (
         <motion.article
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, delay: index * 0.04 }}
-            className="
-                group bg-white rounded-2xl
-                ring-1 ring-slate-100 hover:ring-gold-200/70
-                shadow-[0_1px_2px_rgba(15,23,42,0.04)]
-                hover:shadow-[0_12px_32px_-12px_rgba(198,161,76,0.18)]
-                transition-all duration-400
-                overflow-hidden
-            "
+            className="group bg-white rounded-2xl ring-1 ring-slate-100 hover:ring-gold-200/70 shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:shadow-[0_12px_32px_-12px_rgba(198,161,76,0.18)] transition-all duration-300 overflow-hidden"
         >
             <div className="p-5">
-                {/* ردیف بالا: badges + تاریخ */}
                 <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
                     <div className="flex items-center gap-2 flex-wrap">
                         <StatusBadge status={ticket.status} />
                         <PriorityBadge priority={ticket.priority} />
                     </div>
-
                     <div className="inline-flex items-center gap-1.5 text-[11px] text-slate-400">
                         <PiCalendarBlank className="w-3.5 h-3.5" />
                         {new Date(ticket.createdAt).toLocaleDateString(
@@ -291,17 +227,14 @@ function TicketCard({ ticket, index }) {
                     </div>
                 </div>
 
-                {/* موضوع */}
                 <h3 className="text-base sm:text-[17px] font-bold text-slate-900 mb-2 line-clamp-1 group-hover:text-gold-700 transition-colors">
                     {ticket.subject}
                 </h3>
 
-                {/* توضیحات */}
                 <p className="text-[13px] text-slate-600 leading-relaxed line-clamp-2 mb-4">
                     {ticket.description || "بدون توضیحات"}
                 </p>
 
-                {/* اکشن‌ها */}
                 <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-100">
                     <div className="text-[10.5px] text-slate-400">
                         <span>شناسه: </span>
@@ -312,17 +245,7 @@ function TicketCard({ ticket, index }) {
 
                     <Link
                         href={`/user/tickets/add_comment/${ticket._id}`}
-                        className="
-                            inline-flex items-center justify-center gap-1.5
-                            px-4 py-2 rounded-lg
-                            text-[11.5px] font-bold text-white
-                            bg-gradient-to-b from-gold-400 to-gold-600
-                            hover:from-gold-500 hover:to-gold-700
-                            shadow-sm shadow-gold-500/25
-                            hover:shadow-md hover:shadow-gold-500/40
-                            transition-all duration-200
-                            group/btn
-                        "
+                        className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-[11.5px] font-bold text-white bg-gradient-to-b from-gold-400 to-gold-600 hover:from-gold-500 hover:to-gold-700 shadow-sm shadow-gold-500/25 hover:shadow-md hover:shadow-gold-500/40 transition-all duration-200 group/btn"
                     >
                         <PiChatCircleDots className="w-3.5 h-3.5" />
                         مشاهده و پاسخ
@@ -334,16 +257,10 @@ function TicketCard({ ticket, index }) {
     );
 }
 
-/* ============================================================
-   Page
-   ============================================================ */
 export default function UserTicketsPage() {
     const [tickets, setTickets] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    /* ============================================================
-       Fetch Tickets — ✅ اصلاح شد
-       ============================================================ */
     const fetchTickets = async () => {
         setLoading(true);
         try {
@@ -351,7 +268,6 @@ export default function UserTicketsPage() {
                 withCredentials: true,
             });
 
-            /* ✅ محافظ کامل: هر ساختاری که API برگرداند */
             const data = res?.data;
             let list = [];
 
@@ -366,7 +282,7 @@ export default function UserTicketsPage() {
             setTickets(list);
         } catch (err) {
             console.error("خطا در دریافت تیکت‌ها", err);
-            setTickets([]);   // ✅ در صورت خطا، آرایه خالی
+            setTickets([]);
             toast.error("خطا در بارگذاری تیکت‌ها", {
                 duration: 3000,
                 position: "bottom-center",
@@ -389,7 +305,6 @@ export default function UserTicketsPage() {
         fetchTickets();
     }, []);
 
-    /* ---------- Loading ---------- */
     if (loading) {
         return (
             <div dir="rtl" className="w-full">
@@ -398,12 +313,10 @@ export default function UserTicketsPage() {
         );
     }
 
-    /* ---------- Render ---------- */
     return (
         <div dir="rtl" className="w-full">
             <Toaster />
 
-            {/* ==================== Header ==================== */}
             <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -427,17 +340,7 @@ export default function UserTicketsPage() {
 
                     <Link
                         href="/user/tickets/create"
-                        className="
-                            inline-flex items-center gap-2
-                            px-4 py-2.5 rounded-xl
-                            text-xs font-semibold text-white
-                            bg-gradient-to-b from-gold-400 to-gold-600
-                            hover:from-gold-500 hover:to-gold-700
-                            shadow-md shadow-gold-500/25
-                            hover:shadow-lg hover:shadow-gold-500/40
-                            hover:-translate-y-0.5
-                            transition-all duration-300
-                        "
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-white bg-gradient-to-b from-gold-400 to-gold-600 hover:from-gold-500 hover:to-gold-700 shadow-md shadow-gold-500/25 hover:shadow-lg hover:shadow-gold-500/40 hover:-translate-y-0.5 transition-all duration-300"
                     >
                         <PiPlusCircle className="w-4 h-4" />
                         تیکت جدید
@@ -445,7 +348,6 @@ export default function UserTicketsPage() {
                 </div>
             </motion.div>
 
-            {/* ==================== محتوا ==================== */}
             <AnimatePresence mode="wait">
                 {!Array.isArray(tickets) || tickets.length === 0 ? (
                     <motion.div

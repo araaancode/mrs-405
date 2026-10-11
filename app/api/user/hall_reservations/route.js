@@ -4,7 +4,7 @@ import connectDB from "@/lib/db";
 import HallReservation from "@/models/HallReservation";
 import Hall from "@/models/Hall";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { notifyReservationCreated } from "@/lib/notificationHelpers";
 
 export async function POST(req) {
