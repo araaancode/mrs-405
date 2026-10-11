@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import toast, { Toaster } from "react-hot-toast";
+import { toast } from "react-toastify";
 import {
     PiTicket,
     PiPlusCircle,
@@ -16,6 +16,34 @@ import {
     PiChatCircleDots,
     PiHourglass,
 } from "react-icons/pi";
+
+/* ============================================================
+   Toast Options — یک بار در ماژول
+   موقعیت: بالا-وسط | RTL | فونت IranianSans
+   ============================================================ */
+const TOAST_OPTIONS = {
+    position: "top-center",
+    autoClose: 3500,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+    progress: undefined,
+    rtl: true,
+    theme: "light",
+    style: {
+        fontFamily: "'IranianSans', system-ui, sans-serif",
+        direction: "rtl",
+        textAlign: "right",
+        borderRadius: "14px",
+        padding: "14px 18px",
+        minHeight: "56px",
+        fontSize: "13.5px",
+        fontWeight: 500,
+        background: "#ffffff",
+        color: "#1e293b",
+    },
+};
 
 /* ============================================================
    Status Config
@@ -283,19 +311,7 @@ export default function UserTicketsPage() {
         } catch (err) {
             console.error("خطا در دریافت تیکت‌ها", err);
             setTickets([]);
-            toast.error("خطا در بارگذاری تیکت‌ها", {
-                duration: 3000,
-                position: "bottom-center",
-                style: {
-                    background: "#FEF2F2",
-                    color: "#991B1B",
-                    borderRadius: "12px",
-                    padding: "12px 20px",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    border: "1px solid #FCA5A5",
-                },
-            });
+            toast.error("خطا در بارگذاری تیکت‌ها", TOAST_OPTIONS);
         } finally {
             setLoading(false);
         }
@@ -315,8 +331,6 @@ export default function UserTicketsPage() {
 
     return (
         <div dir="rtl" className="w-full">
-            <Toaster />
-
             <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}

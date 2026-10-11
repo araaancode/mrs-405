@@ -4,7 +4,8 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
-import toast, { Toaster } from "react-hot-toast";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import {
     PiCalendarCheck,
     PiBuilding,
@@ -28,6 +29,34 @@ import {
     PiArrowDown
 } from "react-icons/pi";
 
+/* ============================================================
+   Toast Options — یک بار در ماژول
+   موقعیت: بالا-راست | RTL | فونت IranianSans
+   ============================================================ */
+const TOAST_OPTIONS = {
+    position: "top-right",
+    autoClose: 4000,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+    progress: undefined,
+    rtl: true,
+    theme: "light",
+    style: {
+        fontFamily: "'IranianSans', system-ui, sans-serif",
+        direction: "rtl",
+        textAlign: "right",
+        borderRadius: "14px",
+        padding: "14px 18px",
+        minHeight: "56px",
+        fontSize: "13.5px",
+        fontWeight: 500,
+        background: "#ffffff",
+        color: "#1e293b",
+    },
+};
+
 // ==========================================
 // کامپوننت اصلی
 // ==========================================
@@ -50,19 +79,19 @@ export default function ReservationsPage() {
         if (payment) {
             switch (payment) {
                 case "success":
-                    toast.success(`✓ پرداخت موفق! کد: ${ref || "—"}`);
+                    toast.success(`✓ پرداخت موفق! کد: ${ref || "—"}`, TOAST_OPTIONS);
                     break;
                 case "canceled":
-                    toast.error("پرداخت لغو شد");
+                    toast.error("پرداخت لغو شد", TOAST_OPTIONS);
                     break;
                 case "failed":
-                    toast.error("پرداخت ناموفق");
+                    toast.error("پرداخت ناموفق", TOAST_OPTIONS);
                     break;
                 case "error":
-                    toast.error("خطا در پرداخت");
+                    toast.error("خطا در پرداخت", TOAST_OPTIONS);
                     break;
                 case "duplicate":
-                    toast.info("قبلاً تایید شده");
+                    toast.info("قبلاً تایید شده", TOAST_OPTIONS);
                     break;
             }
 
@@ -82,7 +111,7 @@ export default function ReservationsPage() {
                 setReservations(response.data.reservations || []);
             } catch (error) {
                 console.error("Error:", error);
-                toast.error("خطا در دریافت رزروها");
+                toast.error("خطا در دریافت رزروها", TOAST_OPTIONS);
             } finally {
                 setLoading(false);
             }
@@ -115,7 +144,7 @@ export default function ReservationsPage() {
             }
         } catch (error) {
             console.error("Payment error:", error);
-            toast.error(error.message || "خطا در شروع پرداخت");
+            toast.error(error.message || "خطا در شروع پرداخت", TOAST_OPTIONS);
         } finally {
             setPaymentLoading(null);
         }
@@ -125,7 +154,7 @@ export default function ReservationsPage() {
     if (loading) {
         return (
             <>
-                <Toaster position="top-right" />
+                <ToastContainer {...TOAST_OPTIONS} />
                 <div className="flex flex-col items-center justify-center py-20">
                     <PiSpinner className="w-12 h-12 text-[#D4B06A] animate-spin mb-4" />
                     <p className="text-gray-500 text-sm">در حال بارگذاری...</p>
@@ -138,7 +167,7 @@ export default function ReservationsPage() {
     if (reservations.length === 0) {
         return (
             <>
-                <Toaster position="top-right" />
+                <ToastContainer {...TOAST_OPTIONS} />
                 <div className="flex flex-col items-center justify-center py-20 text-center">
                     <div className="w-24 h-24 bg-gradient-to-br from-[#D4B06A]/10 to-[#B8922E]/10 rounded-full flex items-center justify-center mb-6">
                         <PiCalendarCheck className="w-12 h-12 text-[#D4B06A]" />
@@ -157,7 +186,7 @@ export default function ReservationsPage() {
     // رندر اصلی
     return (
         <>
-            <Toaster position="top-right" />
+            <ToastContainer {...TOAST_OPTIONS} />
             <div className="max-w-7xl mx-auto px-4 py-8">
                 {/* هدر */}
                 <div className="mb-8">

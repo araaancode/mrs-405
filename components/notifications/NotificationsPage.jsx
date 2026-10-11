@@ -4,7 +4,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import {
     PiBell,
     PiBellRinging,
@@ -28,6 +28,33 @@ import {
 } from "react-icons/pi";
 
 import { useNotifications } from "@/contexts/NotificationContext";
+
+/* ============================================================
+   Toast Options — یک بار در ماژول
+   ============================================================ */
+const TOAST_OPTIONS = {
+    position: "top-center",
+    autoClose: 3000,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+    progress: undefined,
+    rtl: true,
+    theme: "light",
+    style: {
+        fontFamily: "'IranianSans', system-ui, sans-serif",
+        direction: "rtl",
+        textAlign: "right",
+        borderRadius: "14px",
+        padding: "14px 18px",
+        minHeight: "56px",
+        fontSize: "13.5px",
+        fontWeight: 500,
+        background: "#ffffff",
+        color: "#1e293b",
+    },
+};
 
 /* ============================================================
    آیکون بر اساس نوع نوتیفیکیشن
@@ -437,10 +464,7 @@ export default function NotificationsPage({ backHref = "/", backLabel = "باز�
         setRefreshing(true);
         await fetchNotifications();
         setRefreshing(false);
-        toast.success("اعلان‌ها به‌روز شدند", {
-            icon: "🔄",
-            duration: 2000,
-        });
+        toast.success("اعلان‌ها به‌روز شدند", TOAST_OPTIONS);
     };
 
     /* ========== حذف همه ========== */
@@ -450,9 +474,9 @@ export default function NotificationsPage({ backHref = "/", backLabel = "باز�
             const axios = (await import("axios")).default;
             await axios.delete("/api/notifications?all=true");
             await fetchNotifications();
-            toast.success("همه اعلان‌ها حذف شدند");
+            toast.success("همه اعلان‌ها حذف شدند", TOAST_OPTIONS);
         } catch (err) {
-            toast.error("خطا در حذف اعلان‌ها");
+            toast.error("خطا در حذف اعلان‌ها", TOAST_OPTIONS);
         }
     };
 

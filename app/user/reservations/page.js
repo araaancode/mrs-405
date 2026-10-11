@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import axios from "axios";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import {
     PiCalendarBlank,
     PiWarningCircle,
@@ -19,6 +19,34 @@ import ReservationStats from "@/components/user/reservations/ReservationStats";
 import ReservationFilters from "@/components/user/reservations/ReservationFilters";
 import ReservationCard from "@/components/user/reservations/ReservationCard";
 import ReservationSkeleton from "@/components/user/reservations/ReservationSkeleton";
+
+/* ============================================================
+   Toast Options — یک بار در ماژول
+   موقعیت: بالا-وسط | RTL | فونت IranianSans
+   ============================================================ */
+const TOAST_OPTIONS = {
+    position: "top-center",
+    autoClose: 3500,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+    progress: undefined,
+    rtl: true,
+    theme: "light",
+    style: {
+        fontFamily: "'IranianSans', system-ui, sans-serif",
+        direction: "rtl",
+        textAlign: "right",
+        borderRadius: "14px",
+        padding: "14px 18px",
+        minHeight: "56px",
+        fontSize: "13.5px",
+        fontWeight: 500,
+        background: "#ffffff",
+        color: "#1e293b",
+    },
+};
 
 /* ============================================================
    EmptyState
@@ -184,7 +212,7 @@ export default function ReservationsPage() {
         } catch (err) {
             console.error(err);
             setError(err.response?.data?.message || "خطا در دریافت اطلاعات");
-            toast.error("خطا در دریافت رزروها");
+            toast.error("خطا در دریافت رزروها", TOAST_OPTIONS);
         } finally {
             setLoading(false);
         }

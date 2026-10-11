@@ -5,7 +5,7 @@ import axios from "axios";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import toast, { Toaster } from "react-hot-toast";
+import { toast } from "react-toastify";
 import {
     PiTicket,
     PiChatCircleDots,
@@ -19,6 +19,33 @@ import {
     PiLightbulb,
     PiUser,
 } from "react-icons/pi";
+
+/* ============================================================
+   Toast Options — یک بار در ماژول
+   ============================================================ */
+const TOAST_OPTIONS = {
+    position: "top-center",
+    autoClose: 3500,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+    progress: undefined,
+    rtl: true,
+    theme: "light",
+    style: {
+        fontFamily: "'IranianSans', system-ui, sans-serif",
+        direction: "rtl",
+        textAlign: "right",
+        borderRadius: "14px",
+        padding: "14px 18px",
+        minHeight: "56px",
+        fontSize: "13.5px",
+        fontWeight: 500,
+        background: "#ffffff",
+        color: "#1e293b",
+    },
+};
 
 /* ============================================================
    Priority Config
@@ -114,9 +141,8 @@ export default function UserCreateTicketPage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        //  FIX: به‌جای toast های پراکنده، اعتبارسنجی متمرکز
         if (!validate()) {
-            toast.error("لطفاً خطاهای فرم را برطرف کنید");
+            toast.error("لطفاً خطاهای فرم را برطرف کنید", TOAST_OPTIONS);
             return;
         }
 
@@ -129,15 +155,14 @@ export default function UserCreateTicketPage() {
                 priority: form.priority,
             });
 
-            toast.success("تیکت شما با موفقیت ثبت شد", {
-                duration: 2500,
-                position: "top-center",
-                iconTheme: { primary: "#C6A14C", secondary: "#ffffff" },
-            });
+            toast.success("تیکت شما با موفقیت ثبت شد", TOAST_OPTIONS);
 
             setTimeout(() => router.push("/user/tickets"), 800);
         } catch (err) {
-            toast.error(err.response?.data?.message || "خطا در ایجاد تیکت");
+            toast.error(
+                err.response?.data?.message || "خطا در ایجاد تیکت",
+                TOAST_OPTIONS
+            );
         } finally {
             setLoading(false);
         }
@@ -148,8 +173,6 @@ export default function UserCreateTicketPage() {
        ============================================================ */
     return (
         <div dir="rtl" className="w-full">
-            <Toaster />
-
             {/* ==================== Header ==================== */}
             <motion.div
                 initial={{ opacity: 0, y: 12 }}

@@ -5,7 +5,7 @@ import axios from "axios";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import toast, { Toaster } from "react-hot-toast";
+import { toast } from "react-toastify";
 import {
     PiTicket,
     PiArrowLeft,
@@ -20,6 +20,33 @@ import {
     PiSpinnerGap,
     PiNote,
 } from "react-icons/pi";
+
+/* ============================================================
+   Toast Options — یک بار در ماژول
+   ============================================================ */
+const TOAST_OPTIONS = {
+    position: "top-center",
+    autoClose: 3500,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+    progress: undefined,
+    rtl: true,
+    theme: "light",
+    style: {
+        fontFamily: "'IranianSans', system-ui, sans-serif",
+        direction: "rtl",
+        textAlign: "right",
+        borderRadius: "14px",
+        padding: "14px 18px",
+        minHeight: "56px",
+        fontSize: "13.5px",
+        fontWeight: 500,
+        background: "#ffffff",
+        color: "#1e293b",
+    },
+};
 
 /* ============================================================
    Helpers — فرمت تاریخ
@@ -292,19 +319,7 @@ export default function UserTicketDetailsPage() {
             setTicket(res.data);
         } catch (err) {
             console.error("خطا در دریافت جزئیات تیکت", err);
-            toast.error("خطا در بارگذاری جزئیات تیکت", {
-                duration: 3000,
-                position: "top-center",
-                style: {
-                    background: "#FEF2F2",
-                    color: "#991B1B",
-                    borderRadius: "12px",
-                    padding: "12px 20px",
-                    fontSize: "13.5px",
-                    fontWeight: "600",
-                    border: "1px solid #FCA5A5",
-                },
-            });
+            toast.error("خطا در بارگذاری جزئیات تیکت", TOAST_OPTIONS);
         } finally {
             setLoading(false);
         }
@@ -331,37 +346,11 @@ export default function UserTicketDetailsPage() {
         try {
             await axios.post(`/api/user/tickets/${id}`, { text: newMessage });
             setNewMessage("");
-            toast.success("پیام با موفقیت ارسال شد", {
-                duration: 2500,
-                position: "top-center",
-                style: {
-                    background: "#ffffff",
-                    color: "#1e293b",
-                    borderRadius: "12px",
-                    padding: "12px 18px",
-                    fontSize: "13.5px",
-                    fontWeight: "600",
-                    border: "1px solid #F6EED5",
-                    boxShadow: "0 20px 40px -12px rgba(198,161,76,0.2)",
-                },
-                iconTheme: { primary: "#C6A14C", secondary: "#ffffff" },
-            });
+            toast.success("پیام با موفقیت ارسال شد", TOAST_OPTIONS);
             fetchTicket();
         } catch (err) {
             console.error("خطا در ارسال پیام", err);
-            toast.error("خطا در ارسال پیام", {
-                duration: 3000,
-                position: "top-center",
-                style: {
-                    background: "#FEF2F2",
-                    color: "#991B1B",
-                    borderRadius: "12px",
-                    padding: "12px 20px",
-                    fontSize: "13.5px",
-                    fontWeight: "600",
-                    border: "1px solid #FCA5A5",
-                },
-            });
+            toast.error("خطا در ارسال پیام", TOAST_OPTIONS);
         } finally {
             setSending(false);
         }
@@ -419,8 +408,6 @@ export default function UserTicketDetailsPage() {
        ============================================================ */
     return (
         <div dir="rtl" className="w-full">
-            <Toaster />
-
             {/* ==================== Header ==================== */}
             <motion.div
                 initial={{ opacity: 0, y: 12 }}

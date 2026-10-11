@@ -4,8 +4,35 @@ import { useRef, useState, useCallback, useEffect } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import axios from "axios";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import { PiCamera, PiCircleNotch, PiTrash } from "react-icons/pi";
+
+/* ============================================================
+   Toast Options — یک بار در ماژول
+   ============================================================ */
+const TOAST_OPTIONS = {
+    position: "top-center",
+    autoClose: 3000,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+    progress: undefined,
+    rtl: true,
+    theme: "light",
+    style: {
+        fontFamily: "'IranianSans', system-ui, sans-serif",
+        direction: "rtl",
+        textAlign: "right",
+        borderRadius: "14px",
+        padding: "14px 18px",
+        minHeight: "56px",
+        fontSize: "13.5px",
+        fontWeight: 500,
+        background: "#ffffff",
+        color: "#1e293b",
+    },
+};
 
 /* ============================================================
    Constants
@@ -58,11 +85,14 @@ export function AvatarUploader({ currentAvatar, onUploaded, name = "" }) {
 
             /* اعتبارسنجی سمت کلاینت */
             if (!ALLOWED_TYPES.includes(file.type)) {
-                toast.error("فقط JPG، PNG یا WebP مجاز است");
+                toast.error("فقط JPG، PNG یا WebP مجاز است", TOAST_OPTIONS);
                 return;
             }
             if (file.size > MAX_SIZE) {
-                toast.error(`حجم تصویر نباید بیشتر از ${MAX_SIZE_MB} مگابایت باشد`);
+                toast.error(
+                    `حجم تصویر نباید بیشتر از ${MAX_SIZE_MB} مگابایت باشد`,
+                    TOAST_OPTIONS
+                );
                 return;
             }
 
@@ -91,9 +121,12 @@ export function AvatarUploader({ currentAvatar, onUploaded, name = "" }) {
                 /* جایگزینی با URL نهایی سرور */
                 setPreview(data.avatar);
                 onUploaded?.(data.avatar);
-                toast.success("آواتار با موفقیت به‌روزرسانی شد");
+                toast.success("آواتار با موفقیت به‌روزرسانی شد", TOAST_OPTIONS);
             } catch (err) {
-                toast.error(err.response?.data?.message || "خطا در آپلود");
+                toast.error(
+                    err.response?.data?.message || "خطا در آپلود",
+                    TOAST_OPTIONS
+                );
                 setPreview(currentAvatar || null);
             } finally {
                 setUploading(false);

@@ -11,7 +11,34 @@ import {
 } from "react";
 import { useSession } from "next-auth/react";
 import axios from "axios";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
+
+/* ============================================================
+   Toast Options — یک بار در ماژول
+   ============================================================ */
+const TOAST_OPTIONS = {
+    position: "top-center",
+    autoClose: 4000,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+    progress: undefined,
+    rtl: true,
+    theme: "light",
+    style: {
+        fontFamily: "'IranianSans', system-ui, sans-serif",
+        direction: "rtl",
+        textAlign: "right",
+        borderRadius: "14px",
+        padding: "14px 18px",
+        minHeight: "56px",
+        fontSize: "13.5px",
+        fontWeight: 500,
+        background: "#ffffff",
+        color: "#1e293b",
+    },
+};
 
 const NotificationContext = createContext(null);
 
@@ -43,18 +70,7 @@ export function NotificationProvider({ children }) {
                         lastSeenIdRef.current &&
                         newest._id !== lastSeenIdRef.current
                     ) {
-                        toast(newest.title, {
-                            icon: "🔔",
-                            duration: 4000,
-                            style: {
-                                background: "#ffffff",
-                                color: "#1e293b",
-                                border: "1px solid #F6EED5",
-                                borderRadius: "12px",
-                                fontSize: "13px",
-                                fontWeight: "600",
-                            },
-                        });
+                        toast.info(newest.title, TOAST_OPTIONS);
                     }
                 }
 

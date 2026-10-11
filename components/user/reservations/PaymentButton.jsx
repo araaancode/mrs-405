@@ -3,8 +3,35 @@
 
 import { useState } from "react";
 import axios from "axios";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import { PiCreditCard, PiSpinnerGap } from "react-icons/pi";
+
+/* ============================================================
+   Toast Options — یک بار در ماژول
+   ============================================================ */
+const TOAST_OPTIONS = {
+    position: "top-center",
+    autoClose: 3000,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+    progress: undefined,
+    rtl: true,
+    theme: "light",
+    style: {
+        fontFamily: "'IranianSans', system-ui, sans-serif",
+        direction: "rtl",
+        textAlign: "right",
+        borderRadius: "14px",
+        padding: "14px 18px",
+        minHeight: "56px",
+        fontSize: "13.5px",
+        fontWeight: 500,
+        background: "#ffffff",
+        color: "#1e293b",
+    },
+};
 
 const faNum = (n) => Number(n || 0).toLocaleString("fa-IR");
 
@@ -35,31 +62,27 @@ export default function PaymentButton({ reservation, onSuccess }) {
             });
 
             if (res.data.success && res.data.url) {
-                toast.success("در حال انتقال به درگاه پرداخت...", {
-                    icon: "💳",
-                    duration: 2000,
-                    style: {
-                        background: "#ffffff",
-                        color: "#1e293b",
-                        borderRadius: "12px",
-                        fontSize: "13px",
-                        fontWeight: "600",
-                        border: "1px solid #F6EED5",
-                    },
-                });
+                toast.success(
+                    "در حال انتقال به درگاه پرداخت...",
+                    TOAST_OPTIONS
+                );
 
                 // انتقال به درگاه زرین‌پال
                 setTimeout(() => {
                     window.location.href = res.data.url;
                 }, 500);
             } else {
-                toast.error(res.data.message || "خطا در ایجاد تراکنش");
+                toast.error(
+                    res.data.message || "خطا در ایجاد تراکنش",
+                    TOAST_OPTIONS
+                );
                 setLoading(false);
             }
         } catch (err) {
             console.error("Payment error:", err);
             toast.error(
-                err.response?.data?.message || "خطا در ارتباط با سرور"
+                err.response?.data?.message || "خطا در ارتباط با سرور",
+                TOAST_OPTIONS
             );
             setLoading(false);
         }

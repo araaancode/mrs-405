@@ -6,7 +6,8 @@ import axios from "axios";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import toast, { Toaster } from "react-hot-toast";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import {
     PiTicket,
     PiArrowLeft,
@@ -24,6 +25,33 @@ import {
     PiPhone,
     PiTag,
 } from "react-icons/pi";
+
+/* ============================================================
+   Toast Options — یک بار در ماژول
+   ============================================================ */
+const TOAST_OPTIONS = {
+    position: "top-center",
+    autoClose: 3500,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+    progress: undefined,
+    rtl: true,
+    theme: "light",
+    style: {
+        fontFamily: "'IranianSans', system-ui, sans-serif",
+        direction: "rtl",
+        textAlign: "right",
+        borderRadius: "14px",
+        padding: "14px 18px",
+        minHeight: "56px",
+        fontSize: "13.5px",
+        fontWeight: 500,
+        background: "#ffffff",
+        color: "#1e293b",
+    },
+};
 
 /* ============================================================
    Helpers — فرمت تاریخ
@@ -195,7 +223,6 @@ function PriorityBadge({ priority }) {
 
 /* ============================================================
    MessageBubble — حباب پیام
-   ادمین در سمت راست (طلایی)، کاربر/تالاردار در سمت چپ (خاکستری)
    ============================================================ */
 function MessageBubble({ message, index }) {
     const isAdmin = message.is_admin_reply;
@@ -333,19 +360,7 @@ export default function AdminTicketDetailsPage() {
             console.error("خطا در دریافت جزئیات تیکت", err);
             toast.error(
                 err.response?.data?.message || "خطا در بارگذاری جزئیات تیکت",
-                {
-                    duration: 3000,
-                    position: "top-center",
-                    style: {
-                        background: "#FEF2F2",
-                        color: "#991B1B",
-                        borderRadius: "12px",
-                        padding: "12px 20px",
-                        fontSize: "13.5px",
-                        fontWeight: "600",
-                        border: "1px solid #FCA5A5",
-                    },
-                }
+                TOAST_OPTIONS
             );
         } finally {
             setLoading(false);
@@ -382,38 +397,15 @@ export default function AdminTicketDetailsPage() {
             });
 
             setNewMessage("");
-            toast.success("پاسخ با موفقیت ثبت شد", {
-                duration: 2500,
-                position: "top-center",
-                style: {
-                    background: "#ffffff",
-                    color: "#1e293b",
-                    borderRadius: "12px",
-                    padding: "12px 18px",
-                    fontSize: "13.5px",
-                    fontWeight: "600",
-                    border: "1px solid #F6EED5",
-                    boxShadow: "0 20px 40px -12px rgba(198,161,76,0.2)",
-                },
-                iconTheme: { primary: "#C6A14C", secondary: "#ffffff" },
-            });
+            toast.success("پاسخ با موفقیت ثبت شد", TOAST_OPTIONS);
 
             fetchTicket();
         } catch (err) {
             console.error("خطا در ارسال پاسخ", err);
-            toast.error(err.response?.data?.message || "خطا در ارسال پاسخ", {
-                duration: 3000,
-                position: "top-center",
-                style: {
-                    background: "#FEF2F2",
-                    color: "#991B1B",
-                    borderRadius: "12px",
-                    padding: "12px 20px",
-                    fontSize: "13.5px",
-                    fontWeight: "600",
-                    border: "1px solid #FCA5A5",
-                },
-            });
+            toast.error(
+                err.response?.data?.message || "خطا در ارسال پاسخ",
+                TOAST_OPTIONS
+            );
         } finally {
             setSending(false);
         }
@@ -431,19 +423,12 @@ export default function AdminTicketDetailsPage() {
             );
             setTicket((prev) => ({ ...prev, status }));
             setNewStatus(status);
-            toast.success("وضعیت تیکت تغییر کرد", {
-                duration: 2000,
-                position: "top-center",
-                iconTheme: { primary: "#C6A14C", secondary: "#ffffff" },
-            });
+            toast.success("وضعیت تیکت تغییر کرد", TOAST_OPTIONS);
         } catch (err) {
             console.error("خطا در تغییر وضعیت", err);
             toast.error(
                 err.response?.data?.message || "خطا در تغییر وضعیت",
-                {
-                    duration: 3000,
-                    position: "top-center",
-                }
+                TOAST_OPTIONS
             );
         }
     };
@@ -500,7 +485,11 @@ export default function AdminTicketDetailsPage() {
 
     return (
         <div dir="rtl" className="w-full">
-            <Toaster />
+            {/*
+                ⚠️ اگر ToastContainer را در app/admin/layout.js داری،
+                این خط را حذف کن تا toastها دو بار نمایش داده نشوند.
+            */}
+            {/* <ToastContainer {...TOAST_OPTIONS} /> */}
 
             {/* ==================== Header ==================== */}
             <motion.div
