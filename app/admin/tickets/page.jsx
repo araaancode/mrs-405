@@ -1,7 +1,14 @@
 // app/admin/tickets/page.jsx
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import {
+  useEffect,
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+  memo,
+} from "react";
 import axios from "axios";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -31,6 +38,8 @@ import { notify } from "@/lib/toast";
 /* ============================================================
    Constants
    ============================================================ */
+const PER_PAGE_OPTIONS = [5, 10, 20, 50];
+
 const STATUS_CONFIG = {
   open: {
     label: "باز",
@@ -149,47 +158,52 @@ function getRoleLabel(role) {
 /* ============================================================
    StatusBadge / PriorityBadge
    ============================================================ */
-function StatusBadge({ status }) {
+const StatusBadge = memo(function StatusBadge({ status }) {
   const config = getStatusConfig(status);
   const Icon = config.icon;
+  const cls = [
+    "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full",
+    "text-[11px] font-bold ring-1",
+    config.bg,
+    config.text,
+    config.ring,
+  ].join(" ");
   return (
-    <span
-      className={`
-        inline-flex items-center gap-1.5
-        px-2.5 py-1 rounded-full
-        text-[11px] font-bold ring-1
-        ${config.bg} ${config.text} ${config.ring}
-      `}
-    >
-      <span className={`w-1.5 h-1.5 rounded-full ${config.dot} animate-pulse`} />
+    <span className={cls}>
+      <span
+        className={[
+          "w-1.5 h-1.5 rounded-full animate-pulse",
+          config.dot,
+        ].join(" ")}
+      />
       <Icon className="w-3.5 h-3.5" />
       {config.label}
     </span>
   );
-}
+});
 
-function PriorityBadge({ priority }) {
+const PriorityBadge = memo(function PriorityBadge({ priority }) {
   const config = getPriorityConfig(priority);
   const Icon = config.icon;
+  const cls = [
+    "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full",
+    "text-[11px] font-bold ring-1",
+    config.bg,
+    config.text,
+    config.ring,
+  ].join(" ");
   return (
-    <span
-      className={`
-        inline-flex items-center gap-1.5
-        px-2.5 py-1 rounded-full
-        text-[11px] font-bold ring-1
-        ${config.bg} ${config.text} ${config.ring}
-      `}
-    >
+    <span className={cls}>
       <Icon className="w-3.5 h-3.5" />
       {config.label}
     </span>
   );
-}
+});
 
 /* ============================================================
    TicketsSkeleton
    ============================================================ */
-function TicketsSkeleton() {
+const TicketsSkeleton = memo(function TicketsSkeleton() {
   return (
     <div className="w-full space-y-5 animate-pulse">
       <div className="flex items-center gap-3">
@@ -218,25 +232,35 @@ function TicketsSkeleton() {
       ))}
     </div>
   );
-}
+});
 
 /* ============================================================
    EmptyState
    ============================================================ */
-function EmptyState({ hasSearch, onClear }) {
+const EmptyState = memo(function EmptyState({ hasSearch, onClear }) {
+  const wrapperCls = [
+    "relative overflow-hidden bg-white rounded-3xl",
+    "ring-1 ring-slate-100",
+    "shadow-[0_8px_32px_rgba(198,161,76,0.06)]",
+    "p-8 sm:p-12 text-center",
+  ].join(" ");
+
+  const clearBtnCls = [
+    "relative inline-flex items-center gap-2 px-6 py-3 rounded-xl",
+    "text-sm font-bold text-white",
+    "bg-gradient-to-b from-gold-400 to-gold-600",
+    "hover:from-gold-500 hover:to-gold-700",
+    "shadow-md shadow-gold-500/25",
+    "hover:shadow-lg hover:shadow-gold-500/40",
+    "hover:-translate-y-0.5 transition-all duration-300",
+  ].join(" ");
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
-      className="
-        relative overflow-hidden
-        bg-white rounded-3xl
-        ring-1 ring-slate-100
-        shadow-[0_8px_32px_rgba(198,161,76,0.06)]
-        p-8 sm:p-12
-        text-center
-      "
+      className={wrapperCls}
     >
       <div className="relative w-20 h-20 mx-auto mb-5 rounded-3xl bg-gradient-to-br from-gold-50 to-gold-100/60 flex items-center justify-center ring-1 ring-gold-100">
         <div className="absolute inset-0 rounded-3xl bg-gold-500/5 blur-xl" />
@@ -253,210 +277,49 @@ function EmptyState({ hasSearch, onClear }) {
       </p>
 
       {hasSearch && (
-        <button
-          type="button"
-          onClick={onClear}
-          className="
-            relative inline-flex items-center gap-2
-            px-6 py-3 rounded-xl
-            text-sm font-bold text-white
-            bg-gradient-to-b from-gold-400 to-gold-600
-            hover:from-gold-500 hover:to-gold-700
-            shadow-md shadow-gold-500/25
-            hover:shadow-lg hover:shadow-gold-500/40
-            hover:-translate-y-0.5
-            transition-all duration-300
-          "
-        >
+        <button type="button" onClick={onClear} className={clearBtnCls}>
           <PiX className="w-4 h-4" />
           پاک کردن جستجو
         </button>
       )}
     </motion.div>
   );
-}
+});
 
 /* ============================================================
-   Pagination
+   MessageItem
    ============================================================ */
-function Pagination({ currentPage, totalPages, onChange }) {
-  if (totalPages <= 1) return null;
-
-  const getPageNumbers = () => {
-    const pages = [];
-    const maxVisible = 5;
-
-    if (totalPages <= maxVisible) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
-      return pages;
-    }
-
-    pages.push(1);
-
-    let start = Math.max(2, currentPage - 1);
-    let end = Math.min(totalPages - 1, currentPage + 1);
-
-    if (currentPage <= 3) {
-      start = 2;
-      end = 4;
-    }
-    if (currentPage >= totalPages - 2) {
-      start = totalPages - 3;
-      end = totalPages - 1;
-    }
-
-    if (start > 2) pages.push("start-ellipsis");
-    for (let i = start; i <= end; i++) pages.push(i);
-    if (end < totalPages - 1) pages.push("end-ellipsis");
-
-    pages.push(totalPages);
-    return pages;
-  };
-
-  const pageNumbers = getPageNumbers();
-
-  const NavButton = ({ onClick, disabled, icon: Icon, label }) => (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-label={label}
-      className="
-        w-10 h-10 rounded-xl
-        flex items-center justify-center
-        bg-white border border-slate-200 text-slate-600
-        hover:border-gold-300 hover:text-gold-700 hover:bg-gold-50/40
-        disabled:opacity-40 disabled:cursor-not-allowed
-        disabled:hover:bg-white disabled:hover:border-slate-200
-        active:scale-95
-        focus:outline-none focus:ring-4 focus:ring-gold-500/15
-        transition-all duration-200
-      "
-    >
-      <Icon className="w-4 h-4" />
-    </button>
-  );
-
-  const PageButton = ({ page, active }) => (
-    <button
-      type="button"
-      onClick={() => onChange(page)}
-      aria-current={active ? "page" : undefined}
-      className={`
-        min-w-[40px] h-10 px-3 rounded-xl
-        flex items-center justify-center
-        text-[13px] font-bold
-        transition-all duration-200
-        active:scale-95
-        focus:outline-none focus:ring-4 focus:ring-gold-500/15
-        ${
-          active
-            ? "bg-gradient-to-b from-gold-400 to-gold-600 text-white shadow-md shadow-gold-500/25"
-            : "bg-white border border-slate-200 text-slate-600 hover:border-gold-300 hover:text-gold-700 hover:bg-gold-50/40"
-        }
-      `}
-    >
-      {page.toLocaleString("fa-IR")}
-    </button>
-  );
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="mt-5 flex flex-col items-center gap-3"
-    >
-      <div className="flex items-center justify-center gap-1.5 sm:gap-2 flex-wrap">
-        <NavButton
-          onClick={() => onChange(1)}
-          disabled={currentPage === 1}
-          icon={PiCaretDoubleRight}
-          label="صفحه اول"
-        />
-        <NavButton
-          onClick={() => onChange(currentPage - 1)}
-          disabled={currentPage === 1}
-          icon={PiCaretRight}
-          label="صفحه قبلی"
-        />
-        <div className="w-px h-6 bg-slate-200 mx-1 hidden sm:block" />
-        {pageNumbers.map((p) => {
-          if (typeof p === "string")
-            return (
-              <span
-                key={p}
-                className="w-10 h-10 flex items-center justify-center text-slate-400 select-none"
-              >
-                …
-              </span>
-            );
-          return <PageButton key={p} page={p} active={p === currentPage} />;
-        })}
-        <div className="w-px h-6 bg-slate-200 mx-1 hidden sm:block" />
-        <NavButton
-          onClick={() => onChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
-          icon={PiCaretLeft}
-          label="صفحه بعدی"
-        />
-        <NavButton
-          onClick={() => onChange(totalPages)}
-          disabled={currentPage === totalPages}
-          icon={PiCaretDoubleLeft}
-          label="صفحه آخر"
-        />
-      </div>
-      <p className="text-[11px] text-slate-400">
-        صفحه{" "}
-        <span className="font-bold text-slate-600">
-          {currentPage.toLocaleString("fa-IR")}
-        </span>{" "}
-        از{" "}
-        <span className="font-bold text-slate-600">
-          {totalPages.toLocaleString("fa-IR")}
-        </span>
-      </p>
-    </motion.div>
-  );
-}
-
-/* ============================================================
-   MessageItem — پیام داخل کارت تیکت
-   ============================================================ */
-function MessageItem({ message, index }) {
+const MessageItem = memo(function MessageItem({ message, index }) {
   const isAdmin = message.is_admin_reply;
   const senderName = message.senderId?.full_name || "ناشناس";
   const senderEmail = message.senderId?.email || "—";
   const senderRole = getRoleLabel(message.senderId?.role);
 
+  const wrapperCls = [
+    "rounded-xl p-3.5 ring-1",
+    isAdmin ? "bg-gold-50/60 ring-gold-100" : "bg-slate-50 ring-slate-100",
+  ].join(" ");
+
+  const avatarCls = [
+    "w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0",
+    isAdmin ? "bg-gold-100 text-gold-700" : "bg-slate-100 text-slate-600",
+  ].join(" ");
+
+  const rolePillCls = [
+    "text-[10px] font-bold px-2 py-0.5 rounded-full",
+    isAdmin ? "bg-gold-100 text-gold-700" : "bg-slate-100 text-slate-600",
+  ].join(" ");
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25, delay: index * 0.03 }}
-      className={`
-        rounded-xl p-3.5 ring-1
-        ${
-          isAdmin
-            ? "bg-gold-50/60 ring-gold-100"
-            : "bg-slate-50 ring-slate-100"
-        }
-      `}
+      transition={{ duration: 0.25, delay: Math.min(index * 0.03, 0.2) }}
+      className={wrapperCls}
     >
-      {/* هدر */}
       <div className="flex items-start justify-between gap-3 flex-wrap mb-2">
         <div className="flex items-center gap-2 min-w-0">
-          <span
-            className={`
-              w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0
-              ${
-                isAdmin
-                  ? "bg-gold-100 text-gold-700"
-                  : "bg-slate-100 text-slate-600"
-              }
-            `}
-          >
+          <span className={avatarCls}>
             {isAdmin ? (
               <PiHeadset className="w-3.5 h-3.5" />
             ) : (
@@ -474,16 +337,7 @@ function MessageItem({ message, index }) {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <span
-            className={`
-              text-[10px] font-bold px-2 py-0.5 rounded-full
-              ${
-                isAdmin
-                  ? "bg-gold-100 text-gold-700"
-                  : "bg-slate-100 text-slate-600"
-              }
-            `}
-          >
+          <span className={rolePillCls}>
             {isAdmin ? "پاسخ ادمین" : senderRole || "پیام کاربر"}
           </span>
           <span className="text-[10.5px] text-slate-400">
@@ -492,18 +346,17 @@ function MessageItem({ message, index }) {
         </div>
       </div>
 
-      {/* متن */}
       <p className="text-[12.5px] text-slate-700 leading-relaxed whitespace-pre-line break-words">
         {message.text}
       </p>
     </motion.div>
   );
-}
+});
 
 /* ============================================================
-   TicketCard — کارت تیکت
+   TicketCard
    ============================================================ */
-function TicketCard({ ticket, index }) {
+const TicketCard = memo(function TicketCard({ ticket, index }) {
   const [expanded, setExpanded] = useState(false);
 
   const reporterName = ticket.reporterId?.full_name || "نامعلوم";
@@ -514,22 +367,41 @@ function TicketCard({ ticket, index }) {
   const messages = Array.isArray(ticket.messages) ? ticket.messages : [];
   const messageCount = messages.length;
 
+  const cardCls = [
+    "group bg-white rounded-2xl",
+    "ring-1 ring-slate-100 hover:ring-gold-200/70",
+    "shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+    "hover:shadow-[0_12px_32px_-12px_rgba(198,161,76,0.18)]",
+    "transition-all duration-300 overflow-hidden",
+  ].join(" ");
+
+  const toggleBtnCls = [
+    "inline-flex items-center gap-1.5 px-3 py-2 rounded-lg",
+    "text-[11.5px] font-medium text-slate-600 bg-white",
+    "ring-1 ring-slate-200",
+    "hover:bg-slate-50 hover:ring-slate-300 hover:text-slate-800",
+    "active:scale-95 transition-all duration-200",
+  ].join(" ");
+
+  const viewBtnCls = [
+    "inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg",
+    "text-[11.5px] font-bold text-white",
+    "bg-gradient-to-b from-gold-400 to-gold-600",
+    "hover:from-gold-500 hover:to-gold-700",
+    "shadow-sm shadow-gold-500/25",
+    "hover:shadow-md hover:shadow-gold-500/40",
+    "active:scale-95 transition-all duration-200",
+  ].join(" ");
+
   return (
     <motion.article
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.04 }}
-      className="
-        group bg-white rounded-2xl
-        ring-1 ring-slate-100 hover:ring-gold-200/70
-        shadow-[0_1px_2px_rgba(15,23,42,0.04)]
-        hover:shadow-[0_12px_32px_-12px_rgba(198,161,76,0.18)]
-        transition-all duration-300
-        overflow-hidden
-      "
+      transition={{ duration: 0.3, delay: Math.min(index * 0.04, 0.3) }}
+      className={cardCls}
     >
       <div className="p-5">
-        {/* ردیف بالا: badges */}
+        {/* ردیف بالا */}
         <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
           <div className="flex items-center gap-2 flex-wrap">
             <StatusBadge status={ticket.status} />
@@ -570,14 +442,12 @@ function TicketCard({ ticket, index }) {
               <strong className="text-slate-800">{reporterName}</strong>
               {reporterRole && (
                 <span
-                  className={`
-                    mx-2 text-[9.5px] font-bold px-1.5 py-0.5 rounded-full
-                    ${
-                      ticket.reporterId?.role === "hall_owner"
-                        ? "bg-amber-100 text-amber-700"
-                        : "bg-slate-100 text-slate-600"
-                    }
-                  `}
+                  className={[
+                    "mx-2 text-[9.5px] font-bold px-1.5 py-0.5 rounded-full",
+                    ticket.reporterId?.role === "hall_owner"
+                      ? "bg-amber-100 text-amber-700"
+                      : "bg-slate-100 text-slate-600",
+                  ].join(" ")}
                 >
                   {reporterRole}
                 </span>
@@ -587,8 +457,7 @@ function TicketCard({ ticket, index }) {
           <div className="flex items-center gap-2 text-[11.5px] text-slate-600">
             <PiHeadset className="w-3.5 h-3.5 text-gold-500 flex-shrink-0" />
             <span className="truncate">
-              مسئول:{" "}
-              <strong className="text-slate-800">{assigneeName}</strong>
+              مسئول: <strong className="text-slate-800">{assigneeName}</strong>
             </span>
           </div>
         </div>
@@ -605,35 +474,18 @@ function TicketCard({ ticket, index }) {
               <button
                 type="button"
                 onClick={() => setExpanded((v) => !v)}
-                className="
-                  inline-flex items-center gap-1.5
-                  px-3 py-2 rounded-lg
-                  text-[11.5px] font-medium
-                  text-slate-600 bg-white
-                  ring-1 ring-slate-200
-                  hover:bg-slate-50 hover:ring-slate-300 hover:text-slate-800
-                  active:scale-95
-                  transition-all duration-200
-                "
+                className={toggleBtnCls}
               >
                 <PiChatCircleDots className="w-3.5 h-3.5" />
-                {expanded ? "بستن پیام‌ها" : `مشاهده ${faNum(messageCount)} پیام`}
+                {expanded
+                  ? "بستن پیام‌ها"
+                  : `مشاهده ${faNum(messageCount)} پیام`}
               </button>
             )}
 
             <Link
               href={`/admin/tickets/${ticket._id}`}
-              className="
-                inline-flex items-center gap-1.5
-                px-3.5 py-2 rounded-lg
-                text-[11.5px] font-bold text-white
-                bg-gradient-to-b from-gold-400 to-gold-600
-                hover:from-gold-500 hover:to-gold-700
-                shadow-sm shadow-gold-500/25
-                hover:shadow-md hover:shadow-gold-500/40
-                active:scale-95
-                transition-all duration-200
-              "
+              className={viewBtnCls}
             >
               <PiEye className="w-3.5 h-3.5" />
               مشاهده تیکت
@@ -662,7 +514,174 @@ function TicketCard({ ticket, index }) {
       </div>
     </motion.article>
   );
-}
+});
+
+/* ============================================================
+   NavButton / PageButton / Ellipsis — بیرون از Pagination
+   ============================================================ */
+const NavButton = memo(function NavButton({
+  onClick,
+  disabled,
+  icon: Icon,
+  label,
+}) {
+  const cls = [
+    "w-10 h-10 rounded-xl flex items-center justify-center",
+    "bg-white border border-slate-200 text-slate-600",
+    "hover:border-gold-300 hover:text-gold-700 hover:bg-gold-50/40",
+    "disabled:opacity-40 disabled:cursor-not-allowed",
+    "disabled:hover:bg-white disabled:hover:border-slate-200",
+    "active:scale-95 focus:outline-none focus:ring-4 focus:ring-gold-500/15",
+    "transition-all duration-200",
+  ].join(" ");
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      className={cls}
+    >
+      <Icon className="w-4 h-4" />
+    </button>
+  );
+});
+
+const PageButton = memo(function PageButton({ page, active, onChange }) {
+  const handleClick = useCallback(() => onChange(page), [onChange, page]);
+
+  const cls = [
+    "min-w-[40px] h-10 px-3 rounded-xl flex items-center justify-center",
+    "text-[13px] font-bold transition-all duration-200 active:scale-95",
+    "focus:outline-none focus:ring-4 focus:ring-gold-500/15",
+    active
+      ? "bg-gradient-to-b from-gold-400 to-gold-600 text-white shadow-md shadow-gold-500/25"
+      : "bg-white border border-slate-200 text-slate-600 hover:border-gold-300 hover:text-gold-700 hover:bg-gold-50/40",
+  ].join(" ");
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      aria-label={`رفتن به صفحه ${page}`}
+      aria-current={active ? "page" : undefined}
+      className={cls}
+    >
+      {faNum(page)}
+    </button>
+  );
+});
+
+const Ellipsis = memo(function Ellipsis() {
+  return (
+    <span className="w-10 h-10 flex items-center justify-center text-slate-400 select-none">
+      …
+    </span>
+  );
+});
+
+/* ============================================================
+   Pagination — memoized
+   ============================================================ */
+const Pagination = memo(function Pagination({
+  currentPage,
+  totalPages,
+  onChange,
+}) {
+  const pageNumbers = useMemo(() => {
+    const pages = [];
+    const maxVisible = 5;
+
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+      return pages;
+    }
+
+    pages.push(1);
+
+    let start = Math.max(2, currentPage - 1);
+    let end = Math.min(totalPages - 1, currentPage + 1);
+
+    if (currentPage <= 3) {
+      start = 2;
+      end = 4;
+    }
+    if (currentPage >= totalPages - 2) {
+      start = totalPages - 3;
+      end = totalPages - 1;
+    }
+
+    if (start > 2) pages.push("start-ellipsis");
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (end < totalPages - 1) pages.push("end-ellipsis");
+
+    pages.push(totalPages);
+    return pages;
+  }, [currentPage, totalPages]);
+
+  if (totalPages <= 1) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="mt-5 flex flex-col items-center gap-3"
+    >
+      <div className="flex items-center justify-center gap-1.5 sm:gap-2 flex-wrap">
+        <NavButton
+          onClick={() => onChange(1)}
+          disabled={currentPage === 1}
+          icon={PiCaretDoubleRight}
+          label="صفحه اول"
+        />
+        <NavButton
+          onClick={() => onChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          icon={PiCaretRight}
+          label="صفحه قبلی"
+        />
+
+        <div className="w-px h-6 bg-slate-200 mx-1 hidden sm:block" />
+
+        {pageNumbers.map((p) => {
+          if (typeof p === "string") return <Ellipsis key={p} />;
+          return (
+            <PageButton
+              key={p}
+              page={p}
+              active={p === currentPage}
+              onChange={onChange}
+            />
+          );
+        })}
+
+        <div className="w-px h-6 bg-slate-200 mx-1 hidden sm:block" />
+
+        <NavButton
+          onClick={() => onChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          icon={PiCaretLeft}
+          label="صفحه بعدی"
+        />
+        <NavButton
+          onClick={() => onChange(totalPages)}
+          disabled={currentPage === totalPages}
+          icon={PiCaretDoubleLeft}
+          label="صفحه آخر"
+        />
+      </div>
+
+      <p className="text-[11px] text-slate-400">
+        صفحه{" "}
+        <span className="font-bold text-slate-600">{faNum(currentPage)}</span>{" "}
+        از{" "}
+        <span className="font-bold text-slate-600">{faNum(totalPages)}</span>
+      </p>
+    </motion.div>
+  );
+});
 
 /* ============================================================
    Page
@@ -680,6 +699,9 @@ export default function AdminTicketsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchField, setSearchField] = useState("all");
 
+  /* ========== Refs ========== */
+  const listTopRef = useRef(null);
+
   /* ============================================================
      Load Tickets
      ============================================================ */
@@ -690,14 +712,13 @@ export default function AdminTicketsPage() {
         withCredentials: true,
       });
 
-      // ⬅️ محافظ: همیشه آرایه
       const data = res?.data?.tickets;
       setTickets(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Error:", err);
       const status = err.response?.status || 500;
       setError(status);
-      setTickets([]);   // ⬅️ در صورت خطا، آرایه خالی
+      setTickets([]);
 
       if (status === 401) notify.error("لطفاً وارد حساب شوید");
       else if (status === 403) notify.error("شما دسترسی لازم را ندارید");
@@ -765,34 +786,48 @@ export default function AdminTicketsPage() {
   }, [tickets]);
 
   /* ============================================================
-     Pagination
+     Pagination Logic
      ============================================================ */
-  const totalPages = Math.ceil(filteredTickets.length / itemsPerPage) || 1;
+  const totalItems = filteredTickets.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const startIndex = (safeCurrentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
 
-  const paginatedTickets = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredTickets.slice(start, start + itemsPerPage);
-  }, [filteredTickets, currentPage, itemsPerPage]);
+  const paginatedTickets = useMemo(
+    () => filteredTickets.slice(startIndex, endIndex),
+    [filteredTickets, startIndex, endIndex]
+  );
 
+  /* ========== اصلاح صفحه اگر از محدوده خارج شد ========== */
   useEffect(() => {
-    if (currentPage > totalPages) setCurrentPage(1);
-  }, [totalPages, currentPage]);
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
+  /* ========== ریست صفحه هنگام تغییر فیلتر/جستجو/perPage ========== */
   useEffect(() => {
     setCurrentPage(1);
   }, [statusFilter, priorityFilter, searchTerm, searchField, itemsPerPage]);
 
-  const handlePageChange = (page) => {
+  /* ========== هندل تغییر صفحه با اسکرول نرم ========== */
+  const handlePageChange = useCallback((page) => {
     setCurrentPage(page);
-    if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+    if (listTopRef.current) {
+      const yOffset = -80;
+      const y =
+        listTopRef.current.getBoundingClientRect().top +
+        window.pageYOffset +
+        yOffset;
+      window.scrollTo({ top: y, behavior: "smooth" });
     }
-  };
+  }, []);
 
-  const clearSearch = () => {
+  const clearSearch = useCallback(() => {
     setSearchTerm("");
     setSearchField("all");
-  };
+  }, []);
 
   /* ============================================================
      Loading
@@ -829,17 +864,7 @@ export default function AdminTicketsPage() {
         </p>
         <button
           onClick={loadTickets}
-          className="
-            inline-flex items-center gap-2
-            px-6 py-3 rounded-xl
-            text-sm font-bold text-white
-            bg-gradient-to-b from-gold-400 to-gold-600
-            hover:from-gold-500 hover:to-gold-700
-            shadow-md shadow-gold-500/25
-            hover:shadow-lg hover:shadow-gold-500/40
-            hover:-translate-y-0.5
-            transition-all duration-300
-          "
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-b from-gold-400 to-gold-600 hover:from-gold-500 hover:to-gold-700 shadow-md shadow-gold-500/25 hover:shadow-lg hover:shadow-gold-500/40 hover:-translate-y-0.5 transition-all duration-300"
         >
           تلاش مجدد
         </button>
@@ -865,6 +890,15 @@ export default function AdminTicketsPage() {
     { key: "medium", label: "متوسط" },
     { key: "low", label: "کم" },
   ];
+
+  const searchInputCls = [
+    "w-full pr-11 pl-10 py-2.5",
+    "bg-white border border-slate-200 rounded-xl",
+    "text-sm text-slate-900 placeholder:text-slate-400",
+    "hover:border-gold-300",
+    "focus:outline-none focus:border-gold-500 focus:ring-4 focus:ring-gold-500/10",
+    "transition-all duration-200",
+  ].join(" ");
 
   return (
     <div dir="rtl" className="w-full">
@@ -914,30 +948,24 @@ export default function AdminTicketsPage() {
                 type="button"
                 onClick={() => setStatusFilter(btn.key)}
                 aria-pressed={isActive}
-                className={`
-                  inline-flex items-center gap-1.5
-                  px-3.5 py-2 rounded-xl
-                  text-[12.5px] font-medium
-                  transition-all duration-200
-                  active:scale-95
-                  ${
-                    isActive
-                      ? "bg-gradient-to-b from-gold-400 to-gold-600 text-white shadow-md shadow-gold-500/25"
-                      : "bg-white border border-slate-200 text-slate-600 hover:border-gold-300 hover:text-gold-700 hover:bg-gold-50/40"
-                  }
-                `}
+                className={[
+                  "inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl",
+                  "text-[12.5px] font-medium transition-all duration-200",
+                  "active:scale-95",
+                  isActive
+                    ? "bg-gradient-to-b from-gold-400 to-gold-600 text-white shadow-md shadow-gold-500/25"
+                    : "bg-white border border-slate-200 text-slate-600 hover:border-gold-300 hover:text-gold-700 hover:bg-gold-50/40",
+                ].join(" ")}
               >
                 {btn.label}
                 {typeof btn.count === "number" && btn.count > 0 && (
                   <span
-                    className={`
-                      text-[10px] font-bold px-1.5 py-0.5 rounded-full
-                      ${
-                        isActive
-                          ? "bg-white/25 text-white"
-                          : "bg-slate-100 text-slate-600"
-                      }
-                    `}
+                    className={[
+                      "text-[10px] font-bold px-1.5 py-0.5 rounded-full",
+                      isActive
+                        ? "bg-white/25 text-white"
+                        : "bg-slate-100 text-slate-600",
+                    ].join(" ")}
                   >
                     {faNum(btn.count)}
                   </span>
@@ -957,17 +985,13 @@ export default function AdminTicketsPage() {
                 type="button"
                 onClick={() => setPriorityFilter(btn.key)}
                 aria-pressed={isActive}
-                className={`
-                  px-3 py-1.5 rounded-lg
-                  text-[11.5px] font-medium
-                  transition-all duration-200
-                  active:scale-95
-                  ${
-                    isActive
-                      ? "bg-gradient-to-b from-gold-400 to-gold-600 text-white shadow-sm shadow-gold-500/25"
-                      : "bg-white border border-slate-200 text-slate-500 hover:border-gold-300 hover:text-gold-700"
-                  }
-                `}
+                className={[
+                  "px-3 py-1.5 rounded-lg text-[11.5px] font-medium",
+                  "transition-all duration-200 active:scale-95",
+                  isActive
+                    ? "bg-gradient-to-b from-gold-400 to-gold-600 text-white shadow-sm shadow-gold-500/25"
+                    : "bg-white border border-slate-200 text-slate-500 hover:border-gold-300 hover:text-gold-700",
+                ].join(" ")}
               >
                 {btn.label}
               </button>
@@ -985,28 +1009,14 @@ export default function AdminTicketsPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="جستجو در تیکت‌ها..."
               aria-label="جستجو"
-              className="
-                w-full pr-11 pl-10 py-2.5
-                bg-white border border-slate-200 rounded-xl
-                text-sm text-slate-900
-                placeholder:text-slate-400
-                hover:border-gold-300
-                focus:outline-none focus:border-gold-500 focus:ring-4 focus:ring-gold-500/10
-                transition-all duration-200
-              "
+              className={searchInputCls}
             />
             {searchTerm && (
               <button
                 type="button"
                 onClick={clearSearch}
                 aria-label="پاک کردن جستجو"
-                className="
-                  absolute left-3 top-1/2 -translate-y-1/2
-                  w-6 h-6 rounded-full
-                  flex items-center justify-center
-                  text-slate-400 hover:text-gold-600 hover:bg-gold-50
-                  active:scale-90 transition-all
-                "
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:text-gold-600 hover:bg-gold-50 active:scale-90 transition-all"
               >
                 <PiX className="w-3.5 h-3.5" strokeWidth={2.5} />
               </button>
@@ -1016,15 +1026,7 @@ export default function AdminTicketsPage() {
           <select
             value={searchField}
             onChange={(e) => setSearchField(e.target.value)}
-            className="
-              px-3.5 py-2.5 rounded-xl
-              bg-white border border-slate-200
-              text-[12.5px] text-slate-700
-              cursor-pointer
-              hover:border-gold-300
-              focus:outline-none focus:border-gold-500 focus:ring-4 focus:ring-gold-500/10
-              transition-all duration-200
-            "
+            className="px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-[12.5px] text-slate-700 cursor-pointer hover:border-gold-300 focus:outline-none focus:border-gold-500 focus:ring-4 focus:ring-gold-500/10 transition-all duration-200"
           >
             {SEARCH_FIELDS.map((f) => (
               <option key={f.value} value={f.value}>
@@ -1036,6 +1038,7 @@ export default function AdminTicketsPage() {
       </motion.div>
 
       {/* ==================== Content ==================== */}
+      <div ref={listTopRef} />
       {filteredTickets.length === 0 ? (
         <EmptyState
           hasSearch={searchTerm.trim().length > 0}
@@ -1050,18 +1053,11 @@ export default function AdminTicketsPage() {
               <select
                 value={itemsPerPage}
                 onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                className="
-                  px-2 py-1 rounded-lg
-                  bg-white border border-slate-200
-                  text-[12.5px] text-slate-700
-                  cursor-pointer
-                  hover:border-gold-300
-                  focus:outline-none focus:border-gold-500
-                "
+                className="px-2 py-1 rounded-lg bg-white border border-slate-200 text-[12.5px] text-slate-700 cursor-pointer hover:border-gold-300 focus:outline-none focus:border-gold-500"
               >
-                {[5, 10, 20, 50].map((n) => (
+                {PER_PAGE_OPTIONS.map((n) => (
                   <option key={n} value={n}>
-                    {n.toLocaleString("fa-IR")}
+                    {faNum(n)}
                   </option>
                 ))}
               </select>
@@ -1077,34 +1073,36 @@ export default function AdminTicketsPage() {
             <p className="text-[12.5px] text-slate-500">
               نمایش{" "}
               <span className="font-bold text-slate-700">
-                {faNum((currentPage - 1) * itemsPerPage + 1)}
+                {faNum(startIndex + 1)}
               </span>{" "}
               تا{" "}
               <span className="font-bold text-slate-700">
-                {faNum(
-                  Math.min(currentPage * itemsPerPage, filteredTickets.length)
-                )}
+                {faNum(endIndex)}
               </span>{" "}
               از{" "}
-              <span className="font-bold text-slate-700">
-                {faNum(filteredTickets.length)}
-              </span>{" "}
+              <span className="font-bold text-slate-700">{faNum(totalItems)}</span>{" "}
               تیکت
             </p>
           </div>
 
           {/* Cards */}
-          <div className="space-y-4">
-            <AnimatePresence mode="popLayout">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`list-${safeCurrentPage}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="space-y-4"
+            >
               {paginatedTickets.map((ticket, index) => (
                 <TicketCard key={ticket._id} ticket={ticket} index={index} />
               ))}
-            </AnimatePresence>
-          </div>
+            </motion.div>
+          </AnimatePresence>
 
           {/* Pagination */}
           <Pagination
-            currentPage={currentPage}
+            currentPage={safeCurrentPage}
             totalPages={totalPages}
             onChange={handlePageChange}
           />
