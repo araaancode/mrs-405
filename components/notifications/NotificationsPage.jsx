@@ -1,7 +1,7 @@
 // components/notifications/NotificationsPage.jsx
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
@@ -11,7 +11,6 @@ import {
     PiCheckCircle,
     PiTrash,
     PiArrowClockwise,
-    PiSpinnerGap,
     PiCalendarPlus,
     PiCalendarCheck,
     PiCalendarX,
@@ -25,12 +24,16 @@ import {
     PiTicket,
     PiMagnifyingGlass,
     PiArrowRight,
+    PiCaretRight,
+    PiCaretLeft,
+    PiCaretDoubleRight,
+    PiCaretDoubleLeft,
 } from "react-icons/pi";
 
 import { useNotifications } from "@/contexts/NotificationContext";
 
 /* ============================================================
-   Toast Options — یک بار در ماژول
+   Toast Options
    ============================================================ */
 const TOAST_OPTIONS = {
     position: "top-center",
@@ -61,7 +64,6 @@ const TOAST_OPTIONS = {
    ============================================================ */
 function getIcon(type) {
     const map = {
-        // کاربر
         reservation_created: PiCalendarPlus,
         reservation_accepted: PiCalendarCheck,
         reservation_rejected: PiCalendarX,
@@ -71,20 +73,14 @@ function getIcon(type) {
         ticket_created: PiTicket,
         ticket_reply: PiChatCircleDots,
         ticket_closed: PiCheckCircle,
-
-        // تالاردار
         new_reservation: PiCalendarPlus,
         reservation_canceled_by_user: PiCalendarX,
         payment_received: PiCreditCard,
         new_ticket_from_user: PiChatCircleDots,
-
-        // ادمین
         new_hall_request: PiStorefront,
         new_owner_registration: PiUserPlus,
         new_ticket: PiTicket,
         user_report: PiInfo,
-
-        // عمومی
         system: PiInfo,
         promotion: PiGift,
     };
@@ -95,12 +91,13 @@ function getIcon(type) {
    رنگ بر اساس priority
    ============================================================ */
 function getColor(priority, isRead) {
-    if (isRead)
+    if (isRead) {
         return {
             bg: "bg-slate-100",
             text: "text-slate-500",
             ring: "ring-slate-200",
         };
+    }
 
     const map = {
         low: {
@@ -176,6 +173,11 @@ function timeAgo(date) {
 }
 
 /* ============================================================
+   تبدیل عدد به فارسی
+   ============================================================ */
+const toFa = (n) => Number(n).toLocaleString("fa-IR");
+
+/* ============================================================
    فیلترها
    ============================================================ */
 const FILTERS = [
@@ -186,6 +188,11 @@ const FILTERS = [
     { key: "ticket", label: "تیکت‌ها" },
     { key: "system", label: "سیستمی" },
 ];
+
+/* ============================================================
+   گزینه‌های تعداد در صفحه
+   ============================================================ */
+const PER_PAGE_OPTIONS = [5, 10, 20, 50];
 
 /* ============================================================
    Skeleton
@@ -225,7 +232,8 @@ function EmptyState({ activeFilter, onReset }) {
             <div
                 className="absolute inset-0 pointer-events-none opacity-40"
                 style={{
-                    backgroundImage: `radial-gradient(circle at 50% 0%, rgba(198,161,76,0.08) 0%, transparent 50%)`,
+                    backgroundImage:
+                        "radial-gradient(circle at 50% 0%, rgba(198,161,76,0.08) 0%, transparent 50%)",
                 }}
             />
 
@@ -269,47 +277,41 @@ function NotificationCard({ notification, index, onRead, onDelete }) {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: Math.min(index * 0.04, 0.3) }}
-            className={`
-                group relative bg-white rounded-2xl
-                ring-1 transition-all duration-300
-                overflow-hidden
-                ${
-                    !notification.is_read
-                        ? "ring-gold-200/80 bg-gradient-to-l from-gold-50/40 to-white shadow-[0_4px_20px_rgba(198,161,76,0.08)]"
-                        : "ring-slate-100 hover:ring-slate-200"
-                }
-            `}
+            className={[
+                "group relative bg-white rounded-2xl",
+                "ring-1 transition-all duration-300 overflow-hidden",
+                !notification.is_read
+                    ? "ring-gold-200/80 bg-gradient-to-l from-gold-50/40 to-white shadow-[0_4px_20px_rgba(198,161,76,0.08)]"
+                    : "ring-slate-100 hover:ring-slate-200",
+            ].join(" ")}
         >
-            {/* نوار عمودی طلایی */}
             {!notification.is_read && (
                 <div className="absolute right-0 top-0 bottom-0 w-1 bg-gradient-to-b from-gold-400 to-gold-600" />
             )}
 
             <div className="p-4 sm:p-5 flex gap-3 sm:gap-4">
-                {/* آیکون */}
                 <div
-                    className={`
-                        w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex-shrink-0
-                        flex items-center justify-center ring-1
-                        ${color.bg} ${color.text} ${color.ring}
-                    `}
+                    className={[
+                        "w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex-shrink-0",
+                        "flex items-center justify-center ring-1",
+                        color.bg,
+                        color.text,
+                        color.ring,
+                    ].join(" ")}
                 >
                     <Icon className="w-5 h-5" />
                 </div>
 
-                {/* محتوا */}
                 <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2 mb-1">
                         <div className="flex items-center gap-2 flex-wrap">
                             <h3
-                                className={`
-                                    text-[13.5px] sm:text-sm leading-snug
-                                    ${
-                                        !notification.is_read
-                                            ? "font-bold text-slate-900"
-                                            : "font-medium text-slate-700"
-                                    }
-                                `}
+                                className={[
+                                    "text-[13.5px] sm:text-sm leading-snug",
+                                    !notification.is_read
+                                        ? "font-bold text-slate-900"
+                                        : "font-medium text-slate-700",
+                                ].join(" ")}
                             >
                                 {notification.title}
                             </h3>
@@ -322,19 +324,11 @@ function NotificationCard({ notification, index, onRead, onDelete }) {
                             )}
                         </div>
 
-                        {/* دکمه حذف */}
                         <button
                             type="button"
                             onClick={() => onDelete(notification._id)}
                             aria-label="حذف"
-                            className="
-                                flex-shrink-0 w-7 h-7 rounded-lg
-                                flex items-center justify-center
-                                text-slate-300
-                                hover:text-rose-500 hover:bg-rose-50
-                                opacity-0 group-hover:opacity-100
-                                transition-all
-                            "
+                            className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 opacity-0 group-hover:opacity-100 transition-all"
                         >
                             <PiTrash className="w-3.5 h-3.5" />
                         </button>
@@ -347,11 +341,12 @@ function NotificationCard({ notification, index, onRead, onDelete }) {
                     <div className="flex items-center justify-between gap-2 flex-wrap">
                         <div className="flex items-center gap-2">
                             <span
-                                className={`
-                                    px-2 py-0.5 rounded-full
-                                    text-[10px] font-bold ring-1
-                                    ${color.bg} ${color.text} ${color.ring}
-                                `}
+                                className={[
+                                    "px-2 py-0.5 rounded-full text-[10px] font-bold ring-1",
+                                    color.bg,
+                                    color.text,
+                                    color.ring,
+                                ].join(" ")}
                             >
                                 {typeLabel}
                             </span>
@@ -364,14 +359,7 @@ function NotificationCard({ notification, index, onRead, onDelete }) {
                             <button
                                 type="button"
                                 onClick={() => onRead(notification._id)}
-                                className="
-                                    inline-flex items-center gap-1
-                                    text-[11px] font-bold
-                                    text-gold-700 hover:text-gold-800
-                                    px-2 py-1 rounded-lg
-                                    hover:bg-gold-50
-                                    transition-colors
-                                "
+                                className="inline-flex items-center gap-1 text-[11px] font-bold text-gold-700 hover:text-gold-800 px-2 py-1 rounded-lg hover:bg-gold-50 transition-colors"
                             >
                                 <PiCheckCircle className="w-3.5 h-3.5" />
                                 خواندن
@@ -385,9 +373,196 @@ function NotificationCard({ notification, index, onRead, onDelete }) {
 }
 
 /* ============================================================
-   Main Component (قابل استفاده در همه نقش‌ها)
+   Pagination Component
    ============================================================ */
-export default function NotificationsPage({ backHref = "/", backLabel = "بازگشت" }) {
+function Pagination({
+    currentPage,
+    totalPages,
+    onPageChange,
+    perPage,
+    onPerPageChange,
+    totalItems,
+    startIndex,
+    endIndex,
+}) {
+    const pageNumbers = useMemo(() => {
+        const pages = [];
+        const maxVisible = 5;
+        const half = Math.floor(maxVisible / 2);
+
+        if (totalPages <= maxVisible + 2) {
+            for (let i = 1; i <= totalPages; i++) pages.push(i);
+            return pages;
+        }
+
+        pages.push(1);
+
+        let start = Math.max(2, currentPage - half);
+        let end = Math.min(totalPages - 1, currentPage + half);
+
+        if (currentPage <= half + 1) {
+            start = 2;
+            end = maxVisible;
+        }
+        if (currentPage >= totalPages - half) {
+            start = totalPages - maxVisible + 1;
+            end = totalPages - 1;
+        }
+
+        if (start > 2) pages.push("start-ellipsis");
+        for (let i = start; i <= end; i++) pages.push(i);
+        if (end < totalPages - 1) pages.push("end-ellipsis");
+
+        pages.push(totalPages);
+        return pages;
+    }, [currentPage, totalPages]);
+
+    if (totalPages <= 1) return null;
+
+    const baseBtn = [
+        "inline-flex items-center justify-center",
+        "min-w-[34px] h-9 px-2.5 rounded-lg",
+        "text-[12px] font-bold",
+        "transition-all duration-200",
+        "active:scale-95",
+    ].join(" ");
+
+    const navBtn = [
+        baseBtn,
+        "text-slate-500 bg-white border border-slate-200",
+        "hover:border-gold-300 hover:text-gold-700 hover:bg-gold-50",
+        "disabled:opacity-40 disabled:cursor-not-allowed",
+        "disabled:hover:bg-white disabled:hover:border-slate-200 disabled:hover:text-slate-500",
+    ].join(" ");
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 bg-white rounded-2xl ring-1 ring-slate-100 p-3 sm:p-4"
+        >
+            <div className="text-[11.5px] sm:text-[12px] text-slate-500 order-2 sm:order-1">
+                نمایش{" "}
+                <span className="font-bold text-slate-700">{toFa(startIndex)}</span>{" "}
+                تا{" "}
+                <span className="font-bold text-slate-700">{toFa(endIndex)}</span>{" "}
+                از{" "}
+                <span className="font-bold text-slate-700">{toFa(totalItems)}</span>{" "}
+                اعلان
+            </div>
+
+            <div className="flex items-center gap-1 order-1 sm:order-2">
+                <button
+                    type="button"
+                    onClick={() => onPageChange(1)}
+                    disabled={currentPage === 1}
+                    aria-label="اولین صفحه"
+                    className={navBtn}
+                >
+                    <PiCaretDoubleRight className="w-3.5 h-3.5" />
+                </button>
+
+                <button
+                    type="button"
+                    onClick={() => onPageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    aria-label="صفحه قبلی"
+                    className={navBtn}
+                >
+                    <PiCaretRight className="w-3.5 h-3.5" />
+                </button>
+
+                <div className="hidden sm:flex items-center gap-1 mx-1">
+                    {pageNumbers.map((p, idx) => {
+                        if (typeof p === "string") {
+                            return (
+                                <span
+                                    key={`${p}-${idx}`}
+                                    className="inline-flex items-center justify-center min-w-[34px] h-9 text-slate-400 text-[12px] font-bold"
+                                >
+                                    …
+                                </span>
+                            );
+                        }
+                        const active = p === currentPage;
+                        return (
+                            <button
+                                key={p}
+                                type="button"
+                                onClick={() => onPageChange(p)}
+                                aria-label={`صفحه ${p}`}
+                                aria-current={active ? "page" : undefined}
+                                className={[
+                                    baseBtn,
+                                    active
+                                        ? "text-white bg-gradient-to-b from-gold-400 to-gold-600 shadow-md shadow-gold-500/25"
+                                        : "text-slate-600 bg-white border border-slate-200 hover:border-gold-300 hover:text-gold-700 hover:bg-gold-50",
+                                ].join(" ")}
+                            >
+                                {toFa(p)}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                <div className="sm:hidden inline-flex items-center gap-1 px-3 h-9 rounded-lg bg-gold-50 text-gold-700 text-[12px] font-bold ring-1 ring-gold-200">
+                    {toFa(currentPage)} / {toFa(totalPages)}
+                </div>
+
+                <button
+                    type="button"
+                    onClick={() => onPageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    aria-label="صفحه بعدی"
+                    className={navBtn}
+                >
+                    <PiCaretLeft className="w-3.5 h-3.5" />
+                </button>
+
+                <button
+                    type="button"
+                    onClick={() => onPageChange(totalPages)}
+                    disabled={currentPage === totalPages}
+                    aria-label="آخرین صفحه"
+                    className={navBtn}
+                >
+                    <PiCaretDoubleLeft className="w-3.5 h-3.5" />
+                </button>
+            </div>
+
+            <div className="flex items-center gap-2 order-3">
+                <label
+                    htmlFor="per-page-select"
+                    className="text-[11.5px] text-slate-500 whitespace-nowrap"
+                >
+                    تعداد در صفحه:
+                </label>
+                <select
+                    id="per-page-select"
+                    value={perPage}
+                    onChange={(e) => onPerPageChange(Number(e.target.value))}
+                    className="h-9 pr-2 pl-7 rounded-lg text-[12px] font-bold text-slate-700 bg-white border border-slate-200 hover:border-gold-300 focus:outline-none focus:border-gold-500 focus:ring-4 focus:ring-gold-500/10 transition-all duration-200 cursor-pointer"
+                >
+                    {PER_PAGE_OPTIONS.map((n) => (
+                        <option key={n} value={n}>
+                            {toFa(n)}
+                        </option>
+                    ))}
+                </select>
+            </div>
+        </motion.div>
+    );
+}
+
+/* ============================================================
+   Main Component
+   ============================================================ */
+export default function NotificationsPage({
+    backHref = "/",
+    backLabel = "بازگشت",
+    defaultPerPage = 10,
+}) {
     const {
         notifications,
         unreadCount,
@@ -401,6 +576,11 @@ export default function NotificationsPage({ backHref = "/", backLabel = "باز�
     const [filter, setFilter] = useState("all");
     const [searchQuery, setSearchQuery] = useState("");
     const [refreshing, setRefreshing] = useState(false);
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const [perPage, setPerPage] = useState(defaultPerPage);
+
+    const listTopRef = useRef(null);
 
     /* ========== فیلتر و جستجو ========== */
     const filtered = useMemo(() => {
@@ -436,6 +616,43 @@ export default function NotificationsPage({ backHref = "/", backLabel = "باز�
         list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
         return list;
     }, [notifications, filter, searchQuery]);
+
+    /* ========== محاسبات Pagination ========== */
+    const totalItems = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
+    const safeCurrentPage = Math.min(currentPage, totalPages);
+    const startIndex = (safeCurrentPage - 1) * perPage;
+    const endIndex = Math.min(startIndex + perPage, totalItems);
+
+    const paginated = useMemo(
+        () => filtered.slice(startIndex, endIndex),
+        [filtered, startIndex, endIndex]
+    );
+
+    /* ========== ریست صفحه هنگام تغییر فیلتر/جستجو/perPage ========== */
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [filter, searchQuery, perPage]);
+
+    /* ========== اصلاح صفحه اگر از محدوده خارج شد ========== */
+    useEffect(() => {
+        if (currentPage > totalPages && totalPages > 0) {
+            setCurrentPage(totalPages);
+        }
+    }, [currentPage, totalPages]);
+
+    /* ========== هندل تغییر صفحه با اسکرول ========== */
+    const handlePageChange = useCallback((page) => {
+        setCurrentPage(page);
+        if (listTopRef.current) {
+            const yOffset = -80;
+            const y =
+                listTopRef.current.getBoundingClientRect().top +
+                window.pageYOffset +
+                yOffset;
+            window.scrollTo({ top: y, behavior: "smooth" });
+        }
+    }, []);
 
     /* ========== شمارش هر فیلتر ========== */
     const counts = useMemo(
@@ -474,6 +691,7 @@ export default function NotificationsPage({ backHref = "/", backLabel = "باز�
             const axios = (await import("axios")).default;
             await axios.delete("/api/notifications?all=true");
             await fetchNotifications();
+            setCurrentPage(1);
             toast.success("همه اعلان‌ها حذف شدند", TOAST_OPTIONS);
         } catch (err) {
             toast.error("خطا در حذف اعلان‌ها", TOAST_OPTIONS);
@@ -526,22 +744,11 @@ export default function NotificationsPage({ backHref = "/", backLabel = "باز�
                     </div>
 
                     <div className="flex items-center gap-2">
-                        {/* رفرش */}
                         <button
                             type="button"
                             onClick={handleRefresh}
                             disabled={refreshing}
-                            className="
-                                inline-flex items-center gap-1.5
-                                px-3 py-2 rounded-xl
-                                text-[12px] font-medium
-                                text-slate-600 bg-white
-                                border border-slate-200
-                                hover:bg-gold-50 hover:border-gold-300 hover:text-gold-700
-                                disabled:opacity-50 disabled:cursor-not-allowed
-                                active:scale-95
-                                transition-all duration-200
-                            "
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-medium text-slate-600 bg-white border border-slate-200 hover:bg-gold-50 hover:border-gold-300 hover:text-gold-700 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all duration-200"
                         >
                             <PiArrowClockwise
                                 className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`}
@@ -549,23 +756,11 @@ export default function NotificationsPage({ backHref = "/", backLabel = "باز�
                             <span className="hidden sm:inline">به‌روزرسانی</span>
                         </button>
 
-                        {/* خواندن همه */}
                         {unreadCount > 0 && (
                             <button
                                 type="button"
                                 onClick={markAllAsRead}
-                                className="
-                                    inline-flex items-center gap-1.5
-                                    px-3 py-2 rounded-xl
-                                    text-[12px] font-bold text-white
-                                    bg-gradient-to-b from-gold-400 to-gold-600
-                                    hover:from-gold-500 hover:to-gold-700
-                                    shadow-md shadow-gold-500/25
-                                    hover:shadow-lg hover:shadow-gold-500/40
-                                    hover:-translate-y-0.5
-                                    active:scale-95
-                                    transition-all duration-200
-                                "
+                                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-bold text-white bg-gradient-to-b from-gold-400 to-gold-600 hover:from-gold-500 hover:to-gold-700 shadow-md shadow-gold-500/25 hover:shadow-lg hover:shadow-gold-500/40 hover:-translate-y-0.5 active:scale-95 transition-all duration-200"
                             >
                                 <PiCheckCircle className="w-3.5 h-3.5" />
                                 <span className="hidden sm:inline">خواندن همه</span>
@@ -592,29 +787,22 @@ export default function NotificationsPage({ backHref = "/", backLabel = "باز�
                                     key={f.key}
                                     type="button"
                                     onClick={() => setFilter(f.key)}
-                                    className={`
-                                        flex-shrink-0 inline-flex items-center gap-1.5
-                                        px-3.5 py-2 rounded-xl
-                                        text-[12px] font-bold
-                                        transition-all duration-200
-                                        ${
-                                            active
-                                                ? "text-white bg-gradient-to-b from-gold-400 to-gold-600 shadow-md shadow-gold-500/25"
-                                                : "text-slate-600 bg-white border border-slate-200 hover:border-gold-300 hover:text-gold-700 hover:bg-gold-50"
-                                        }
-                                    `}
+                                    className={[
+                                        "flex-shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[12px] font-bold transition-all duration-200",
+                                        active
+                                            ? "text-white bg-gradient-to-b from-gold-400 to-gold-600 shadow-md shadow-gold-500/25"
+                                            : "text-slate-600 bg-white border border-slate-200 hover:border-gold-300 hover:text-gold-700 hover:bg-gold-50",
+                                    ].join(" ")}
                                 >
                                     <span>{f.label}</span>
                                     {count > 0 && (
                                         <span
-                                            className={`
-                                                px-1.5 rounded-full text-[10px]
-                                                ${
-                                                    active
-                                                        ? "bg-white/25 text-white"
-                                                        : "bg-slate-100 text-slate-600"
-                                                }
-                                            `}
+                                            className={[
+                                                "px-1.5 rounded-full text-[10px]",
+                                                active
+                                                    ? "bg-white/25 text-white"
+                                                    : "bg-slate-100 text-slate-600",
+                                            ].join(" ")}
                                         >
                                             {count.toLocaleString("fa-IR")}
                                         </span>
@@ -632,34 +820,14 @@ export default function NotificationsPage({ backHref = "/", backLabel = "باز�
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="جستجو در اعلان‌ها..."
-                                className="
-                                    w-full pr-11 pl-3.5 py-2.5
-                                    bg-white border border-slate-200
-                                    rounded-xl
-                                    text-[13px] text-slate-900
-                                    placeholder:text-slate-400
-                                    hover:border-gold-300
-                                    focus:outline-none
-                                    focus:border-gold-500
-                                    focus:ring-4 focus:ring-gold-500/10
-                                    transition-all duration-200
-                                "
+                                className="w-full pr-11 pl-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-[13px] text-slate-900 placeholder:text-slate-400 hover:border-gold-300 focus:outline-none focus:border-gold-500 focus:ring-4 focus:ring-gold-500/10 transition-all duration-200"
                             />
                         </div>
 
                         <button
                             type="button"
                             onClick={handleDeleteAll}
-                            className="
-                                flex-shrink-0 inline-flex items-center gap-1.5
-                                px-3 py-2.5 rounded-xl
-                                text-[12px] font-medium
-                                text-slate-500 bg-white
-                                border border-slate-200
-                                hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200
-                                active:scale-95
-                                transition-all duration-200
-                            "
+                            className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[12px] font-medium text-slate-500 bg-white border border-slate-200 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 active:scale-95 transition-all duration-200"
                             title="حذف همه اعلان‌ها"
                         >
                             <PiTrash className="w-3.5 h-3.5" />
@@ -670,6 +838,7 @@ export default function NotificationsPage({ backHref = "/", backLabel = "باز�
             )}
 
             {/* ==================== Content ==================== */}
+            <div ref={listTopRef} />
             <AnimatePresence mode="wait">
                 {filtered.length === 0 ? (
                     <motion.div
@@ -688,13 +857,13 @@ export default function NotificationsPage({ backHref = "/", backLabel = "باز�
                     </motion.div>
                 ) : (
                     <motion.div
-                        key="list"
+                        key={`list-${safeCurrentPage}`}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         className="space-y-3"
                     >
-                        {filtered.map((notification, index) => (
+                        {paginated.map((notification, index) => (
                             <NotificationCard
                                 key={notification._id}
                                 notification={notification}
@@ -707,6 +876,20 @@ export default function NotificationsPage({ backHref = "/", backLabel = "باز�
                 )}
             </AnimatePresence>
 
+            {/* ==================== Pagination ==================== */}
+            {totalPages > 1 && (
+                <Pagination
+                    currentPage={safeCurrentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                    perPage={perPage}
+                    onPerPageChange={setPerPage}
+                    totalItems={totalItems}
+                    startIndex={startIndex + 1}
+                    endIndex={endIndex}
+                />
+            )}
+
             {/* ==================== Footer Link ==================== */}
             <motion.div
                 initial={{ opacity: 0, y: 12 }}
@@ -716,16 +899,7 @@ export default function NotificationsPage({ backHref = "/", backLabel = "باز�
             >
                 <Link
                     href={backHref}
-                    className="
-                        inline-flex items-center gap-2
-                        px-4 py-2.5 rounded-xl
-                        text-[12.5px] font-medium
-                        text-slate-600 bg-white
-                        border border-slate-200
-                        hover:bg-gold-50 hover:border-gold-300 hover:text-gold-700
-                        active:scale-95
-                        transition-all duration-200
-                    "
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-[12.5px] font-medium text-slate-600 bg-white border border-slate-200 hover:bg-gold-50 hover:border-gold-300 hover:text-gold-700 active:scale-95 transition-all duration-200"
                 >
                     <PiArrowRight className="w-4 h-4" />
                     {backLabel}

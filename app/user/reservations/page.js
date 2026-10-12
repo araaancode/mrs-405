@@ -1,7 +1,7 @@
 // app/user/reservations/page.jsx
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import axios from "axios";
@@ -12,6 +12,10 @@ import {
     PiArrowClockwise,
     PiCalendarX,
     PiPlusCircle,
+    PiCaretRight,
+    PiCaretLeft,
+    PiCaretDoubleRight,
+    PiCaretDoubleLeft,
 } from "react-icons/pi";
 import { useSession } from "next-auth/react";
 
@@ -22,7 +26,6 @@ import ReservationSkeleton from "@/components/user/reservations/ReservationSkele
 
 /* ============================================================
    Toast Options — یک بار در ماژول
-   موقعیت: بالا-وسط | RTL | فونت IranianSans
    ============================================================ */
 const TOAST_OPTIONS = {
     position: "top-center",
@@ -49,27 +52,62 @@ const TOAST_OPTIONS = {
 };
 
 /* ============================================================
+   گزینه‌های تعداد در صفحه
+   ============================================================ */
+const PER_PAGE_OPTIONS = [5, 10, 20, 50];
+
+/* ============================================================
+   تبدیل عدد به فارسی
+   ============================================================ */
+const toFa = (n) => Number(n).toLocaleString("fa-IR");
+
+/* ============================================================
    EmptyState
    ============================================================ */
 function EmptyState({ activeFilter, onReset }) {
+    const wrapperClass = [
+        "relative overflow-hidden",
+        "bg-white rounded-3xl",
+        "ring-1 ring-slate-100",
+        "shadow-[0_8px_32px_rgba(198,161,76,0.06)]",
+        "p-8 sm:p-12",
+        "text-center",
+    ].join(" ");
+
+    const resetBtnClass = [
+        "inline-flex items-center gap-2",
+        "px-5 py-2.5 rounded-xl",
+        "text-sm font-medium",
+        "text-slate-700 bg-white",
+        "border border-slate-200",
+        "hover:bg-slate-50 hover:border-slate-300",
+        "transition-all duration-200",
+    ].join(" ");
+
+    const ctaClass = [
+        "inline-flex items-center gap-2",
+        "px-6 py-3 rounded-xl",
+        "text-sm font-bold text-white",
+        "bg-gradient-to-b from-gold-400 to-gold-600",
+        "hover:from-gold-500 hover:to-gold-700",
+        "shadow-md shadow-gold-500/25",
+        "hover:shadow-lg hover:shadow-gold-500/40",
+        "hover:-translate-y-0.5",
+        "transition-all duration-300",
+    ].join(" ");
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
-            className="
-        relative overflow-hidden
-        bg-white rounded-3xl
-        ring-1 ring-slate-100
-        shadow-[0_8px_32px_rgba(198,161,76,0.06)]
-        p-8 sm:p-12
-        text-center
-      "
+            className={wrapperClass}
         >
             <div
                 className="absolute inset-0 pointer-events-none opacity-40"
                 style={{
-                    backgroundImage: `radial-gradient(circle at 50% 0%, rgba(198,161,76,0.08) 0%, transparent 50%)`,
+                    backgroundImage:
+                        "radial-gradient(circle at 50% 0%, rgba(198,161,76,0.08) 0%, transparent 50%)",
                 }}
             />
 
@@ -91,37 +129,13 @@ function EmptyState({ activeFilter, onReset }) {
 
             <div className="relative flex flex-wrap items-center justify-center gap-3">
                 {activeFilter && (
-                    <button
-                        onClick={onReset}
-                        className="
-              inline-flex items-center gap-2
-              px-5 py-2.5 rounded-xl
-              text-sm font-medium
-              text-slate-700 bg-white
-              border border-slate-200
-              hover:bg-slate-50 hover:border-slate-300
-              transition-all duration-200
-            "
-                    >
+                    <button onClick={onReset} className={resetBtnClass}>
                         <PiArrowClockwise className="w-4 h-4" />
                         پاک کردن فیلترها
                     </button>
                 )}
 
-                <Link
-                    href="/halls"
-                    className="
-            inline-flex items-center gap-2
-            px-6 py-3 rounded-xl
-            text-sm font-bold text-white
-            bg-gradient-to-b from-gold-400 to-gold-600
-            hover:from-gold-500 hover:to-gold-700
-            shadow-md shadow-gold-500/25
-            hover:shadow-lg hover:shadow-gold-500/40
-            hover:-translate-y-0.5
-            transition-all duration-300
-          "
-                >
+                <Link href="/halls" className={ctaClass}>
                     <PiPlusCircle className="w-4 h-4" />
                     مشاهده تالارها
                 </Link>
@@ -134,24 +148,39 @@ function EmptyState({ activeFilter, onReset }) {
    ErrorState
    ============================================================ */
 function ErrorState({ message, onRetry }) {
+    const wrapperClass = [
+        "relative overflow-hidden",
+        "bg-white rounded-3xl",
+        "ring-1 ring-rose-100",
+        "shadow-[0_8px_32px_rgba(244,63,94,0.06)]",
+        "p-8 sm:p-12",
+        "text-center",
+    ].join(" ");
+
+    const retryBtnClass = [
+        "relative inline-flex items-center gap-2",
+        "px-6 py-3 rounded-xl",
+        "text-sm font-bold text-white",
+        "bg-gradient-to-b from-gold-400 to-gold-600",
+        "hover:from-gold-500 hover:to-gold-700",
+        "shadow-md shadow-gold-500/25",
+        "hover:shadow-lg hover:shadow-gold-500/40",
+        "hover:-translate-y-0.5",
+        "transition-all duration-300",
+    ].join(" ");
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
-            className="
-        relative overflow-hidden
-        bg-white rounded-3xl
-        ring-1 ring-rose-100
-        shadow-[0_8px_32px_rgba(244,63,94,0.06)]
-        p-8 sm:p-12
-        text-center
-      "
+            className={wrapperClass}
         >
             <div
                 className="absolute inset-0 pointer-events-none opacity-40"
                 style={{
-                    backgroundImage: `radial-gradient(circle at 50% 0%, rgba(244,63,94,0.06) 0%, transparent 50%)`,
+                    backgroundImage:
+                        "radial-gradient(circle at 50% 0%, rgba(244,63,94,0.06) 0%, transparent 50%)",
                 }}
             />
 
@@ -168,23 +197,196 @@ function ErrorState({ message, onRetry }) {
                     "متأسفانه در دریافت اطلاعات رزروها مشکلی پیش آمد. لطفاً دوباره تلاش کنید."}
             </p>
 
-            <button
-                onClick={onRetry}
-                className="
-          relative inline-flex items-center gap-2
-          px-6 py-3 rounded-xl
-          text-sm font-bold text-white
-          bg-gradient-to-b from-gold-400 to-gold-600
-          hover:from-gold-500 hover:to-gold-700
-          shadow-md shadow-gold-500/25
-          hover:shadow-lg hover:shadow-gold-500/40
-          hover:-translate-y-0.5
-          transition-all duration-300
-        "
-            >
+            <button onClick={onRetry} className={retryBtnClass}>
                 <PiArrowClockwise className="w-4 h-4" />
                 تلاش مجدد
             </button>
+        </motion.div>
+    );
+}
+
+/* ============================================================
+   Pagination Component
+   ============================================================ */
+function Pagination({
+    currentPage,
+    totalPages,
+    onPageChange,
+    perPage,
+    onPerPageChange,
+    totalItems,
+    startIndex,
+    endIndex,
+}) {
+    const pageNumbers = useMemo(() => {
+        const pages = [];
+        const maxVisible = 5;
+        const half = Math.floor(maxVisible / 2);
+
+        if (totalPages <= maxVisible + 2) {
+            for (let i = 1; i <= totalPages; i++) pages.push(i);
+            return pages;
+        }
+
+        pages.push(1);
+
+        let start = Math.max(2, currentPage - half);
+        let end = Math.min(totalPages - 1, currentPage + half);
+
+        if (currentPage <= half + 1) {
+            start = 2;
+            end = maxVisible;
+        }
+        if (currentPage >= totalPages - half) {
+            start = totalPages - maxVisible + 1;
+            end = totalPages - 1;
+        }
+
+        if (start > 2) pages.push("start-ellipsis");
+        for (let i = start; i <= end; i++) pages.push(i);
+        if (end < totalPages - 1) pages.push("end-ellipsis");
+
+        pages.push(totalPages);
+        return pages;
+    }, [currentPage, totalPages]);
+
+    if (totalPages <= 1) return null;
+
+    const baseBtn = [
+        "inline-flex items-center justify-center",
+        "min-w-[34px] h-9 px-2.5 rounded-lg",
+        "text-[12px] font-bold",
+        "transition-all duration-200",
+        "active:scale-95",
+    ].join(" ");
+
+    const navBtn = [
+        baseBtn,
+        "text-slate-500 bg-white border border-slate-200",
+        "hover:border-gold-300 hover:text-gold-700 hover:bg-gold-50",
+        "disabled:opacity-40 disabled:cursor-not-allowed",
+        "disabled:hover:bg-white disabled:hover:border-slate-200 disabled:hover:text-slate-500",
+    ].join(" ");
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 bg-white rounded-2xl ring-1 ring-slate-100 p-3 sm:p-4"
+        >
+            {/* اطلاعات بازه */}
+            <div className="text-[11.5px] sm:text-[12px] text-slate-500 order-2 sm:order-1">
+                نمایش{" "}
+                <span className="font-bold text-slate-700">{toFa(startIndex)}</span>{" "}
+                تا{" "}
+                <span className="font-bold text-slate-700">{toFa(endIndex)}</span>{" "}
+                از{" "}
+                <span className="font-bold text-slate-700">{toFa(totalItems)}</span>{" "}
+                رزرو
+            </div>
+
+            {/* دکمه‌های صفحه */}
+            <div className="flex items-center gap-1 order-1 sm:order-2">
+                <button
+                    type="button"
+                    onClick={() => onPageChange(1)}
+                    disabled={currentPage === 1}
+                    aria-label="اولین صفحه"
+                    className={navBtn}
+                >
+                    <PiCaretDoubleRight className="w-3.5 h-3.5" />
+                </button>
+
+                <button
+                    type="button"
+                    onClick={() => onPageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    aria-label="صفحه قبلی"
+                    className={navBtn}
+                >
+                    <PiCaretRight className="w-3.5 h-3.5" />
+                </button>
+
+                <div className="hidden sm:flex items-center gap-1 mx-1">
+                    {pageNumbers.map((p, idx) => {
+                        if (typeof p === "string") {
+                            return (
+                                <span
+                                    key={`${p}-${idx}`}
+                                    className="inline-flex items-center justify-center min-w-[34px] h-9 text-slate-400 text-[12px] font-bold"
+                                >
+                                    …
+                                </span>
+                            );
+                        }
+                        const active = p === currentPage;
+                        return (
+                            <button
+                                key={p}
+                                type="button"
+                                onClick={() => onPageChange(p)}
+                                aria-label={`صفحه ${p}`}
+                                aria-current={active ? "page" : undefined}
+                                className={[
+                                    baseBtn,
+                                    active
+                                        ? "text-white bg-gradient-to-b from-gold-400 to-gold-600 shadow-md shadow-gold-500/25"
+                                        : "text-slate-600 bg-white border border-slate-200 hover:border-gold-300 hover:text-gold-700 hover:bg-gold-50",
+                                ].join(" ")}
+                            >
+                                {toFa(p)}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                <div className="sm:hidden inline-flex items-center gap-1 px-3 h-9 rounded-lg bg-gold-50 text-gold-700 text-[12px] font-bold ring-1 ring-gold-200">
+                    {toFa(currentPage)} / {toFa(totalPages)}
+                </div>
+
+                <button
+                    type="button"
+                    onClick={() => onPageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    aria-label="صفحه بعدی"
+                    className={navBtn}
+                >
+                    <PiCaretLeft className="w-3.5 h-3.5" />
+                </button>
+
+                <button
+                    type="button"
+                    onClick={() => onPageChange(totalPages)}
+                    disabled={currentPage === totalPages}
+                    aria-label="آخرین صفحه"
+                    className={navBtn}
+                >
+                    <PiCaretDoubleLeft className="w-3.5 h-3.5" />
+                </button>
+            </div>
+
+            {/* تعداد در صفحه */}
+            <div className="flex items-center gap-2 order-3">
+                <label
+                    htmlFor="per-page-select"
+                    className="text-[11.5px] text-slate-500 whitespace-nowrap"
+                >
+                    تعداد در صفحه:
+                </label>
+                <select
+                    id="per-page-select"
+                    value={perPage}
+                    onChange={(e) => onPerPageChange(Number(e.target.value))}
+                    className="h-9 pr-2 pl-7 rounded-lg text-[12px] font-bold text-slate-700 bg-white border border-slate-200 hover:border-gold-300 focus:outline-none focus:border-gold-500 focus:ring-4 focus:ring-gold-500/10 transition-all duration-200 cursor-pointer"
+                >
+                    {PER_PAGE_OPTIONS.map((n) => (
+                        <option key={n} value={n}>
+                            {toFa(n)}
+                        </option>
+                    ))}
+                </select>
+            </div>
         </motion.div>
     );
 }
@@ -199,6 +401,13 @@ export default function ReservationsPage() {
     const [error, setError] = useState(null);
     const [filter, setFilter] = useState("all");
     const [searchQuery, setSearchQuery] = useState("");
+
+    /* ========== Pagination State ========== */
+    const [currentPage, setCurrentPage] = useState(1);
+    const [perPage, setPerPage] = useState(10);
+
+    /* ========== Refs ========== */
+    const listTopRef = useRef(null);
 
     /* ============================================================
        بارگذاری رزروها
@@ -250,7 +459,6 @@ export default function ReservationsPage() {
     const filtered = useMemo(() => {
         let list = [...reservations];
 
-        // فیلتر بر اساس وضعیت
         if (filter !== "all") {
             if (filter === "confirmed") {
                 list = list.filter(
@@ -261,7 +469,6 @@ export default function ReservationsPage() {
             }
         }
 
-        // جستجو در نام تالار و شهر
         if (searchQuery.trim()) {
             const q = searchQuery.trim().toLowerCase();
             list = list.filter((r) => {
@@ -271,7 +478,6 @@ export default function ReservationsPage() {
             });
         }
 
-        // مرتب‌سازی بر اساس تاریخ (جدیدترین اول)
         list.sort((a, b) => {
             const da = new Date(a.createdAt || a.start_date);
             const db = new Date(b.createdAt || b.start_date);
@@ -280,6 +486,45 @@ export default function ReservationsPage() {
 
         return list;
     }, [reservations, filter, searchQuery]);
+
+    /* ============================================================
+       محاسبات Pagination
+       ============================================================ */
+    const totalItems = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
+    const safeCurrentPage = Math.min(currentPage, totalPages);
+    const startIndex = (safeCurrentPage - 1) * perPage;
+    const endIndex = Math.min(startIndex + perPage, totalItems);
+
+    const paginated = useMemo(
+        () => filtered.slice(startIndex, endIndex),
+        [filtered, startIndex, endIndex]
+    );
+
+    /* ========== ریست صفحه هنگام تغییر فیلتر/جستجو/perPage ========== */
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [filter, searchQuery, perPage]);
+
+    /* ========== اصلاح صفحه اگر از محدوده خارج شد ========== */
+    useEffect(() => {
+        if (currentPage > totalPages && totalPages > 0) {
+            setCurrentPage(totalPages);
+        }
+    }, [currentPage, totalPages]);
+
+    /* ========== هندل تغییر صفحه با اسکرول ========== */
+    const handlePageChange = useCallback((page) => {
+        setCurrentPage(page);
+        if (listTopRef.current) {
+            const yOffset = -80;
+            const y =
+                listTopRef.current.getBoundingClientRect().top +
+                window.pageYOffset +
+                yOffset;
+            window.scrollTo({ top: y, behavior: "smooth" });
+        }
+    }, []);
 
     /* ============================================================
        Loading / Unauthenticated
@@ -305,6 +550,18 @@ export default function ReservationsPage() {
     /* ============================================================
        Render
        ============================================================ */
+    const newReservationBtn = [
+        "inline-flex items-center gap-2",
+        "px-4 py-2.5 rounded-xl",
+        "text-xs font-semibold text-white",
+        "bg-gradient-to-b from-gold-400 to-gold-600",
+        "hover:from-gold-500 hover:to-gold-700",
+        "shadow-md shadow-gold-500/25",
+        "hover:shadow-lg hover:shadow-gold-500/40",
+        "hover:-translate-y-0.5",
+        "transition-all duration-300",
+    ].join(" ");
+
     return (
         <div dir="rtl" className="w-full">
             {/* ==================== Header ==================== */}
@@ -324,20 +581,7 @@ export default function ReservationsPage() {
                         </p>
                     </div>
 
-                    <Link
-                        href="/halls"
-                        className="
-              inline-flex items-center gap-2
-              px-4 py-2.5 rounded-xl
-              text-xs font-semibold text-white
-              bg-gradient-to-b from-gold-400 to-gold-600
-              hover:from-gold-500 hover:to-gold-700
-              shadow-md shadow-gold-500/25
-              hover:shadow-lg hover:shadow-gold-500/40
-              hover:-translate-y-0.5
-              transition-all duration-300
-            "
-                    >
+                    <Link href="/halls" className={newReservationBtn}>
                         <PiPlusCircle className="w-4 h-4" />
                         رزرو جدید
                     </Link>
@@ -346,7 +590,11 @@ export default function ReservationsPage() {
 
             {/* ==================== آمار ==================== */}
             {!error && reservations.length > 0 && (
-                <ReservationStats stats={stats} activeFilter={filter} onFilterChange={setFilter} />
+                <ReservationStats
+                    stats={stats}
+                    activeFilter={filter}
+                    onFilterChange={setFilter}
+                />
             )}
 
             {/* ==================== فیلتر و جستجو ==================== */}
@@ -361,6 +609,7 @@ export default function ReservationsPage() {
             )}
 
             {/* ==================== محتوا ==================== */}
+            <div ref={listTopRef} />
             <AnimatePresence mode="wait">
                 {/* خطا */}
                 {error && (
@@ -395,13 +644,13 @@ export default function ReservationsPage() {
                 {/* لیست رزروها */}
                 {!error && filtered.length > 0 && (
                     <motion.div
-                        key="list"
+                        key={`list-${safeCurrentPage}`}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         className="space-y-4"
                     >
-                        {filtered.map((reservation, index) => (
+                        {paginated.map((reservation, index) => (
                             <ReservationCard
                                 key={reservation._id}
                                 reservation={reservation}
@@ -412,6 +661,20 @@ export default function ReservationsPage() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* ==================== Pagination ==================== */}
+            {!error && totalPages > 1 && (
+                <Pagination
+                    currentPage={safeCurrentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                    perPage={perPage}
+                    onPerPageChange={setPerPage}
+                    totalItems={totalItems}
+                    startIndex={startIndex + 1}
+                    endIndex={endIndex}
+                />
+            )}
         </div>
     );
 }

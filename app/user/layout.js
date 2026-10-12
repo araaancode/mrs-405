@@ -311,11 +311,7 @@ export default function UserLayout({ children }) {
                                                     icon: PiListChecks,
                                                     label: "تراکنش‌ها",
                                                 },
-                                                {
-                                                    href: "/user/wallet",
-                                                    icon: PiWallet,
-                                                    label: "کیف پول",
-                                                },
+                                             
                                             ]}
                                         />
                                     </div>
