@@ -13,6 +13,12 @@ const HeroSlider = dynamic(() => import("@/components/landing/HeroSlider"), {
     ),
 });
 
+// const LandingAds = dynamic(() => import("@/components/landing/LandingAds"), {
+//     loading: () => (
+//         <div className="w-full h-[500px] bg-slate-100 animate-pulse rounded-2xl" />
+//     ),
+// });
+
 const AdvancedSearch = dynamic(
     () => import("@/components/landing/AdvancedSearch"),
     {
@@ -198,6 +204,8 @@ export default function HomePage() {
 
             {/* ==================== Popular Cities ==================== */}
             <PopularCities />
+            
+            {/* <LandingAds /> */}
 
             {/* ==================== Popular Halls — Streaming ==================== */}
             <Suspense fallback={<HallsSkeleton />}>
