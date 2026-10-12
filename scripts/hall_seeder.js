@@ -3,20 +3,20 @@ import User from "../models/User.js";
 import Hall from "../models/Hall.js";
 
 const urlImages = [
-    './images/landing/halls/1.jpg',
-    './images/landing/halls/2.jpg',
-    './images/landing/halls/3.jpg',
-    './images/landing/halls/4.jpg',
-    './images/landing/halls/5.jpg',
-    './images/landing/halls/6.jpg',
-    './images/landing/halls/7.jpg',
-    './images/landing/halls/8.jpg',
-    './images/landing/halls/8.jpeg',
-    './images/landing/halls/10.jpg',
-    './images/landing/halls/10.jpeg',
-    './images/landing/halls/12.jpeg',
-    './images/landing/halls/13.jpg',
-    './images/landing/halls/14.png',
+    '/images/landing/halls/1.jpg',
+    '/images/landing/halls/2.jpg',
+    '/images/landing/halls/3.jpg',
+    '/images/landing/halls/4.jpg',
+    '/images/landing/halls/5.jpg',
+    '/images/landing/halls/6.jpg',
+    '/images/landing/halls/7.jpg',
+    '/images/landing/halls/8.jpg',
+    '/images/landing/halls/8.jpeg',
+    '/images/landing/halls/10.jpg',
+    '/images/landing/halls/10.jpeg',
+    '/images/landing/halls/12.jpeg',
+    '/images/landing/halls/13.jpg',
+    '/images/landing/halls/14.png',
 ];
 
 const iranLocations = {

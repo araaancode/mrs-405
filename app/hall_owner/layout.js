@@ -20,6 +20,7 @@ import {
     PiBell,
     PiMegaphone,
     PiCalendarCheck,
+    PiReceipt, // ← جدید
 } from "react-icons/pi";
 
 /* ============================================================
@@ -200,7 +201,6 @@ export default function HallOwnerLayout({ children }) {
         setOpenDropdown((prev) => (prev === key ? null : key));
 
     return (
-        /* ✅ تغییر: حذف گرادیانت — پس‌زمینه از body می‌آید */
         <div className="min-h-screen relative">
             <div
                 className="fixed inset-0 pointer-events-none opacity-[0.5]"
@@ -269,6 +269,14 @@ export default function HallOwnerLayout({ children }) {
                                             href="/hall_owner/reservations"
                                             icon={PiCalendarCheck}
                                             label="رزروها"
+                                            pathname={pathname}
+                                        />
+
+                                        {/* ✅ جدید: تراکنش‌ها */}
+                                        <NavLink
+                                            href="/hall_owner/transactions"
+                                            icon={PiReceipt}
+                                            label="تراکنش‌ها"
                                             pathname={pathname}
                                         />
 
