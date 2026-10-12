@@ -1,7 +1,14 @@
 // app/hall_owner/tickets/page.jsx
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import {
+  useEffect,
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+  memo,
+} from "react";
 import axios from "axios";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -27,7 +34,9 @@ import { notify } from "@/lib/toast";
 /* ============================================================
    Constants
    ============================================================ */
-const PER_PAGE = 6;
+const DEFAULT_PER_PAGE = 6;
+const PER_PAGE_OPTIONS = [3, 6, 12, 24];
+const faNum = (n) => Number(n).toLocaleString("fa-IR");
 
 /* ============================================================
    Status Config
@@ -112,52 +121,54 @@ function getPriorityInfo(priority) {
 /* ============================================================
    StatusBadge
    ============================================================ */
-function StatusBadge({ status }) {
+const StatusBadge = memo(function StatusBadge({ status }) {
   const info = getStatusInfo(status);
   const Icon = info.icon;
+  const cls = [
+    "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full",
+    "text-[11px] font-bold ring-1",
+    info.bg,
+    info.text,
+    info.ring,
+  ].join(" ");
   return (
-    <span
-      className={`
-        inline-flex items-center gap-1.5
-        px-2.5 py-1 rounded-full
-        text-[11px] font-bold
-        ring-1
-        ${info.bg} ${info.text} ${info.ring}
-      `}
-    >
-      <span className={`w-1.5 h-1.5 rounded-full ${info.dot} animate-pulse`} />
+    <span className={cls}>
+      <span
+        className={["w-1.5 h-1.5 rounded-full animate-pulse", info.dot].join(
+          " "
+        )}
+      />
       <Icon className="w-3.5 h-3.5" />
       {info.label}
     </span>
   );
-}
+});
 
 /* ============================================================
    PriorityBadge
    ============================================================ */
-function PriorityBadge({ priority }) {
+const PriorityBadge = memo(function PriorityBadge({ priority }) {
   const info = getPriorityInfo(priority);
   const Icon = info.icon;
+  const cls = [
+    "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full",
+    "text-[11px] font-bold ring-1",
+    info.bg,
+    info.text,
+    info.ring,
+  ].join(" ");
   return (
-    <span
-      className={`
-        inline-flex items-center gap-1.5
-        px-2.5 py-1 rounded-full
-        text-[11px] font-bold
-        ring-1
-        ${info.bg} ${info.text} ${info.ring}
-      `}
-    >
+    <span className={cls}>
       <Icon className="w-3.5 h-3.5" />
       {info.label}
     </span>
   );
-}
+});
 
 /* ============================================================
    TicketSkeleton
    ============================================================ */
-function TicketSkeleton() {
+const TicketSkeleton = memo(function TicketSkeleton() {
   return (
     <div className="w-full space-y-5 animate-pulse">
       <div className="flex items-center justify-between gap-4">
@@ -190,30 +201,48 @@ function TicketSkeleton() {
       ))}
     </div>
   );
-}
+});
 
 /* ============================================================
    EmptyState
    ============================================================ */
-function EmptyState({ filtered, onReset }) {
+const EmptyState = memo(function EmptyState({ filtered, onReset }) {
+  const wrapperCls = [
+    "relative overflow-hidden bg-white rounded-3xl",
+    "ring-1 ring-slate-100",
+    "shadow-[0_8px_32px_rgba(198,161,76,0.06)]",
+    "p-8 sm:p-12 text-center",
+  ].join(" ");
+
+  const resetBtnCls = [
+    "inline-flex items-center gap-2 px-5 py-2.5 rounded-xl",
+    "text-sm font-medium text-slate-700 bg-white border border-slate-200",
+    "hover:bg-slate-50 hover:border-slate-300 active:scale-95",
+    "transition-all duration-200",
+  ].join(" ");
+
+  const ctaCls = [
+    "inline-flex items-center gap-2 px-6 py-3 rounded-xl",
+    "text-sm font-bold text-white",
+    "bg-gradient-to-b from-gold-400 to-gold-600",
+    "hover:from-gold-500 hover:to-gold-700",
+    "shadow-md shadow-gold-500/25",
+    "hover:shadow-lg hover:shadow-gold-500/40",
+    "hover:-translate-y-0.5 transition-all duration-300",
+  ].join(" ");
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
-      className="
-        relative overflow-hidden
-        bg-white rounded-3xl
-        ring-1 ring-slate-100
-        shadow-[0_8px_32px_rgba(198,161,76,0.06)]
-        p-8 sm:p-12
-        text-center
-      "
+      className={wrapperCls}
     >
       <div
         className="absolute inset-0 pointer-events-none opacity-40"
         style={{
-          backgroundImage: `radial-gradient(circle at 50% 0%, rgba(198,161,76,0.08) 0%, transparent 50%)`,
+          backgroundImage:
+            "radial-gradient(circle at 50% 0%, rgba(198,161,76,0.08) 0%, transparent 50%)",
         }}
       />
 
@@ -233,63 +262,49 @@ function EmptyState({ filtered, onReset }) {
 
       <div className="relative flex flex-wrap items-center justify-center gap-3">
         {filtered && (
-          <button
-            type="button"
-            onClick={onReset}
-            className="
-              inline-flex items-center gap-2
-              px-5 py-2.5 rounded-xl
-              text-sm font-medium text-slate-700
-              bg-white border border-slate-200
-              hover:bg-slate-50 hover:border-slate-300
-              active:scale-95
-              transition-all duration-200
-            "
-          >
+          <button type="button" onClick={onReset} className={resetBtnCls}>
             <PiX className="w-4 h-4" />
             پاک کردن فیلترها
           </button>
         )}
 
-        <Link
-          href="/hall_owner/tickets/create"
-          className="
-            inline-flex items-center gap-2
-            px-6 py-3 rounded-xl
-            text-sm font-bold text-white
-            bg-gradient-to-b from-gold-400 to-gold-600
-            hover:from-gold-500 hover:to-gold-700
-            shadow-md shadow-gold-500/25
-            hover:shadow-lg hover:shadow-gold-500/40
-            hover:-translate-y-0.5
-            transition-all duration-300
-          "
-        >
+        <Link href="/hall_owner/tickets/create" className={ctaCls}>
           <PiPlusCircle className="w-4 h-4" />
           ایجاد تیکت جدید
         </Link>
       </div>
     </motion.div>
   );
-}
+});
 
 /* ============================================================
    TicketCard
    ============================================================ */
-function TicketCard({ ticket, index }) {
+const TicketCard = memo(function TicketCard({ ticket, index }) {
+  const cardCls = [
+    "group bg-white rounded-2xl",
+    "ring-1 ring-slate-100 hover:ring-gold-200/70",
+    "shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+    "hover:shadow-[0_12px_32px_-12px_rgba(198,161,76,0.18)]",
+    "transition-all duration-400 overflow-hidden",
+  ].join(" ");
+
+  const linkCls = [
+    "inline-flex items-center justify-center gap-1.5",
+    "px-4 py-2 rounded-lg text-[11.5px] font-bold text-white",
+    "bg-gradient-to-b from-gold-400 to-gold-600",
+    "hover:from-gold-500 hover:to-gold-700",
+    "shadow-sm shadow-gold-500/25",
+    "hover:shadow-md hover:shadow-gold-500/40",
+    "active:scale-95 transition-all duration-200 group/btn",
+  ].join(" ");
+
   return (
     <motion.article
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, delay: index * 0.04 }}
-      className="
-        group bg-white rounded-2xl
-        ring-1 ring-slate-100 hover:ring-gold-200/70
-        shadow-[0_1px_2px_rgba(15,23,42,0.04)]
-        hover:shadow-[0_12px_32px_-12px_rgba(198,161,76,0.18)]
-        transition-all duration-400
-        overflow-hidden
-      "
+      transition={{ duration: 0.35, delay: Math.min(index * 0.04, 0.3) }}
+      className={cardCls}
     >
       <div className="p-5">
         <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
@@ -322,18 +337,7 @@ function TicketCard({ ticket, index }) {
 
           <Link
             href={`/hall_owner/tickets/add_comment/${ticket._id}`}
-            className="
-              inline-flex items-center justify-center gap-1.5
-              px-4 py-2 rounded-lg
-              text-[11.5px] font-bold text-white
-              bg-gradient-to-b from-gold-400 to-gold-600
-              hover:from-gold-500 hover:to-gold-700
-              shadow-sm shadow-gold-500/25
-              hover:shadow-md hover:shadow-gold-500/40
-              active:scale-95
-              transition-all duration-200
-              group/btn
-            "
+            className={linkCls}
           >
             <PiChatCircleDots className="w-3.5 h-3.5" />
             مشاهده و پاسخ
@@ -343,16 +347,115 @@ function TicketCard({ ticket, index }) {
       </div>
     </motion.article>
   );
-}
+});
 
 /* ============================================================
-   Pagination
+   NavButton / PageButton / Ellipsis — بیرون از Pagination
    ============================================================ */
-function Pagination({ currentPage, totalPages, onChange }) {
-  if (totalPages <= 1) return null;
+const NavButton = memo(function NavButton({
+  onClick,
+  disabled,
+  icon: Icon,
+  label,
+}) {
+  const cls = [
+    "w-10 h-10 rounded-xl flex items-center justify-center",
+    "bg-white border border-slate-200 text-slate-600",
+    "hover:border-gold-300 hover:text-gold-700 hover:bg-gold-50/40",
+    "disabled:opacity-40 disabled:cursor-not-allowed",
+    "disabled:hover:bg-white disabled:hover:border-slate-200 disabled:hover:text-slate-600",
+    "focus:outline-none focus:ring-4 focus:ring-gold-500/15",
+    "active:scale-95 transition-all duration-200",
+  ].join(" ");
 
-  /* ساخت لیست صفحات با ellipsis */
-  const getPageNumbers = () => {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      className={cls}
+    >
+      <Icon className="w-4 h-4" />
+    </button>
+  );
+});
+
+const PageButton = memo(function PageButton({ page, active, onChange }) {
+  const handleClick = useCallback(() => onChange(page), [onChange, page]);
+
+  const cls = [
+    "min-w-[40px] h-10 px-3 rounded-xl flex items-center justify-center",
+    "text-[13px] font-bold transition-all duration-200 active:scale-95",
+    "focus:outline-none focus:ring-4 focus:ring-gold-500/15",
+    active
+      ? "bg-gradient-to-b from-gold-400 to-gold-600 text-white shadow-md shadow-gold-500/25"
+      : "bg-white border border-slate-200 text-slate-600 hover:border-gold-300 hover:text-gold-700 hover:bg-gold-50/40",
+  ].join(" ");
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      aria-label={`رفتن به صفحه ${page}`}
+      aria-current={active ? "page" : undefined}
+      className={cls}
+    >
+      {faNum(page)}
+    </button>
+  );
+});
+
+const Ellipsis = memo(function Ellipsis() {
+  return (
+    <span className="w-10 h-10 flex items-center justify-center text-slate-400 select-none">
+      …
+    </span>
+  );
+});
+
+/* ============================================================
+   PerPageSelector
+   ============================================================ */
+const PerPageSelector = memo(function PerPageSelector({ value, onChange }) {
+  return (
+    <div className="flex items-center gap-2">
+      <label
+        htmlFor="tickets-per-page"
+        className="text-[11.5px] text-slate-500 whitespace-nowrap"
+      >
+        تعداد در صفحه:
+      </label>
+      <select
+        id="tickets-per-page"
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="h-10 pr-2 pl-7 rounded-xl text-[12px] font-bold text-slate-700 bg-white border border-slate-200 hover:border-gold-300 focus:outline-none focus:border-gold-500 focus:ring-4 focus:ring-gold-500/10 transition-all duration-200 cursor-pointer"
+      >
+        {PER_PAGE_OPTIONS.map((n) => (
+          <option key={n} value={n}>
+            {faNum(n)}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+});
+
+/* ============================================================
+   Pagination — memoized، با بازه و PerPageSelector
+   ============================================================ */
+const Pagination = memo(function Pagination({
+  currentPage,
+  totalPages,
+  onChange,
+  perPage,
+  onPerPageChange,
+  totalItems,
+  startIndex,
+  endIndex,
+}) {
+  const pageNumbers = useMemo(() => {
     const pages = [];
     const maxVisible = 5;
 
@@ -381,82 +484,34 @@ function Pagination({ currentPage, totalPages, onChange }) {
 
     pages.push(totalPages);
     return pages;
-  };
+  }, [currentPage, totalPages]);
 
-  const pageNumbers = getPageNumbers();
-
-  /* دکمه ناوبری */
-  const NavButton = ({ onClick, disabled, icon: Icon, label }) => (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-label={label}
-      className="
-        w-10 h-10 rounded-xl
-        flex items-center justify-center
-        bg-white border border-slate-200
-        text-slate-600
-        hover:border-gold-300 hover:text-gold-700 hover:bg-gold-50/40
-        disabled:opacity-40 disabled:cursor-not-allowed
-        disabled:hover:bg-white disabled:hover:border-slate-200 disabled:hover:text-slate-600
-        focus:outline-none focus:ring-4 focus:ring-gold-500/15
-        active:scale-95
-        transition-all duration-200
-      "
-    >
-      <Icon className="w-4 h-4" />
-    </button>
-  );
-
-  /* دکمه شماره */
-  const PageButton = ({ page, active }) => (
-    <button
-      type="button"
-      onClick={() => onChange(page)}
-      aria-label={`رفتن به صفحه ${page}`}
-      aria-current={active ? "page" : undefined}
-      className={`
-        min-w-[40px] h-10 px-3 rounded-xl
-        flex items-center justify-center
-        text-[13px] font-bold
-        transition-all duration-200
-        active:scale-95
-        focus:outline-none focus:ring-4 focus:ring-gold-500/15
-        ${
-          active
-            ? "bg-gradient-to-b from-gold-400 to-gold-600 text-white shadow-md shadow-gold-500/25"
-            : "bg-white border border-slate-200 text-slate-600 hover:border-gold-300 hover:text-gold-700 hover:bg-gold-50/40"
-        }
-      `}
-    >
-      {page.toLocaleString("fa-IR")}
-    </button>
-  );
-
-  const Ellipsis = () => (
-    <span className="w-10 h-10 flex items-center justify-center text-slate-400 select-none">
-      …
-    </span>
-  );
+  if (totalPages <= 1 && totalItems <= perPage) return null;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="mt-8 flex flex-col items-center gap-3"
+      className="mt-8 flex flex-col items-center gap-4"
     >
+      {/* بازه */}
+      <p className="text-[11.5px] text-slate-500">
+        نمایش{" "}
+        <span className="font-bold text-slate-700">{faNum(startIndex)}</span> تا{" "}
+        <span className="font-bold text-slate-700">{faNum(endIndex)}</span> از{" "}
+        <span className="font-bold text-slate-700">{faNum(totalItems)}</span>{" "}
+        تیکت
+      </p>
+
+      {/* دکمه‌ها */}
       <div className="flex items-center justify-center gap-1.5 sm:gap-2 flex-wrap">
-        {/* ابتدا */}
         <NavButton
           onClick={() => onChange(1)}
           disabled={currentPage === 1}
           icon={PiCaretDoubleRight}
           label="صفحه اول"
         />
-
-        {/* قبلی */}
         <NavButton
           onClick={() => onChange(currentPage - 1)}
           disabled={currentPage === 1}
@@ -468,20 +523,24 @@ function Pagination({ currentPage, totalPages, onChange }) {
 
         {pageNumbers.map((p) => {
           if (typeof p === "string") return <Ellipsis key={p} />;
-          return <PageButton key={p} page={p} active={p === currentPage} />;
+          return (
+            <PageButton
+              key={p}
+              page={p}
+              active={p === currentPage}
+              onChange={onChange}
+            />
+          );
         })}
 
         <div className="w-px h-6 bg-slate-200 mx-1 hidden sm:block" />
 
-        {/* بعدی */}
         <NavButton
           onClick={() => onChange(currentPage + 1)}
           disabled={currentPage === totalPages}
           icon={PiCaretLeft}
           label="صفحه بعدی"
         />
-
-        {/* انتها */}
         <NavButton
           onClick={() => onChange(totalPages)}
           disabled={currentPage === totalPages}
@@ -490,19 +549,20 @@ function Pagination({ currentPage, totalPages, onChange }) {
         />
       </div>
 
-      <p className="text-[11px] text-slate-400">
-        صفحه{" "}
-        <span className="font-bold text-slate-600">
-          {currentPage.toLocaleString("fa-IR")}
-        </span>{" "}
-        از{" "}
-        <span className="font-bold text-slate-600">
-          {totalPages.toLocaleString("fa-IR")}
-        </span>
-      </p>
+      {/* وضعیت + تعداد در صفحه */}
+      <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
+        <p className="text-[11px] text-slate-400">
+          صفحه{" "}
+          <span className="font-bold text-slate-600">{faNum(currentPage)}</span>{" "}
+          از{" "}
+          <span className="font-bold text-slate-600">{faNum(totalPages)}</span>
+        </p>
+
+        <PerPageSelector value={perPage} onChange={onPerPageChange} />
+      </div>
     </motion.div>
   );
-}
+});
 
 /* ============================================================
    Page
@@ -511,7 +571,13 @@ export default function HallOwnerTicketsPage() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+
+  /* ========== Pagination State ========== */
   const [currentPage, setCurrentPage] = useState(1);
+  const [perPage, setPerPage] = useState(DEFAULT_PER_PAGE);
+
+  /* ========== Refs ========== */
+  const listTopRef = useRef(null);
 
   /* ============================================================
      Fetch Tickets
@@ -551,29 +617,41 @@ export default function HallOwnerTicketsPage() {
   /* ============================================================
      Pagination Logic
      ============================================================ */
-  const totalPages = Math.ceil(filteredTickets.length / PER_PAGE) || 1;
+  const totalItems = filteredTickets.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
+  const safePage = currentPage > totalPages ? totalPages : currentPage;
+  const startIndex = (safePage - 1) * perPage;
+  const endIndex = Math.min(startIndex + perPage, totalItems);
 
-  const paginatedTickets = useMemo(() => {
-    const start = (currentPage - 1) * PER_PAGE;
-    return filteredTickets.slice(start, start + PER_PAGE);
-  }, [filteredTickets, currentPage]);
+  const paginatedTickets = useMemo(
+    () => filteredTickets.slice(startIndex, endIndex),
+    [filteredTickets, startIndex, endIndex]
+  );
 
-  /* اگر تعداد صفحات تغییر کرد و صفحه فعلی معتبر نبود → ریست */
-  useEffect(() => {
-    if (currentPage > totalPages) setCurrentPage(1);
-  }, [totalPages, currentPage]);
-
-  /* با تغییر جستجو → برگرد به صفحه اول */
+  /* ========== ریست صفحه هنگام تغییر جستجو یا perPage ========== */
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery]);
+  }, [searchQuery, perPage]);
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-    if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+  /* ========== اصلاح صفحه اگر از محدوده خارج شد ========== */
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
     }
-  };
+  }, [currentPage, totalPages]);
+
+  /* ========== هندل تغییر صفحه با اسکرول به بالای لیست ========== */
+  const handlePageChange = useCallback((page) => {
+    setCurrentPage(page);
+    if (listTopRef.current) {
+      const yOffset = -80;
+      const y =
+        listTopRef.current.getBoundingClientRect().top +
+        window.pageYOffset +
+        yOffset;
+      window.scrollTo({ top: y, behavior: "smooth" });
+    }
+  }, []);
 
   /* ============================================================
      Loading
@@ -589,6 +667,26 @@ export default function HallOwnerTicketsPage() {
   /* ============================================================
      Render
      ============================================================ */
+  const createBtnCls = [
+    "inline-flex items-center gap-2 px-4 py-2.5 rounded-xl",
+    "text-xs font-semibold text-white",
+    "bg-gradient-to-b from-gold-400 to-gold-600",
+    "hover:from-gold-500 hover:to-gold-700",
+    "shadow-md shadow-gold-500/25",
+    "hover:shadow-lg hover:shadow-gold-500/40",
+    "hover:-translate-y-0.5 active:scale-95",
+    "transition-all duration-300",
+  ].join(" ");
+
+  const searchInputCls = [
+    "w-full pr-11 pl-10 py-2.5",
+    "bg-white border border-slate-200 rounded-xl",
+    "text-sm text-slate-900 placeholder:text-slate-400",
+    "hover:border-gold-300",
+    "focus:outline-none focus:border-gold-500 focus:ring-4 focus:ring-gold-500/10",
+    "transition-all duration-200",
+  ].join(" ");
+
   return (
     <div dir="rtl" className="w-full">
       {/* ==================== Header ==================== */}
@@ -609,17 +707,8 @@ export default function HallOwnerTicketsPage() {
                   تیکت‌های پشتیبانی
                 </h1>
                 {tickets.length > 0 && (
-                  <span
-                    className="
-                      inline-flex items-center justify-center
-                      min-w-[28px] h-[24px] px-2
-                      rounded-full
-                      bg-gold-50 text-gold-700
-                      text-[11px] font-bold
-                      ring-1 ring-gold-100
-                    "
-                  >
-                    {tickets.length.toLocaleString("fa-IR")}
+                  <span className="inline-flex items-center justify-center min-w-[28px] h-[24px] px-2 rounded-full bg-gold-50 text-gold-700 text-[11px] font-bold ring-1 ring-gold-100">
+                    {faNum(tickets.length)}
                   </span>
                 )}
               </div>
@@ -629,21 +718,7 @@ export default function HallOwnerTicketsPage() {
             </div>
           </div>
 
-          <Link
-            href="/hall_owner/tickets/create"
-            className="
-              inline-flex items-center gap-2
-              px-4 py-2.5 rounded-xl
-              text-xs font-semibold text-white
-              bg-gradient-to-b from-gold-400 to-gold-600
-              hover:from-gold-500 hover:to-gold-700
-              shadow-md shadow-gold-500/25
-              hover:shadow-lg hover:shadow-gold-500/40
-              hover:-translate-y-0.5
-              active:scale-95
-              transition-all duration-300
-            "
-          >
+          <Link href="/hall_owner/tickets/create" className={createBtnCls}>
             <PiPlusCircle className="w-4 h-4" />
             تیکت جدید
           </Link>
@@ -665,28 +740,14 @@ export default function HallOwnerTicketsPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="جستجو در موضوع یا توضیحات تیکت..."
             aria-label="جستجو در تیکت‌ها"
-            className="
-              w-full pr-11 pl-10 py-2.5
-              bg-white border border-slate-200 rounded-xl
-              text-sm text-slate-900
-              placeholder:text-slate-400
-              hover:border-gold-300
-              focus:outline-none focus:border-gold-500 focus:ring-4 focus:ring-gold-500/10
-              transition-all duration-200
-            "
+            className={searchInputCls}
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => setSearchQuery("")}
               aria-label="پاک کردن جستجو"
-              className="
-                absolute left-3 top-1/2 -translate-y-1/2
-                w-6 h-6 rounded-full
-                flex items-center justify-center
-                text-slate-400 hover:text-gold-600 hover:bg-gold-50
-                active:scale-90 transition-all
-              "
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:text-gold-600 hover:bg-gold-50 active:scale-90 transition-all"
             >
               <PiX className="w-3.5 h-3.5" strokeWidth={2.5} />
             </button>
@@ -695,6 +756,7 @@ export default function HallOwnerTicketsPage() {
       )}
 
       {/* ==================== Content ==================== */}
+      <div ref={listTopRef} />
       <AnimatePresence mode="wait">
         {filteredTickets.length === 0 ? (
           <motion.div
@@ -710,28 +772,31 @@ export default function HallOwnerTicketsPage() {
           </motion.div>
         ) : (
           <motion.div
-            key="list"
+            key={`list-${safePage}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
             <div className="space-y-4">
-              <AnimatePresence mode="popLayout">
-                {paginatedTickets.map((ticket, index) => (
-                  <TicketCard
-                    key={ticket._id}
-                    ticket={ticket}
-                    index={index}
-                  />
-                ))}
-              </AnimatePresence>
+              {paginatedTickets.map((ticket, index) => (
+                <TicketCard
+                  key={ticket._id}
+                  ticket={ticket}
+                  index={index}
+                />
+              ))}
             </div>
 
             {/* ==================== Pagination ==================== */}
             <Pagination
-              currentPage={currentPage}
+              currentPage={safePage}
               totalPages={totalPages}
               onChange={handlePageChange}
+              perPage={perPage}
+              onPerPageChange={setPerPage}
+              totalItems={totalItems}
+              startIndex={startIndex + 1}
+              endIndex={endIndex}
             />
           </motion.div>
         )}

@@ -1,7 +1,7 @@
 // app/hall_owner/reservations/page.jsx
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
@@ -11,6 +11,10 @@ import {
   PiArrowClockwise,
   PiCalendarX,
   PiX,
+  PiCaretRight,
+  PiCaretLeft,
+  PiCaretDoubleRight,
+  PiCaretDoubleLeft,
 } from "react-icons/pi";
 
 import ReservationCard from "./components/ReservationCard";
@@ -18,6 +22,16 @@ import FilterTabs from "./components/FilterTabs";
 import ConfirmModal from "./components/ConfirmModal";
 import RejectModal from "./components/RejectModal";
 import { notify } from "@/lib/toast";
+
+/* ============================================================
+   گزینه‌های تعداد در صفحه
+   ============================================================ */
+const PER_PAGE_OPTIONS = [5, 10, 20, 50];
+
+/* ============================================================
+   تبدیل عدد به فارسی
+   ============================================================ */
+const toFa = (n) => Number(n).toLocaleString("fa-IR");
 
 /* ============================================================
    SkeletonCard
@@ -45,24 +59,37 @@ function ReservationSkeleton() {
    EmptyState
    ============================================================ */
 function EmptyState({ filtered, onReset }) {
+  const wrapperCls = [
+    "relative overflow-hidden",
+    "bg-white rounded-3xl",
+    "ring-1 ring-slate-100",
+    "shadow-[0_8px_32px_rgba(198,161,76,0.06)]",
+    "p-8 sm:p-12 text-center",
+  ].join(" ");
+
+  const resetBtnCls = [
+    "relative inline-flex items-center gap-2",
+    "px-6 py-3 rounded-xl text-sm font-bold text-white",
+    "bg-gradient-to-b from-gold-400 to-gold-600",
+    "hover:from-gold-500 hover:to-gold-700",
+    "shadow-md shadow-gold-500/25",
+    "hover:shadow-lg hover:shadow-gold-500/40",
+    "hover:-translate-y-0.5",
+    "transition-all duration-300",
+  ].join(" ");
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
-      className="
-        relative overflow-hidden
-        bg-white rounded-3xl
-        ring-1 ring-slate-100
-        shadow-[0_8px_32px_rgba(198,161,76,0.06)]
-        p-8 sm:p-12
-        text-center
-      "
+      className={wrapperCls}
     >
       <div
         className="absolute inset-0 pointer-events-none opacity-40"
         style={{
-          backgroundImage: `radial-gradient(circle at 50% 0%, rgba(198,161,76,0.08) 0%, transparent 50%)`,
+          backgroundImage:
+            "radial-gradient(circle at 50% 0%, rgba(198,161,76,0.08) 0%, transparent 50%)",
         }}
       />
 
@@ -81,25 +108,197 @@ function EmptyState({ filtered, onReset }) {
       </p>
 
       {filtered && (
-        <button
-          type="button"
-          onClick={onReset}
-          className="
-            relative inline-flex items-center gap-2
-            px-6 py-3 rounded-xl
-            text-sm font-bold text-white
-            bg-gradient-to-b from-gold-400 to-gold-600
-            hover:from-gold-500 hover:to-gold-700
-            shadow-md shadow-gold-500/25
-            hover:shadow-lg hover:shadow-gold-500/40
-            hover:-translate-y-0.5
-            transition-all duration-300
-          "
-        >
+        <button type="button" onClick={onReset} className={resetBtnCls}>
           <PiX className="w-4 h-4" />
           پاک کردن فیلترها
         </button>
       )}
+    </motion.div>
+  );
+}
+
+/* ============================================================
+   Pagination Component
+   ============================================================ */
+function Pagination({
+  currentPage,
+  totalPages,
+  onPageChange,
+  perPage,
+  onPerPageChange,
+  totalItems,
+  startIndex,
+  endIndex,
+}) {
+  const pageNumbers = useMemo(() => {
+    const pages = [];
+    const maxVisible = 5;
+    const half = Math.floor(maxVisible / 2);
+
+    if (totalPages <= maxVisible + 2) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+      return pages;
+    }
+
+    pages.push(1);
+
+    let start = Math.max(2, currentPage - half);
+    let end = Math.min(totalPages - 1, currentPage + half);
+
+    if (currentPage <= half + 1) {
+      start = 2;
+      end = maxVisible;
+    }
+    if (currentPage >= totalPages - half) {
+      start = totalPages - maxVisible + 1;
+      end = totalPages - 1;
+    }
+
+    if (start > 2) pages.push("start-ellipsis");
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (end < totalPages - 1) pages.push("end-ellipsis");
+
+    pages.push(totalPages);
+    return pages;
+  }, [currentPage, totalPages]);
+
+  if (totalPages <= 1) return null;
+
+  const baseBtn = [
+    "inline-flex items-center justify-center",
+    "min-w-[34px] h-9 px-2.5 rounded-lg",
+    "text-[12px] font-bold",
+    "transition-all duration-200",
+    "active:scale-95",
+  ].join(" ");
+
+  const navBtn = [
+    baseBtn,
+    "text-slate-500 bg-white border border-slate-200",
+    "hover:border-gold-300 hover:text-gold-700 hover:bg-gold-50",
+    "disabled:opacity-40 disabled:cursor-not-allowed",
+    "disabled:hover:bg-white disabled:hover:border-slate-200 disabled:hover:text-slate-500",
+  ].join(" ");
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 bg-white rounded-2xl ring-1 ring-slate-100 p-3 sm:p-4"
+    >
+      {/* اطلاعات بازه */}
+      <div className="text-[11.5px] sm:text-[12px] text-slate-500 order-2 sm:order-1">
+        نمایش{" "}
+        <span className="font-bold text-slate-700">{toFa(startIndex)}</span>{" "}
+        تا{" "}
+        <span className="font-bold text-slate-700">{toFa(endIndex)}</span> از{" "}
+        <span className="font-bold text-slate-700">{toFa(totalItems)}</span>{" "}
+        رزرو
+      </div>
+
+      {/* دکمه‌های صفحه */}
+      <div className="flex items-center gap-1 order-1 sm:order-2">
+        <button
+          type="button"
+          onClick={() => onPageChange(1)}
+          disabled={currentPage === 1}
+          aria-label="اولین صفحه"
+          className={navBtn}
+        >
+          <PiCaretDoubleRight className="w-3.5 h-3.5" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          aria-label="صفحه قبلی"
+          className={navBtn}
+        >
+          <PiCaretRight className="w-3.5 h-3.5" />
+        </button>
+
+        <div className="hidden sm:flex items-center gap-1 mx-1">
+          {pageNumbers.map((p, idx) => {
+            if (typeof p === "string") {
+              return (
+                <span
+                  key={`${p}-${idx}`}
+                  className="inline-flex items-center justify-center min-w-[34px] h-9 text-slate-400 text-[12px] font-bold"
+                >
+                  …
+                </span>
+              );
+            }
+            const active = p === currentPage;
+            return (
+              <button
+                key={p}
+                type="button"
+                onClick={() => onPageChange(p)}
+                aria-label={`صفحه ${p}`}
+                aria-current={active ? "page" : undefined}
+                className={[
+                  baseBtn,
+                  active
+                    ? "text-white bg-gradient-to-b from-gold-400 to-gold-600 shadow-md shadow-gold-500/25"
+                    : "text-slate-600 bg-white border border-slate-200 hover:border-gold-300 hover:text-gold-700 hover:bg-gold-50",
+                ].join(" ")}
+              >
+                {toFa(p)}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* نمایش موبایل */}
+        <div className="sm:hidden inline-flex items-center gap-1 px-3 h-9 rounded-lg bg-gold-50 text-gold-700 text-[12px] font-bold ring-1 ring-gold-200">
+          {toFa(currentPage)} / {toFa(totalPages)}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          aria-label="صفحه بعدی"
+          className={navBtn}
+        >
+          <PiCaretLeft className="w-3.5 h-3.5" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onPageChange(totalPages)}
+          disabled={currentPage === totalPages}
+          aria-label="آخرین صفحه"
+          className={navBtn}
+        >
+          <PiCaretDoubleLeft className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {/* تعداد در صفحه */}
+      <div className="flex items-center gap-2 order-3">
+        <label
+          htmlFor="owner-per-page"
+          className="text-[11.5px] text-slate-500 whitespace-nowrap"
+        >
+          تعداد در صفحه:
+        </label>
+        <select
+          id="owner-per-page"
+          value={perPage}
+          onChange={(e) => onPerPageChange(Number(e.target.value))}
+          className="h-9 pr-2 pl-7 rounded-lg text-[12px] font-bold text-slate-700 bg-white border border-slate-200 hover:border-gold-300 focus:outline-none focus:border-gold-500 focus:ring-4 focus:ring-gold-500/10 transition-all duration-200 cursor-pointer"
+        >
+          {PER_PAGE_OPTIONS.map((n) => (
+            <option key={n} value={n}>
+              {toFa(n)}
+            </option>
+          ))}
+        </select>
+      </div>
     </motion.div>
   );
 }
@@ -117,6 +316,13 @@ export default function ReservationsPage() {
   const [confirmTarget, setConfirmTarget] = useState(null);
   const [rejectTarget, setRejectTarget] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
+
+  /* ========== Pagination State ========== */
+  const [currentPage, setCurrentPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+
+  /* ========== Refs ========== */
+  const listTopRef = useRef(null);
 
   /* ============================================================
      Load Reservations
@@ -182,8 +388,54 @@ export default function ReservationsPage() {
       });
     }
 
+    // مرتب‌سازی: جدیدترین اول
+    result.sort((a, b) => {
+      const da = new Date(a.createdAt || a.start_date || 0);
+      const db = new Date(b.createdAt || b.start_date || 0);
+      return db - da;
+    });
+
     return result;
   }, [reservations, activeTab, search]);
+
+  /* ============================================================
+     محاسبات Pagination
+     ============================================================ */
+  const totalItems = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const startIndex = (safeCurrentPage - 1) * perPage;
+  const endIndex = Math.min(startIndex + perPage, totalItems);
+
+  const paginated = useMemo(
+    () => filtered.slice(startIndex, endIndex),
+    [filtered, startIndex, endIndex]
+  );
+
+  /* ========== Reset صفحه هنگام تغییر تب/جستجو/perPage ========== */
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, search, perPage]);
+
+  /* ========== اصلاح صفحه اگر از محدوده خارج شد ========== */
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  /* ========== هندل تغییر صفحه با اسکرول نرم ========== */
+  const handlePageChange = useCallback((page) => {
+    setCurrentPage(page);
+    if (listTopRef.current) {
+      const yOffset = -80;
+      const y =
+        listTopRef.current.getBoundingClientRect().top +
+        window.pageYOffset +
+        yOffset;
+      window.scrollTo({ top: y, behavior: "smooth" });
+    }
+  }, []);
 
   /* ============================================================
      Reset
@@ -332,6 +584,34 @@ export default function ReservationsPage() {
   /* ============================================================
      Render
      ============================================================ */
+  const refreshBtnCls = [
+    "inline-flex items-center gap-2",
+    "px-4 py-2.5 rounded-xl text-[12.5px] font-medium",
+    "text-slate-700 bg-white border border-slate-200",
+    "hover:bg-gold-50 hover:border-gold-300 hover:text-gold-700",
+    "active:scale-95",
+    "disabled:opacity-50 disabled:cursor-not-allowed",
+    "transition-all duration-200",
+  ].join(" ");
+
+  const searchInputCls = [
+    "w-full pr-11 pl-10 py-2.5",
+    "bg-white border border-slate-200 rounded-xl",
+    "text-sm text-slate-900",
+    "placeholder:text-slate-400",
+    "hover:border-gold-300",
+    "focus:outline-none focus:border-gold-500 focus:ring-4 focus:ring-gold-500/10",
+    "transition-all duration-200",
+  ].join(" ");
+
+  const clearSearchCls = [
+    "absolute left-3 top-1/2 -translate-y-1/2",
+    "w-6 h-6 rounded-full",
+    "flex items-center justify-center",
+    "text-slate-400 hover:text-gold-600 hover:bg-gold-50",
+    "active:scale-90 transition-all",
+  ].join(" ");
+
   return (
     <div dir="rtl" className="w-full">
       {/* ==================== Header ==================== */}
@@ -360,20 +640,13 @@ export default function ReservationsPage() {
             type="button"
             onClick={() => loadReservations(true)}
             disabled={refreshing}
-            className="
-              inline-flex items-center gap-2
-              px-4 py-2.5 rounded-xl
-              text-[12.5px] font-medium
-              text-slate-700 bg-white
-              border border-slate-200
-              hover:bg-gold-50 hover:border-gold-300 hover:text-gold-700
-              active:scale-95
-              disabled:opacity-50 disabled:cursor-not-allowed
-              transition-all duration-200
-            "
+            className={refreshBtnCls}
           >
             <PiArrowClockwise
-              className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
+              className={[
+                "w-4 h-4",
+                refreshing ? "animate-spin" : "",
+              ].join(" ")}
             />
             بروزرسانی
           </button>
@@ -394,28 +667,14 @@ export default function ReservationsPage() {
           onChange={(e) => setSearch(e.target.value)}
           placeholder="جستجو در شماره رزرو، نام تالار، یادداشت‌ها..."
           aria-label="جستجو در رزروها"
-          className="
-            w-full pr-11 pl-10 py-2.5
-            bg-white border border-slate-200 rounded-xl
-            text-sm text-slate-900
-            placeholder:text-slate-400
-            hover:border-gold-300
-            focus:outline-none focus:border-gold-500 focus:ring-4 focus:ring-gold-500/10
-            transition-all duration-200
-          "
+          className={searchInputCls}
         />
         {search && (
           <button
             type="button"
             onClick={() => setSearch("")}
             aria-label="پاک کردن جستجو"
-            className="
-              absolute left-3 top-1/2 -translate-y-1/2
-              w-6 h-6 rounded-full
-              flex items-center justify-center
-              text-slate-400 hover:text-gold-600 hover:bg-gold-50
-              active:scale-90 transition-all
-            "
+            className={clearSearchCls}
           >
             <PiX className="w-3.5 h-3.5" strokeWidth={2.5} />
           </button>
@@ -437,6 +696,7 @@ export default function ReservationsPage() {
       </motion.div>
 
       {/* ==================== Content ==================== */}
+      <div ref={listTopRef} />
       <AnimatePresence mode="wait">
         {filtered.length === 0 ? (
           <motion.div
@@ -454,13 +714,13 @@ export default function ReservationsPage() {
           </motion.div>
         ) : (
           <motion.div
-            key="list"
+            key={`list-${safeCurrentPage}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="space-y-4"
           >
-            {filtered.map((r) => (
+            {paginated.map((r) => (
               <ReservationCard
                 key={r._id}
                 data={r}
@@ -472,6 +732,20 @@ export default function ReservationsPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ==================== Pagination ==================== */}
+      {totalPages > 1 && (
+        <Pagination
+          currentPage={safeCurrentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+          perPage={perPage}
+          onPerPageChange={setPerPage}
+          totalItems={totalItems}
+          startIndex={startIndex + 1}
+          endIndex={endIndex}
+        />
+      )}
 
       {/* ==================== Modals ==================== */}
       <ConfirmModal

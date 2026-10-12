@@ -1,7 +1,14 @@
 // app/hall_owner/halls/page.jsx
 "use client";
 
-import { useEffect, useState, useCallback, useMemo, memo } from "react";
+import {
+    useEffect,
+    useState,
+    useCallback,
+    useMemo,
+    memo,
+    useRef,
+} from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { toast } from "react-toastify";
@@ -27,7 +34,8 @@ import {
 /* ============================================================
    Constants
    ============================================================ */
-const PER_PAGE = 6;
+const DEFAULT_PER_PAGE = 6;
+const PER_PAGE_OPTIONS = [3, 6, 12, 24];
 const PLACEHOLDER = "/images/placeholder-hall.jpg";
 const faNumFormatter = new Intl.NumberFormat("fa-IR");
 const faNum = (n) => faNumFormatter.format(Number(n) || 0);
@@ -39,7 +47,8 @@ function normalizeImageUrl(url, fallback = PLACEHOLDER) {
     if (!url || typeof url !== "string") return fallback;
     const trimmed = url.trim();
     if (!trimmed) return fallback;
-    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://"))
+        return trimmed;
     if (trimmed.startsWith("data:")) return trimmed;
     if (trimmed.startsWith("./")) return "/" + trimmed.slice(2);
     if (!trimmed.startsWith("/")) return "/" + trimmed;
@@ -47,7 +56,7 @@ function normalizeImageUrl(url, fallback = PLACEHOLDER) {
 }
 
 /* ============================================================
-   HallRowSkeleton — خالص CSS، بدون framer-motion
+   HallRowSkeleton
    ============================================================ */
 const HallRowSkeleton = memo(function HallRowSkeleton() {
     return (
@@ -73,7 +82,7 @@ const HallRowSkeleton = memo(function HallRowSkeleton() {
 });
 
 /* ============================================================
-   EmptyState — memoized
+   EmptyState
    ============================================================ */
 const EmptyState = memo(function EmptyState() {
     return (
@@ -110,7 +119,7 @@ const EmptyState = memo(function EmptyState() {
 });
 
 /* ============================================================
-   Chip — کوچک، reusable
+   Chip
    ============================================================ */
 const Chip = memo(function Chip({ icon: Icon, children }) {
     return (
@@ -122,12 +131,11 @@ const Chip = memo(function Chip({ icon: Icon, children }) {
 });
 
 /* ============================================================
-   HallRow — memoized + next/image + بدون framer-motion
+   HallRow
    ============================================================ */
 const HallRow = memo(function HallRow({ hall, onDelete, isDeleting }) {
     const updateUrl = `/hall_owner/halls/update_hall/${hall._id}`;
 
-    /* یک بار محاسبه */
     const imageUrl = useMemo(() => {
         const cover = Array.isArray(hall.images) && hall.images[0];
         return cover ? normalizeImageUrl(cover) : null;
@@ -138,8 +146,10 @@ const HallRow = memo(function HallRow({ hall, onDelete, isDeleting }) {
         [hall._id]
     );
 
-    /* callbacks پایدار */
-    const handleDelete = useCallback(() => onDelete(hall._id), [onDelete, hall._id]);
+    const handleDelete = useCallback(
+        () => onDelete(hall._id),
+        [onDelete, hall._id]
+    );
     const handleImgError = useCallback((e) => {
         e.currentTarget.onerror = null;
         e.currentTarget.src = PLACEHOLDER;
@@ -147,7 +157,6 @@ const HallRow = memo(function HallRow({ hall, onDelete, isDeleting }) {
 
     return (
         <article className="group bg-white rounded-2xl ring-1 ring-slate-100 hover:ring-gold-200/70 shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:shadow-[0_12px_32px_-12px_rgba(198,161,76,0.18)] transition-all duration-300 overflow-hidden flex flex-col md:flex-row">
-            {/* ==================== تصویر ==================== */}
             <Link
                 href={updateUrl}
                 className="relative w-full md:w-64 lg:w-72 h-48 md:h-auto flex-shrink-0 overflow-hidden bg-slate-100 block"
@@ -180,7 +189,6 @@ const HallRow = memo(function HallRow({ hall, onDelete, isDeleting }) {
                 )}
             </Link>
 
-            {/* ==================== محتوا ==================== */}
             <div className="flex-1 p-5 min-w-0 flex flex-col">
                 <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="min-w-0 flex-1">
@@ -199,7 +207,6 @@ const HallRow = memo(function HallRow({ hall, onDelete, isDeleting }) {
                     </div>
                 </div>
 
-                {/* چیپ‌ها */}
                 <div className="flex items-center gap-2 flex-wrap mb-3">
                     <Chip icon={PiUsersThree}>ظرفیت: {faNum(hall.capacity)} نفر</Chip>
                     <Chip icon={PiRuler}>متراژ: {faNum(hall.hall_measure)} متر</Chip>
@@ -222,7 +229,6 @@ const HallRow = memo(function HallRow({ hall, onDelete, isDeleting }) {
                     </p>
                 )}
 
-                {/* اکشن‌ها */}
                 <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between gap-3 flex-wrap">
                     <div className="text-[10.5px] text-slate-400">
                         <span>شناسه: </span>
@@ -266,9 +272,14 @@ const HallRow = memo(function HallRow({ hall, onDelete, isDeleting }) {
 });
 
 /* ============================================================
-   NavButton / PageButton / Ellipsis — بیرون از Pagination
+   NavButton / PageButton / Ellipsis
    ============================================================ */
-const NavButton = memo(function NavButton({ onClick, disabled, icon: Icon, label }) {
+const NavButton = memo(function NavButton({
+    onClick,
+    disabled,
+    icon: Icon,
+    label,
+}) {
     return (
         <button
             type="button"
@@ -285,17 +296,22 @@ const NavButton = memo(function NavButton({ onClick, disabled, icon: Icon, label
 const PageButton = memo(function PageButton({ page, active, onChange }) {
     const handleClick = useCallback(() => onChange(page), [onChange, page]);
 
+    const cls = [
+        "min-w-[40px] h-10 px-3 rounded-xl flex items-center justify-center",
+        "text-[13px] font-bold transition-all duration-200 active:scale-95",
+        "focus:outline-none focus:ring-4 focus:ring-gold-500/15",
+        active
+            ? "bg-gradient-to-b from-gold-400 to-gold-600 text-white shadow-md shadow-gold-500/25"
+            : "bg-white border border-slate-200 text-slate-600 hover:border-gold-300 hover:text-gold-700 hover:bg-gold-50/40",
+    ].join(" ");
+
     return (
         <button
             type="button"
             onClick={handleClick}
             aria-label={`رفتن به صفحه ${page}`}
             aria-current={active ? "page" : undefined}
-            className={`min-w-[40px] h-10 px-3 rounded-xl flex items-center justify-center text-[13px] font-bold transition-all duration-200 active:scale-95 focus:outline-none focus:ring-4 focus:ring-gold-500/15 ${
-                active
-                    ? "bg-gradient-to-b from-gold-400 to-gold-600 text-white shadow-md shadow-gold-500/25"
-                    : "bg-white border border-slate-200 text-slate-600 hover:border-gold-300 hover:text-gold-700 hover:bg-gold-50/40"
-            }`}
+            className={cls}
         >
             {page.toLocaleString("fa-IR")}
         </button>
@@ -311,9 +327,46 @@ const Ellipsis = memo(function Ellipsis() {
 });
 
 /* ============================================================
-   Pagination — memoized
+   PerPageSelector
    ============================================================ */
-const Pagination = memo(function Pagination({ currentPage, totalPages, onChange }) {
+const PerPageSelector = memo(function PerPageSelector({ value, onChange }) {
+    return (
+        <div className="flex items-center gap-2">
+            <label
+                htmlFor="halls-per-page"
+                className="text-[11.5px] text-slate-500 whitespace-nowrap"
+            >
+                تعداد در صفحه:
+            </label>
+            <select
+                id="halls-per-page"
+                value={value}
+                onChange={(e) => onChange(Number(e.target.value))}
+                className="h-10 pr-2 pl-7 rounded-xl text-[12px] font-bold text-slate-700 bg-white border border-slate-200 hover:border-gold-300 focus:outline-none focus:border-gold-500 focus:ring-4 focus:ring-gold-500/10 transition-all duration-200 cursor-pointer"
+            >
+                {PER_PAGE_OPTIONS.map((n) => (
+                    <option key={n} value={n}>
+                        {n.toLocaleString("fa-IR")}
+                    </option>
+                ))}
+            </select>
+        </div>
+    );
+});
+
+/* ============================================================
+   Pagination
+   ============================================================ */
+const Pagination = memo(function Pagination({
+    currentPage,
+    totalPages,
+    onChange,
+    perPage,
+    onPerPageChange,
+    totalItems,
+    startIndex,
+    endIndex,
+}) {
     const pageNumbers = useMemo(() => {
         const pages = [];
         const maxVisible = 5;
@@ -345,10 +398,28 @@ const Pagination = memo(function Pagination({ currentPage, totalPages, onChange 
         return pages;
     }, [currentPage, totalPages]);
 
-    if (totalPages <= 1) return null;
+    if (totalPages <= 1 && totalItems <= perPage) return null;
 
     return (
-        <div className="mt-8 flex flex-col items-center gap-3">
+        <div className="mt-8 flex flex-col items-center gap-4">
+            {/* بازه */}
+            <p className="text-[11.5px] text-slate-500">
+                نمایش{" "}
+                <span className="font-bold text-slate-700">
+                    {startIndex.toLocaleString("fa-IR")}
+                </span>{" "}
+                تا{" "}
+                <span className="font-bold text-slate-700">
+                    {endIndex.toLocaleString("fa-IR")}
+                </span>{" "}
+                از{" "}
+                <span className="font-bold text-slate-700">
+                    {totalItems.toLocaleString("fa-IR")}
+                </span>{" "}
+                تالار
+            </p>
+
+            {/* دکمه‌های صفحه */}
             <div className="flex items-center justify-center gap-1.5 sm:gap-2 flex-wrap">
                 <NavButton
                     onClick={() => onChange(1)}
@@ -393,22 +464,27 @@ const Pagination = memo(function Pagination({ currentPage, totalPages, onChange 
                 />
             </div>
 
-            <p className="text-[11px] text-slate-400">
-                صفحه{" "}
-                <span className="font-bold text-slate-600">
-                    {currentPage.toLocaleString("fa-IR")}
-                </span>{" "}
-                از{" "}
-                <span className="font-bold text-slate-600">
-                    {totalPages.toLocaleString("fa-IR")}
-                </span>
-            </p>
+            {/* وضعیت + تعداد در صفحه */}
+            <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
+                <p className="text-[11px] text-slate-400">
+                    صفحه{" "}
+                    <span className="font-bold text-slate-600">
+                        {currentPage.toLocaleString("fa-IR")}
+                    </span>{" "}
+                    از{" "}
+                    <span className="font-bold text-slate-600">
+                        {totalPages.toLocaleString("fa-IR")}
+                    </span>
+                </p>
+
+                <PerPageSelector value={perPage} onChange={onPerPageChange} />
+            </div>
         </div>
     );
 });
 
 /* ============================================================
-   ConfirmDialog — بدون AnimatePresence، فقط CSS transition
+   ConfirmDialog
    ============================================================ */
 const ConfirmDialog = memo(function ConfirmDialog({
     isOpen,
@@ -417,7 +493,6 @@ const ConfirmDialog = memo(function ConfirmDialog({
     onCancel,
     isDeleting,
 }) {
-    /* Escape key */
     useEffect(() => {
         if (!isOpen) return;
         const onKey = (e) => e.key === "Escape" && onCancel();
@@ -495,10 +570,16 @@ export default function HallsPage() {
     const [loading, setLoading] = useState(true);
     const [deletingId, setDeletingId] = useState(null);
     const [confirmHall, setConfirmHall] = useState(null);
+
+    /* ========== Pagination State ========== */
     const [currentPage, setCurrentPage] = useState(1);
+    const [perPage, setPerPage] = useState(DEFAULT_PER_PAGE);
+
+    /* ========== Refs ========== */
+    const listTopRef = useRef(null);
 
     /* ============================================================
-       Fetch — با fetch + AbortController
+       Fetch
        ============================================================ */
     useEffect(() => {
         const controller = new AbortController();
@@ -525,24 +606,45 @@ export default function HallsPage() {
     }, []);
 
     /* ============================================================
-       Pagination — useMemo (بدون useEffect اضافه)
+       Pagination
        ============================================================ */
+    const totalItems = halls.length;
     const totalPages = useMemo(
-        () => Math.max(1, Math.ceil(halls.length / PER_PAGE)),
-        [halls.length]
+        () => Math.max(1, Math.ceil(totalItems / perPage)),
+        [totalItems, perPage]
     );
 
     const safePage = currentPage > totalPages ? totalPages : currentPage;
+    const startIndex = (safePage - 1) * perPage;
+    const endIndex = Math.min(startIndex + perPage, totalItems);
 
-    const paginatedHalls = useMemo(() => {
-        const start = (safePage - 1) * PER_PAGE;
-        return halls.slice(start, start + PER_PAGE);
-    }, [halls, safePage]);
+    const paginatedHalls = useMemo(
+        () => halls.slice(startIndex, endIndex),
+        [halls, startIndex, endIndex]
+    );
 
+    /* ========== Reset صفحه هنگام تغییر perPage ========== */
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [perPage]);
+
+    /* ========== اصلاح State صفحه اگر از محدوده خارج شد ========== */
+    useEffect(() => {
+        if (currentPage > totalPages && totalPages > 0) {
+            setCurrentPage(totalPages);
+        }
+    }, [currentPage, totalPages]);
+
+    /* ========== هندل تغییر صفحه با اسکرول نرم ========== */
     const handlePageChange = useCallback((page) => {
         setCurrentPage(page);
-        if (typeof window !== "undefined") {
-            window.scrollTo({ top: 0, behavior: "smooth" });
+        if (listTopRef.current) {
+            const yOffset = -80;
+            const y =
+                listTopRef.current.getBoundingClientRect().top +
+                window.pageYOffset +
+                yOffset;
+            window.scrollTo({ top: y, behavior: "smooth" });
         }
     }, []);
 
@@ -644,6 +746,7 @@ export default function HallsPage() {
             </div>
 
             {/* ==================== Content ==================== */}
+            <div ref={listTopRef} />
             {loading ? (
                 <div className="space-y-4">
                     {[1, 2, 3].map((i) => (
@@ -669,6 +772,11 @@ export default function HallsPage() {
                         currentPage={safePage}
                         totalPages={totalPages}
                         onChange={handlePageChange}
+                        perPage={perPage}
+                        onPerPageChange={setPerPage}
+                        totalItems={totalItems}
+                        startIndex={startIndex + 1}
+                        endIndex={endIndex}
                     />
                 </>
             )}
@@ -682,7 +790,6 @@ export default function HallsPage() {
                 isDeleting={!!deletingId}
             />
 
-            {/* کیفریم‌های سبک برای دیالوگ */}
             <style jsx global>{`
                 @keyframes fadeIn {
                     from { opacity: 0; }
