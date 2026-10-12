@@ -4,9 +4,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import connectDB from "@/lib/db";
 import Advertisement from "@/models/Advertisement";
+import Hall from "@/models/Hall"; // ← مهم
 
 /* ============================================================
-   GET — لیست همه تبلیغات + آمار
+   GET — لیست همه تبلیغات + آمار (ادمین)
    ============================================================ */
 export async function GET(req) {
     try {
@@ -20,9 +21,8 @@ export async function GET(req) {
             );
         }
 
-        // پارامترهای اختیاری
         const { searchParams } = new URL(req.url);
-        const status = searchParams.get("status"); // "all" | "pending" | ...
+        const status = searchParams.get("status");
 
         const query = {};
         if (status && status !== "all") {
@@ -35,7 +35,6 @@ export async function GET(req) {
             .sort({ createdAt: -1 })
             .lean();
 
-        // آمار کلی
         const allAds = await Advertisement.find({}).lean();
 
         const stats = {

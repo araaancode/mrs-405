@@ -18,7 +18,7 @@ export async function PATCH(req, { params }) {
         }
 
         const { id } = await params;
-        const { action } = await req.json(); // "pause" یا "resume"
+        const { action } = await req.json();
 
         const ad = await Advertisement.findOne({
             _id: id,

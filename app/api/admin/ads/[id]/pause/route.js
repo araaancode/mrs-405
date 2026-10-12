@@ -18,7 +18,7 @@ export async function PATCH(req, { params }) {
         }
 
         const { id } = await params;
-        const { action } = await req.json(); // "pause" | "resume"
+        const { action } = await req.json();
 
         const ad = await Advertisement.findById(id);
         if (!ad) {

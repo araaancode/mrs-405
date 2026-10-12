@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import connectDB from "@/lib/db";
 import Advertisement from "@/models/Advertisement";
-import Hall from "@/models/Hall";
+import Hall from "@/models/Hall"; // ← مهم
 
 /* ============================================================
    GET — لیست تبلیغات تالاردار
@@ -28,7 +28,6 @@ export async function GET() {
             .sort({ createdAt: -1 })
             .lean();
 
-        // آمار
         const stats = {
             total: ads.length,
             draft: ads.filter((a) => a.status === "draft").length,
@@ -84,7 +83,6 @@ export async function POST(req) {
             hall_id,
         } = body;
 
-        // اعتبارسنجی
         if (!title || !description || !ad_type || !start_date || !end_date || !budget) {
             return NextResponse.json(
                 { message: "فیلدهای الزامی را پر کنید" },
@@ -102,7 +100,6 @@ export async function POST(req) {
             );
         }
 
-        // اگر hall_id داده شده، بررسی مالکیت
         if (hall_id) {
             const hall = await Hall.findOne({
                 _id: hall_id,
@@ -130,7 +127,7 @@ export async function POST(req) {
             end_date: endDate,
             budget,
             daily_budget: daily_budget || 0,
-            status: "draft", // پیش‌نویس - کاربر بعداً ارسال می‌کند
+            status: "draft",
         });
 
         return NextResponse.json({

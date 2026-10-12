@@ -36,13 +36,11 @@ export async function PATCH(req, { params }) {
             );
         }
 
-        // بررسی تاریخ‌ها
         const now = new Date();
         let newStatus = "active";
         let isActive = true;
 
         if (ad.start_date > now) {
-            // هنوز شروع نشده → approved (در انتظار شروع)
             newStatus = "approved";
             isActive = false;
         }

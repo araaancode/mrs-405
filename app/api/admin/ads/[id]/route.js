@@ -4,10 +4,12 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import connectDB from "@/lib/db";
 import Advertisement from "@/models/Advertisement";
+import Hall from "@/models/Hall"; // ← مهم
+import User from "@/models/User"; // ← مهم برای populate owner_id
 import mongoose from "mongoose";
 
 /* ============================================================
-   GET — جزئیات یک تبلیغ
+   GET — جزئیات یک تبلیغ (ادمین)
    ============================================================ */
 export async function GET(req, { params }) {
     try {
@@ -54,7 +56,7 @@ export async function GET(req, { params }) {
 }
 
 /* ============================================================
-   DELETE — حذف تبلیغ توسط ادمین
+   DELETE — حذف تبلیغ (ادمین)
    ============================================================ */
 export async function DELETE(req, { params }) {
     try {

@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import connectDB from "@/lib/db";
 import Advertisement from "@/models/Advertisement";
+import Hall from "@/models/Hall"; // ← مهم
 import mongoose from "mongoose";
 
 /* ============================================================
@@ -82,7 +83,6 @@ export async function PUT(req, { params }) {
             );
         }
 
-        // فقط تبلیغات draft یا rejected قابل ویرایش هستند
         if (!["draft", "rejected"].includes(ad.status)) {
             return NextResponse.json(
                 { message: "فقط تبلیغات پیش‌نویس یا رد‌شده قابل ویرایش هستند" },
@@ -90,7 +90,6 @@ export async function PUT(req, { params }) {
             );
         }
 
-        // به‌روزرسانی فیلدها
         Object.assign(ad, {
             title: body.title ?? ad.title,
             description: body.description ?? ad.description,
@@ -106,7 +105,6 @@ export async function PUT(req, { params }) {
             hall_id: body.hall_id ?? ad.hall_id,
         });
 
-        // اگر rejected بود، به draft برگردد
         if (ad.status === "rejected") {
             ad.status = "draft";
             ad.rejection_reason = "";

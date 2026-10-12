@@ -4,7 +4,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import connectDB from "@/lib/db";
 import Advertisement from "@/models/Advertisement";
-import { notifyAdminsNewAd } from "@/lib/notificationHelpers"; // یا هر helper مشابه
 
 export async function PATCH(req, { params }) {
     try {
@@ -39,7 +38,6 @@ export async function PATCH(req, { params }) {
             );
         }
 
-        // اعتبارسنجی نهایی
         if (!ad.images || ad.images.length === 0) {
             return NextResponse.json(
                 { message: "حداقل یک تصویر برای تبلیغ لازم است" },
@@ -49,15 +47,6 @@ export async function PATCH(req, { params }) {
 
         ad.status = "pending";
         await ad.save();
-
-        // نوتیفیکیشن به ادمین‌ها (اختیاری)
-        try {
-            if (typeof notifyAdminsNewAd === "function") {
-                await notifyAdminsNewAd({ ad, owner: session.user });
-            }
-        } catch (e) {
-            console.error("Notification error:", e);
-        }
 
         return NextResponse.json({
             success: true,
