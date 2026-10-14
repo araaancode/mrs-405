@@ -1,7 +1,7 @@
 // components/landing/PopularCities.jsx
 "use client";
 
-import { useState, useCallback, memo } from "react";
+import { memo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -13,11 +13,22 @@ import {
     PiMountainsFill,
     PiDropFill,
     PiTreeFill,
+    PiSunFill,
+    PiLeafFill,
+    PiSparkleFill,
+    PiFlowerLotusFill,
+    PiCastleTurretFill,
+    PiCloudFill,
+    PiSnowflakeFill,
+    PiAnchorFill,
+    PiFireFill,
+    PiCompassFill,
     PiArrowLeft,
 } from "react-icons/pi";
+import Carousel from "../../components/landing/Carousel";
 
 /* ============================================================
-   Cities Data
+   Cities Data — ۲۴ شهر محبوب ایران
    ============================================================ */
 const POPULAR_CITIES = [
     {
@@ -108,6 +119,183 @@ const POPULAR_CITIES = [
         description: "کویر و تاریخ",
         rating: 4.5,
     },
+    {
+        id: 9,
+        name: "یزد",
+        slug: "yazd",
+        province: "یزد",
+        propertyCount: 412,
+        image: "/images/landing/cities/yazd.jpg",
+        iconName: "PiSunFill",
+        description: "شهر بادگیرها",
+        rating: 4.7,
+    },
+    {
+        id: 10,
+        name: "همدان",
+        slug: "hamedan",
+        province: "همدان",
+        propertyCount: 298,
+        image: "/images/landing/cities/hamedan.jpg",
+        iconName: "PiLeafFill",
+        description: "پایتخت تاریخ و تمدن",
+        rating: 4.5,
+    },
+    {
+        id: 11,
+        name: "کاشان",
+        slug: "kashan",
+        province: "اصفهان",
+        propertyCount: 356,
+        image: "/images/landing/cities/kashan.jpg",
+        iconName: "PiFlowerLotusFill",
+        description: "شهر گل و گلاب",
+        rating: 4.8,
+    },
+    {
+        id: 12,
+        name: "ماسال",
+        slug: "masal",
+        province: "گیلان",
+        propertyCount: 187,
+        image: "/images/landing/cities/masal.jpg",
+        iconName: "PiTreeFill",
+        description: "بهشت گمشده گیلان",
+        rating: 4.9,
+    },
+    {
+        id: 13,
+        name: "رامسر",
+        slug: "ramsar",
+        province: "مازندران",
+        propertyCount: 234,
+        image: "/images/landing/cities/ramsar.jpg",
+        iconName: "PiDropFill",
+        description: "عروس شهرهای ایران",
+        rating: 4.8,
+    },
+    {
+        id: 14,
+        name: "بندر انزلی",
+        slug: "anzali",
+        province: "گیلان",
+        propertyCount: 201,
+        image: "/images/landing/cities/anzali.jpg",
+        iconName: "PiAnchorFill",
+        description: "شهر تالاب‌ها",
+        rating: 4.6,
+    },
+    {
+        id: 15,
+        name: "نوشهر",
+        slug: "nowshahr",
+        province: "مازندران",
+        propertyCount: 176,
+        image: "/images/landing/cities/nowshahr.jpg",
+        iconName: "PiCloudFill",
+        description: "شهر جنگل و دریا",
+        rating: 4.7,
+    },
+    {
+        id: 16,
+        name: "اردبیل",
+        slug: "ardabil",
+        province: "اردبیل",
+        propertyCount: 245,
+        image: "/images/landing/cities/ardabil.jpg",
+        iconName: "PiCastleTurretFill",
+        description: "سرزمین سرسبز",
+        rating: 4.6,
+    },
+    /* ---------- ۸ شهر جدید ---------- */
+    {
+        id: 17,
+        name: "قشم",
+        slug: "qeshm",
+        province: "هرمزگان",
+        propertyCount: 312,
+        image: "/images/landing/cities/qeshm.jpg",
+        iconName: "PiAnchorFill",
+        description: "بزرگ‌ترین جزیره خلیج فارس",
+        rating: 4.7,
+    },
+    {
+        id: 18,
+        name: "چابهار",
+        slug: "chabahar",
+        province: "سیستان و بلوچستان",
+        propertyCount: 143,
+        image: "/images/landing/cities/chabahar.jpg",
+        iconName: "PiCompassFill",
+        description: "بهشت سواحل مکران",
+        rating: 4.6,
+    },
+    {
+        id: 19,
+        name: "ساری",
+        slug: "sari",
+        province: "مازندران",
+        propertyCount: 267,
+        image: "/images/landing/cities/sari.jpg",
+        iconName: "PiTreeFill",
+        description: "مرکز مازندران",
+        rating: 4.5,
+    },
+    {
+        id: 20,
+        name: "گرگان",
+        slug: "gorgan",
+        province: "گلستان",
+        propertyCount: 234,
+        image: "/images/landing/cities/gorgan.jpg",
+        iconName: "PiTreeFill",
+        description: "شهر جنگل‌های هیرکانی",
+        rating: 4.6,
+    },
+    {
+        id: 21,
+        name: "اهواز",
+        slug: "ahvaz",
+        province: "خوزستان",
+        propertyCount: 356,
+        image: "/images/landing/cities/ahvaz.jpg",
+        iconName: "PiFireFill",
+        description: "شهر کارون",
+        rating: 4.4,
+    },
+    {
+        id: 22,
+        name: "بوشهر",
+        slug: "bushehr",
+        province: "بوشهر",
+        propertyCount: 189,
+        image: "/images/landing/cities/bushehr.jpg",
+        iconName: "PiAnchorFill",
+        description: "بندر تاریخی خلیج فارس",
+        rating: 4.5,
+    },
+    {
+        id: 23,
+        name: "زنجان",
+        slug: "zanjan",
+        province: "زنجان",
+        propertyCount: 178,
+        image: "/images/landing/cities/zanjan.jpg",
+        iconName: "PiSnowflakeFill",
+        description: "شهر چاقو و ملیله",
+        rating: 4.5,
+    },
+    {
+        id: 24,
+        name: "سنندج",
+        slug: "sanandaj",
+        province: "کردستان",
+        propertyCount: 165,
+        image: "/images/landing/cities/sanandaj.jpg",
+        iconName: "PiMountainsFill",
+        description: "شهر موسیقی و فرهنگ",
+        rating: 4.6,
+    },
 ];
 
 /* ============================================================
@@ -121,119 +309,93 @@ const ICON_MAP = {
     PiMountainsFill,
     PiDropFill,
     PiTreeFill,
+    PiSunFill,
+    PiLeafFill,
+    PiSparkleFill,
+    PiFlowerLotusFill,
+    PiCastleTurretFill,
+    PiCloudFill,
+    PiSnowflakeFill,
+    PiAnchorFill,
+    PiFireFill,
+    PiCompassFill,
 };
 
 /* ============================================================
-   Formatters — یک بار در ماژول
+   Formatters
    ============================================================ */
 const faNumFormatter = new Intl.NumberFormat("fa-IR");
 const faNum = (n) => faNumFormatter.format(Number(n) || 0);
 
 /* ============================================================
-   CityCard — memoized، isHovered داخلی
+   CityCard — استایل جاباما (نسبت ۱:۱.۲)
    ============================================================ */
 const CityCard = memo(function CityCard({ city, index }) {
-    const [isHovered, setIsHovered] = useState(false);
-
     const IconComponent = ICON_MAP[city.iconName];
-    const priority = index < 4;
-
-    const handleEnter = useCallback(() => setIsHovered(true), []);
-    const handleLeave = useCallback(() => setIsHovered(false), []);
+    const isPriority = index < 4;
 
     return (
-        <div
-            className="group relative"
-            onMouseEnter={handleEnter}
-            onMouseLeave={handleLeave}
+        <Link
+            href={`/halls/city/${city.slug}`}
+            aria-label={`مشاهده ${faNum(city.propertyCount)} تالار در ${city.name}`}
+            className="group relative block h-full w-full rounded-2xl overflow-hidden shadow-sm hover:shadow-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#C6A14C]/40 transition-all duration-300 cursor-pointer"
         >
-            <Link href={`/halls/city/${city.slug}`} prefetch={false}>
-                <div className="relative h-72 sm:h-80 rounded-2xl overflow-hidden ring-1 ring-slate-100 shadow-md hover:shadow-xl hover:shadow-slate-900/20 transition-shadow duration-300 cursor-pointer">
-                    {/* تصویر */}
-                    <Image
-                        src={city.image}
-                        alt={city.name}
-                        fill
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
-                        quality={75}
-                        priority={priority}
-                        loading={priority ? "eager" : "lazy"}
-                        className="object-cover transition-transform duration-700 group-hover:scale-110"
+            {/* تصویر پس‌زمینه */}
+            <Image
+                src={city.image}
+                alt={city.name}
+                fill
+                sizes="(max-width: 480px) 150px, (max-width: 640px) 160px, (max-width: 768px) 170px, (max-width: 1024px) 180px, (max-width: 1280px) 190px, 200px"
+                quality={85}
+                priority={isPriority}
+                loading={isPriority ? "eager" : "lazy"}
+                className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+            />
+
+            {/* گرادیانت تیره */}
+            <div
+                className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent"
+                aria-hidden="true"
+            />
+
+            {/* محتوا */}
+            <div className="absolute bottom-0 right-0 left-0 p-3 flex flex-col justify-end text-white">
+                {/* ردیف بالایی: امتیاز */}
+                <div className="flex items-center gap-1 mb-1">
+                    <PiStarFill
+                        className="w-3 h-3 text-[#C6A14C] shrink-0"
+                        aria-hidden="true"
                     />
-
-                    {/* گرادیانت تیره */}
-                    <div className="absolute inset-0 z-10 bg-gradient-to-t from-slate-950/90 via-slate-900/40 to-slate-900/10" />
-
-                    {/* درخشش طلایی */}
-                    <div
-                        className={`absolute inset-0 z-10 bg-gradient-to-t from-gold-500/30 via-transparent to-transparent transition-opacity duration-300 ${
-                            isHovered ? "opacity-100" : "opacity-0"
-                        }`}
-                    />
-
-                    {/* اطلاعات */}
-                    <div
-                        className={`absolute inset-0 z-20 p-5 flex flex-col justify-end transition-colors duration-300 ${
-                            isHovered ? "bg-slate-950/30" : ""
-                        }`}
-                    >
-                        {/* نام + آیکون */}
-                        <div className="flex items-center gap-2 mb-1">
-                            {IconComponent && (
-                                <IconComponent className="w-5 h-5 text-gold-400 drop-shadow-md" />
-                            )}
-                            <h3 className="text-xl font-bold text-white drop-shadow-lg">
-                                {city.name}
-                            </h3>
-                        </div>
-
-                        {/* امتیاز */}
-                        <div className="flex items-center gap-1.5 mb-1">
-                            <PiStarFill className="w-3.5 h-3.5 text-amber-400 drop-shadow" />
-                            <span className="text-white/90 text-[12px] font-medium">
-                                {faNum(city.rating)}
-                            </span>
-                        </div>
-
-                        {/* اطلاعات در hover */}
-                        <div
-                            className={`overflow-hidden transition-[max-height,opacity,margin] duration-300 ${
-                                isHovered
-                                    ? "max-h-40 opacity-100 mt-2"
-                                    : "max-h-0 opacity-0"
-                            }`}
-                        >
-                            <p className="text-white/90 text-[13px] mb-3 drop-shadow-md leading-relaxed">
-                                {city.description}
-                            </p>
-
-                            <div className="flex items-center justify-between mb-3">
-                                <span className="text-white/80 text-[11px] flex items-center gap-1">
-                                    <PiMapPinFill className="w-3 h-3" />
-                                    {city.province}
-                                </span>
-
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gold-500/90 text-white text-[11px] font-bold">
-                                    {faNum(city.propertyCount)} تالار
-                                </span>
-                            </div>
-
-                            <div className="flex items-center justify-between pt-3 border-t border-white/20">
-                                <span className="text-[12.5px] text-white/90 font-medium">
-                                    مشاهده تالارها
-                                </span>
-                                <div className="w-8 h-8 rounded-full bg-gold-500 hover:bg-gold-600 flex items-center justify-center shadow-md transition-transform duration-200 group-hover:scale-110">
-                                    <PiArrowLeft
-                                        className="w-4 h-4 text-white"
-                                        strokeWidth={2.5}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <span className="text-[11px] font-bold text-white/95">
+                        {faNum(city.rating)}
+                    </span>
                 </div>
-            </Link>
-        </div>
+
+                {/* نام شهر + آیکون */}
+                <div className="flex items-center gap-1.5 mb-1">
+                    {IconComponent && (
+                        <IconComponent
+                            className="w-4 h-4 text-[#C6A14C] drop-shadow-md shrink-0"
+                            aria-hidden="true"
+                        />
+                    )}
+                    <h3 className="text-sm sm:text-base font-bold drop-shadow-md truncate">
+                        {city.name}
+                    </h3>
+                </div>
+
+                {/* تعداد تالار */}
+                <div className="flex items-center gap-1 text-[11px] text-white/85">
+                    <PiMapPinFill
+                        className="w-3 h-3 shrink-0"
+                        aria-hidden="true"
+                    />
+                    <span className="truncate">
+                        {faNum(city.propertyCount)} تالار
+                    </span>
+                </div>
+            </div>
+        </Link>
     );
 });
 
@@ -242,43 +404,34 @@ const CityCard = memo(function CityCard({ city, index }) {
    ============================================================ */
 export default function PopularCities() {
     return (
-        <section className="py-12 sm:py-16 md:py-20">
-            <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
-                {/* Header */}
-                <div className="text-center mb-10 sm:mb-12">
-                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 mb-3 tracking-tight">
-                        محبوب‌ترین{" "}
-                        <span className="bg-gradient-to-l from-gold-500 to-gold-700 bg-clip-text text-transparent">
-                            شهرهای ایران
-                        </span>
-                    </h2>
-
-                    <div className="w-20 h-1 bg-gradient-to-r from-gold-400 to-gold-600 rounded-full mx-auto mb-4" />
-
-                    <p className="text-slate-500 text-sm md:text-base max-w-2xl mx-auto px-4 leading-relaxed">
-                        تالارهای ویژه در بهترین مقاصد برگزاری مراسم ایران
-                    </p>
-                </div>
-
-                {/* Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
-                    {POPULAR_CITIES.map((city, index) => (
-                        <CityCard key={city.id} city={city} index={index} />
-                    ))}
-                </div>
-
-                {/* View All */}
-                <div className="text-center mt-10 sm:mt-12">
+        <section
+            aria-labelledby="popular-cities-heading"
+            className="py-10 md:py-14"
+        >
+            <Carousel
+                ariaLabel="popular-cities"
+                eyebrow="مقاصد محبوب"
+                title="محبوب‌ترین شهرهای ایران"
+                subtitle="تالارهای ویژه در بهترین مقاصد برگزاری مراسم ایران"
+                slideClassName="city-slide shrink-0 snap-start"
+                gapClassName="gap-3 sm:gap-4"
+                containerClassName="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+                trackPaddingClassName="px-4 sm:px-6 lg:px-8"
+                headerAction={
                     <Link
                         href="/halls"
                         prefetch={false}
-                        className="group inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 rounded-xl text-sm font-bold text-gold-700 bg-white border-2 border-gold-400 hover:bg-gradient-to-b hover:from-gold-400 hover:to-gold-600 hover:text-white hover:border-transparent shadow-md hover:shadow-lg hover:shadow-gold-500/30 hover:-translate-y-0.5 active:scale-95 focus:outline-none focus:ring-4 focus:ring-gold-500/20 transition-all duration-300"
+                        className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold text-[#A8853A] hover:text-[#85672C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6A14C]/40 rounded px-2 py-1 transition-colors"
                     >
-                        <span>مشاهده همه تالارها</span>
-                        <PiArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-300" />
+                        <span>مشاهده همه</span>
+                        <PiArrowLeft aria-hidden="true" className="w-3.5 h-3.5" />
                     </Link>
-                </div>
-            </div>
+                }
+            >
+                {POPULAR_CITIES.map((city, index) => (
+                    <CityCard key={city.id} city={city} index={index} />
+                ))}
+            </Carousel>
         </section>
     );
 }

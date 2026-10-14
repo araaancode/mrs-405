@@ -4,7 +4,6 @@
 
 /* ============================================
    فونت IranianSans
-   فایل: public/fonts/IranianSans.ttf
    ============================================ */
 @font-face {
   font-family: 'IranianSans';
@@ -16,7 +15,6 @@
 
 /* ============================================
    متغیرهای CSS
-   پالت طلایی #C6A14C
    ============================================ */
 :root {
   --color-primary: #3B2F2F;
@@ -65,7 +63,6 @@
   --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-bounce: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  /* ✅ متغیرهای Toastify — حذف سایه از ریشه */
   --toastify-color-light: #ffffff;
   --toastify-color-dark: #ffffff;
   --toastify-color-info: #ffffff;
@@ -132,14 +129,8 @@
   }
 
   h1 { font-size: clamp(1.75rem, 5vw, 3rem); }
-  @media (min-width: 768px) { h1 { font-size: clamp(2rem, 5vw, 3.5rem); } }
-  @media (min-width: 1024px) { h1 { font-size: clamp(2.5rem, 4vw, 4rem); } }
-
   h2 { font-size: clamp(1.5rem, 4vw, 2.5rem); }
-  @media (min-width: 768px) { h2 { font-size: clamp(1.75rem, 4vw, 2.75rem); } }
-
   h3 { font-size: clamp(1.25rem, 3.5vw, 2rem); }
-
   p { font-size: clamp(0.875rem, 2vw, 1rem); }
 
   input, textarea, select, button {
@@ -177,6 +168,15 @@
   img, video, iframe { max-width: 100%; height: auto; }
 
   ul, ol { list-style: none; padding: 0; margin: 0; }
+}
+
+@media (min-width: 768px) {
+  h1 { font-size: clamp(2rem, 5vw, 3.5rem); }
+  h2 { font-size: clamp(1.75rem, 4vw, 2.75rem); }
+}
+
+@media (min-width: 1024px) {
+  h1 { font-size: clamp(2.5rem, 4vw, 4rem); }
 }
 
 /* ============================================
@@ -600,6 +600,68 @@
 
   .hover-scale { transition: transform var(--transition-base); }
   .hover-scale:hover { transform: scale(1.05); }
+
+  /* ============================================
+     Popular Cities Carousel
+     نسبت ابعاد ۱ : ۱.۲ (کارت‌های کم‌ارتفاع)
+     ============================================ */
+  .city-slide {
+    flex: 0 0 150px !important;
+    width: 150px !important;
+    min-width: 150px !important;
+    max-width: 150px !important;
+    height: 180px !important;
+  }
+}
+
+@media (min-width: 480px) {
+  .city-slide {
+    flex: 0 0 160px !important;
+    width: 160px !important;
+    min-width: 160px !important;
+    max-width: 160px !important;
+    height: 192px !important;
+  }
+}
+
+@media (min-width: 640px) {
+  .city-slide {
+    flex: 0 0 170px !important;
+    width: 170px !important;
+    min-width: 170px !important;
+    max-width: 170px !important;
+    height: 204px !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .city-slide {
+    flex: 0 0 180px !important;
+    width: 180px !important;
+    min-width: 180px !important;
+    max-width: 180px !important;
+    height: 216px !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .city-slide {
+    flex: 0 0 190px !important;
+    width: 190px !important;
+    min-width: 190px !important;
+    max-width: 190px !important;
+    height: 228px !important;
+  }
+}
+
+@media (min-width: 1280px) {
+  .city-slide {
+    flex: 0 0 200px !important;
+    width: 200px !important;
+    min-width: 200px !important;
+    max-width: 200px !important;
+    height: 240px !important;
+  }
 }
 
 /* ============================================
@@ -662,8 +724,7 @@
 }
 
 /* ============================================
-   React Toastify — حذف کامل سایه
-   ✅ بازنویسی متغیرها + box-shadow + filter
+   React Toastify
    ============================================ */
 
 .Toastify__toast-container {
@@ -675,6 +736,7 @@
   z-index: 9999 !important;
   box-shadow: none !important;
 }
+
 .Toastify__toast-container--top-left {
   top: 1rem !important;
   left: 1rem !important;
@@ -698,8 +760,6 @@
   background: #ffffff !important;
   color: #1e293b !important;
   overflow: hidden !important;
-
-  /* ✅ حذف سایه از همه راه‌ها */
   box-shadow: none !important;
   -webkit-box-shadow: none !important;
   -moz-box-shadow: none !important;
@@ -722,12 +782,53 @@
   text-shadow: none !important;
 }
 
-.Toastify__toast--success { background: #ffffff !important; color: #065f46 !important; border: 2px solid #10b981 !important; box-shadow: none !important; filter: none !important; }
-.Toastify__toast--error   { background: #ffffff !important; color: #991b1b !important; border: 2px solid #ef4444 !important; box-shadow: none !important; filter: none !important; }
-.Toastify__toast--info    { background: #ffffff !important; color: #1e40af !important; border: 2px solid #3b82f6 !important; box-shadow: none !important; filter: none !important; }
-.Toastify__toast--warning { background: #ffffff !important; color: #92400e !important; border: 2px solid #f59e0b !important; box-shadow: none !important; filter: none !important; }
-.Toastify__toast--loading { background: #ffffff !important; color: #475569 !important; border: 2px solid #cbd5e1 !important; box-shadow: none !important; filter: none !important; }
-.Toastify__toast--default { background: #ffffff !important; color: #1e293b !important; border: 2px solid #e2e8f0 !important; box-shadow: none !important; filter: none !important; }
+.Toastify__toast--success {
+  background: #ffffff !important;
+  color: #065f46 !important;
+  border: 2px solid #10b981 !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+.Toastify__toast--error {
+  background: #ffffff !important;
+  color: #991b1b !important;
+  border: 2px solid #ef4444 !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+.Toastify__toast--info {
+  background: #ffffff !important;
+  color: #1e40af !important;
+  border: 2px solid #3b82f6 !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+.Toastify__toast--warning {
+  background: #ffffff !important;
+  color: #92400e !important;
+  border: 2px solid #f59e0b !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+.Toastify__toast--loading {
+  background: #ffffff !important;
+  color: #475569 !important;
+  border: 2px solid #cbd5e1 !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+.Toastify__toast--default {
+  background: #ffffff !important;
+  color: #1e293b !important;
+  border: 2px solid #e2e8f0 !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
 
 .Toastify__toast-icon {
   margin-left: 10px !important;
@@ -736,6 +837,7 @@
   height: 20px !important;
   flex-shrink: 0 !important;
 }
+
 .Toastify__toast--success .Toastify__toast-icon svg { fill: #10b981 !important; }
 .Toastify__toast--error .Toastify__toast-icon svg { fill: #ef4444 !important; }
 .Toastify__toast--info .Toastify__toast-icon svg { fill: #3b82f6 !important; }
@@ -755,6 +857,7 @@
   opacity: 0.7 !important;
   background: linear-gradient(to left, #c6a14c, #a8853a) !important;
 }
+
 .Toastify__progress-bar--success { background: linear-gradient(to left, #10b981, #059669) !important; }
 .Toastify__progress-bar--error   { background: linear-gradient(to left, #ef4444, #dc2626) !important; }
 .Toastify__progress-bar--info    { background: linear-gradient(to left, #3b82f6, #2563eb) !important; }
@@ -774,7 +877,6 @@
 .Toastify__slide-enter--top-left,
 .Toastify__slide-exit--top-left { animation-duration: 0.3s !important; }
 
-/* ✅ کلاس‌های سفارشی ToastProvider — حذف سایه */
 .custom-toast {
   box-shadow: none !important;
   -webkit-box-shadow: none !important;
@@ -809,8 +911,7 @@
 }
 
 /* ============================================
-   Leaflet — استایل نقشه (بدون @import)
-   استایل‌های پایه از layout.js وارد می‌شوند
+   Leaflet — استایل نقشه
    ============================================ */
 
 .leaflet-container {
@@ -831,7 +932,6 @@
   z-index: 0;
 }
 
-/* ✅ مارکر بالاتر از تایل‌ها */
 .leaflet-marker-pane { z-index: 600 !important; }
 
 .leaflet-marker-icon,
@@ -849,11 +949,13 @@
   border-radius: 12px !important;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15) !important;
 }
+
 .leaflet-popup-content {
   margin: 12px 16px !important;
   font-size: 13px !important;
   line-height: 1.6 !important;
 }
+
 .leaflet-popup-close-button { font-size: 20px !important; color: #64748b !important; }
 .leaflet-popup-close-button:hover { color: #1e293b !important; }
 
@@ -863,6 +965,7 @@
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
 }
+
 .leaflet-control-zoom a {
   width: 34px !important;
   height: 34px !important;
@@ -873,6 +976,7 @@
   border-bottom: 1px solid #e2e8f0 !important;
   transition: all 0.15s ease;
 }
+
 .leaflet-control-zoom a:last-child { border-bottom: none !important; }
 .leaflet-control-zoom a:hover { background: #FBF7EC !important; color: #A8853A !important; }
 

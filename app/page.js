@@ -1,7 +1,8 @@
 // app/page.js — Server Component (بدون "use client")
 import dynamic from "next/dynamic";
 import { Suspense } from "react";
-import { PiBuildings, PiWarningCircle } from "react-icons/pi";
+import { cache } from "react";
+import { PiBuildings, PiWarningCircle, PiFireFill } from "react-icons/pi";
 
 /* ============================================================
    Lazy Load — کامپوننت‌های تعاملی (Client)
@@ -13,11 +14,11 @@ const HeroSlider = dynamic(() => import("@/components/landing/HeroSlider"), {
     ),
 });
 
-// const LandingAds = dynamic(() => import("@/components/landing/LandingAds"), {
-//     loading: () => (
-//         <div className="w-full h-[500px] bg-slate-100 animate-pulse rounded-2xl" />
-//     ),
-// });
+const LandingAds = dynamic(() => import("@/components/landing/LandingAds"), {
+    loading: () => (
+        <div className="w-full h-[500px] bg-slate-100 animate-pulse rounded-2xl" />
+    ),
+});
 
 const AdvancedSearch = dynamic(
     () => import("@/components/landing/AdvancedSearch"),
@@ -77,8 +78,16 @@ const PopularHalls = dynamic(
     }
 );
 
+/* ✅ کامپوننت جدید — تالارهای با بیشترین تخفیف */
+const TopDiscountHalls = dynamic(
+    () => import("@/components/landing/TopDiscountHalls"),
+    {
+        loading: () => <DiscountHallsSkeleton />,
+    }
+);
+
 /* ============================================================
-   Empty & Error — بدون framer-motion، فقط CSS
+   Empty & Error
    ============================================================ */
 function EmptyState() {
     return (
@@ -113,7 +122,7 @@ function ErrorState({ message }) {
 }
 
 /* ============================================================
-   Skeleton برای PopularHalls — به عنوان fallback Suspense
+   Skeletons
    ============================================================ */
 function HallsSkeleton() {
     return (
@@ -143,10 +152,42 @@ function HallsSkeleton() {
     );
 }
 
+/* ✅ Skeleton اختصاصی برای بخش تخفیف‌ها — با رنگ‌بندی گرم */
+function DiscountHallsSkeleton() {
+    return (
+        <div className="w-full py-16 md:py-20 bg-gradient-to-b from-rose-50/40 via-white to-white">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="text-center mb-10">
+                    <div className="h-6 w-40 bg-rose-100 rounded-full mx-auto mb-4 animate-pulse" />
+                    <div className="h-9 w-56 bg-slate-100 rounded-lg mx-auto mb-3 animate-pulse" />
+                    <div className="w-20 h-1 bg-rose-100 rounded-full mx-auto" />
+                    <div className="h-4 w-64 bg-slate-100 rounded-md mx-auto mt-4 animate-pulse" />
+                </div>
+                <div className="flex gap-5 overflow-hidden px-2 pb-4">
+                    {[1, 2, 3, 4].map((i) => (
+                        <div
+                            key={i}
+                            className="flex-shrink-0 w-[300px] bg-white rounded-2xl ring-1 ring-slate-100 overflow-hidden"
+                        >
+                            <div className="h-44 bg-slate-100 animate-pulse" />
+                            <div className="p-4 space-y-3">
+                                <div className="h-5 w-3/4 bg-slate-100 rounded-lg animate-pulse" />
+                                <div className="h-3.5 w-1/2 bg-slate-100 rounded-md animate-pulse" />
+                                <div className="h-16 w-full bg-rose-50 rounded-xl animate-pulse mt-4" />
+                                <div className="h-9 w-full bg-slate-100 rounded-lg animate-pulse" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 /* ============================================================
-   Fetch در سرور — بدون axios، بدون waterfall
+   Fetch در سرور — با React.cache برای جلوگیری از duplicate fetch
    ============================================================ */
-async function getHalls() {
+const getHalls = cache(async () => {
     try {
         const baseUrl =
             process.env.NEXT_PUBLIC_BASE_URL ||
@@ -154,7 +195,7 @@ async function getHalls() {
             "http://localhost:3000";
 
         const res = await fetch(`${baseUrl}/api/halls`, {
-            next: { revalidate: 300 }, // ISR: هر ۵ دقیقه بازسازی
+            next: { revalidate: 300 }, // ISR: هر ۵ دقیقه
             headers: { Accept: "application/json" },
         });
 
@@ -162,7 +203,6 @@ async function getHalls() {
 
         const data = await res.json();
 
-        // استخراج ساده‌تر
         let halls = [];
         if (Array.isArray(data)) halls = data;
         else if (Array.isArray(data?.data)) halls = data.data;
@@ -174,11 +214,12 @@ async function getHalls() {
     } catch (err) {
         return { halls: [], error: err.message || "خطا در بارگذاری داده‌ها" };
     }
-}
+});
 
 /* ============================================================
-   PopularHallsAsync — بخش داده‌ای با Streaming
+   Async Components — Streaming
    ============================================================ */
+
 async function PopularHallsAsync() {
     const { halls, error } = await getHalls();
 
@@ -186,6 +227,17 @@ async function PopularHallsAsync() {
     if (halls.length === 0) return <EmptyState />;
 
     return <PopularHalls halls={halls} />;
+}
+
+/* ✅ بخش تخفیف‌ها — از همان داده cache شده استفاده می‌کند */
+async function TopDiscountHallsAsync() {
+    const { halls, error } = await getHalls();
+
+    // در صورت خطا یا خالی بودن داده‌ها، کامپوننت خودش EmptyState را نشان می‌دهد
+    if (error && halls.length === 0) return null;
+    if (halls.length === 0) return null;
+
+    return <TopDiscountHalls halls={halls} limit={10} />;
 }
 
 /* ============================================================
@@ -202,15 +254,24 @@ export default function HomePage() {
                 <AdvancedSearch />
             </div>
 
-            {/* ==================== Popular Cities ==================== */}
-            <PopularCities />
-            
-            {/* <LandingAds /> */}
+      
 
-            {/* ==================== Popular Halls — Streaming ==================== */}
+
+            {/* ==================== Popular Halls ==================== */}
             <Suspense fallback={<HallsSkeleton />}>
                 <PopularHallsAsync />
             </Suspense>
+
+            <LandingAds />
+
+
+            {/* ✅ ==================== Top Discount Halls ==================== */}
+            <Suspense fallback={<DiscountHallsSkeleton />}>
+                <TopDiscountHallsAsync />
+            </Suspense>
+
+                  {/* ==================== Popular Cities ==================== */}
+            <PopularCities />
         </div>
     );
 }

@@ -230,15 +230,7 @@ export default function HeroSlider() {
                             key={currentIndex}
                             className="space-y-6 sm:space-y-7 animate-[heroFadeIn_700ms_ease-out]"
                         >
-                            {/* Badge */}
-                            <div className="flex justify-center">
-                                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md ring-1 ring-white/20 shadow-lg">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-gold-400 animate-pulse" />
-                                    <span className="text-[11px] sm:text-xs font-bold text-white/95 tracking-wider">
-                                        {currentSlide.badge}
-                                    </span>
-                                </div>
-                            </div>
+                      
 
                             {/* آیکون تاج */}
                             <div className="flex justify-center">
@@ -273,18 +265,7 @@ export default function HeroSlider() {
                                 بیش از ۱۰٬۰۰۰ مراسم موفق با رزرو تالار
                             </p>
 
-                            {/* دکمه CTA */}
-                            <div className="pt-4 sm:pt-5 flex justify-center">
-                                <Link
-                                    href={currentSlide.ctaLink}
-                                    prefetch
-                                    className="group relative inline-flex items-center justify-center gap-2 px-7 sm:px-9 py-3.5 sm:py-4 rounded-2xl text-sm sm:text-base font-bold text-slate-900 bg-gradient-to-b from-gold-300 via-gold-400 to-gold-600 hover:from-gold-200 hover:via-gold-300 hover:to-gold-500 shadow-[0_10px_40px_-8px_rgba(198,161,76,0.6)] hover:shadow-[0_20px_60px_-10px_rgba(198,161,76,0.8)] ring-1 ring-white/40 hover:-translate-y-1 active:scale-95 focus:outline-none focus:ring-4 focus:ring-gold-500/50 transition-all duration-300 overflow-hidden"
-                                >
-                                    <span className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                                    <span className="relative">{currentSlide.ctaText}</span>
-                                    <PiArrowLeft className="relative w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 group-hover:-translate-x-1" />
-                                </Link>
-                            </div>
+                        
                         </div>
                     </div>
                 </div>
