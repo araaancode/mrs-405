@@ -17,6 +17,7 @@
    متغیرهای CSS
    ============================================ */
 :root {
+  /* --- Colors --- */
   --color-primary: #3B2F2F;
   --color-primary-light: #4A3B3B;
   --color-primary-dark: #2A1F1F;
@@ -48,21 +49,29 @@
   --color-error: #EF4444;
   --color-info: #3B82F6;
 
+  /* --- Gradients --- */
   --gradient-gold: linear-gradient(135deg, #D3B263 0%, #C6A14C 50%, #A8853A 100%);
   --gradient-gold-soft: linear-gradient(135deg, #E0C67B 0%, #C6A14C 100%);
   --gradient-primary: linear-gradient(135deg, #3B2F2F 0%, #6E5B4C 100%);
 
+  /* --- Shadows --- */
   --shadow-gold-sm: 0 2px 8px rgba(198, 161, 76, 0.15);
   --shadow-gold-md: 0 4px 15px rgba(198, 161, 76, 0.25);
   --shadow-gold-lg: 0 8px 30px rgba(198, 161, 76, 0.35);
   --shadow-glow: 0 0 20px rgba(198, 161, 76, 0.3);
   --shadow-glow-lg: 0 0 40px rgba(198, 161, 76, 0.5);
 
+  /* --- Transitions --- */
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-base: 300ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-bounce: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
 
+  /* --- City Card Sizes (Responsive) --- */
+  --city-card-w: 150px;
+  --city-card-h: 180px;
+
+  /* --- Toastify --- */
   --toastify-color-light: #ffffff;
   --toastify-color-dark: #ffffff;
   --toastify-color-info: #ffffff;
@@ -85,6 +94,28 @@
   --toastify-z-index: 9999;
 }
 
+/* ============================================
+   City Card breakpoints (CSS Variables)
+   ============================================ */
+@media (min-width: 480px) {
+  :root { --city-card-w: 160px; --city-card-h: 192px; }
+}
+@media (min-width: 640px) {
+  :root { --city-card-w: 170px; --city-card-h: 204px; }
+}
+@media (min-width: 768px) {
+  :root { --city-card-w: 180px; --city-card-h: 216px; }
+}
+@media (min-width: 1024px) {
+  :root { --city-card-w: 190px; --city-card-h: 228px; }
+}
+@media (min-width: 1280px) {
+  :root { --city-card-w: 200px; --city-card-h: 240px; }
+}
+
+/* ============================================
+   Dark Mode
+   ============================================ */
 @media (prefers-color-scheme: dark) {
   :root {
     --color-background-warm: #1a1614;
@@ -107,6 +138,7 @@
     -moz-osx-font-smoothing: grayscale;
     text-size-adjust: 100%;
     -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
@@ -117,8 +149,14 @@
     text-align: right;
     background-color: var(--color-background-warm);
     color: var(--color-text-dark);
-    overflow-x: hidden;
-    min-height: 100vh;
+    min-height: 100dvh;
+    /* overflow-x روی body نمی‌گذاریم تا sticky کار کند */
+  }
+
+  /* wrapper اصلی برای جلوگیری از overflow افقی */
+  #__next,
+  body > div:first-child {
+    overflow-x: clip;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -128,30 +166,34 @@
     color: var(--color-primary);
   }
 
-  h1 { font-size: clamp(1.75rem, 5vw, 3rem); }
-  h2 { font-size: clamp(1.5rem, 4vw, 2.5rem); }
-  h3 { font-size: clamp(1.25rem, 3.5vw, 2rem); }
-  p { font-size: clamp(0.875rem, 2vw, 1rem); }
+  h1 { font-size: clamp(1.5rem, 4vw + 0.5rem, 3rem); }
+  h2 { font-size: clamp(1.25rem, 3vw + 0.5rem, 2.5rem); }
+  h3 { font-size: clamp(1.125rem, 2.5vw + 0.5rem, 2rem); }
+  p  { font-size: clamp(0.875rem, 1vw + 0.5rem, 1rem); }
 
   input, textarea, select, button {
     font-family: 'IranianSans', system-ui, sans-serif;
+    /* جلوگیری از زوم iOS روی input */
+    font-size: max(16px, 0.875rem);
   }
 
-  ::-webkit-scrollbar { width: 10px; height: 10px; }
-  ::-webkit-scrollbar-track {
-    background: var(--color-background-light);
-    border-radius: 10px;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: var(--color-accent);
-    border-radius: 10px;
-    transition: background var(--transition-base);
-  }
-  ::-webkit-scrollbar-thumb:hover { background: var(--color-accent-600); }
-
-  * {
-    scrollbar-width: thin;
-    scrollbar-color: var(--color-accent) var(--color-background-light);
+  /* اسکرول‌بار فقط برای دسکتاپ */
+  @media (hover: hover) and (pointer: fine) {
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track {
+      background: var(--color-background-light);
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--color-accent);
+      border-radius: 10px;
+      transition: background var(--transition-base);
+    }
+    ::-webkit-scrollbar-thumb:hover { background: var(--color-accent-600); }
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--color-accent) var(--color-background-light);
+    }
   }
 
   ::selection { background-color: var(--color-accent); color: white; }
@@ -164,19 +206,8 @@
   }
 
   a { text-decoration: none; transition: color var(--transition-base); }
-
   img, video, iframe { max-width: 100%; height: auto; }
-
   ul, ol { list-style: none; padding: 0; margin: 0; }
-}
-
-@media (min-width: 768px) {
-  h1 { font-size: clamp(2rem, 5vw, 3.5rem); }
-  h2 { font-size: clamp(1.75rem, 4vw, 2.75rem); }
-}
-
-@media (min-width: 1024px) {
-  h1 { font-size: clamp(2.5rem, 4vw, 4rem); }
 }
 
 /* ============================================
@@ -200,6 +231,10 @@
     font-family: 'IranianSans', system-ui, sans-serif;
   }
   .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  @media (max-width: 640px) {
+    .btn { padding: 0.875rem 1.25rem; font-size: 0.9375rem; }
+  }
 
   .btn-primary {
     background-image: var(--gradient-gold);
@@ -267,6 +302,9 @@
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     padding: 1.5rem;
   }
+  @media (max-width: 640px) {
+    .card-elevated { padding: 1rem; border-radius: 0.75rem; }
+  }
 
   .input-field {
     width: 100%;
@@ -278,6 +316,9 @@
     font-size: 0.875rem;
     font-family: 'IranianSans', system-ui, sans-serif;
     transition: all var(--transition-base);
+  }
+  @media (max-width: 640px) {
+    .input-field { padding: 0.875rem 0.875rem; font-size: 0.9375rem; }
   }
   .input-field::placeholder { color: var(--color-text-muted); }
   .input-field:focus {
@@ -314,6 +355,9 @@
     align-items: flex-start;
     gap: 0.75rem;
   }
+  @media (max-width: 640px) {
+    .alert { padding: 0.875rem; gap: 0.5rem; font-size: 0.875rem; }
+  }
   .alert-success { background-color: #f0fdf4; border-color: #bbf7d0; color: #166534; }
   .alert-warning { background-color: #fffbeb; border-color: #fde68a; color: #92400e; }
   .alert-error { background-color: #fef2f2; border-color: #fecaca; color: #991b1b; }
@@ -324,11 +368,15 @@
     inset: 0;
     background-color: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     z-index: 50;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 1rem;
+  }
+  @media (max-width: 640px) {
+    .modal-overlay { padding: 0.5rem; align-items: flex-end; }
   }
   .modal-content {
     background-color: var(--color-background-white);
@@ -339,8 +387,15 @@
     max-height: 90vh;
     overflow-y: auto;
   }
+  @media (max-width: 640px) {
+    .modal-content {
+      max-width: 100%;
+      max-height: 92dvh;
+      border-radius: 1rem 1rem 0 0;
+    }
+  }
 
-  .table-container { overflow-x: auto; }
+  .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .table-header {
     background-color: var(--color-background-warm);
     text-align: right;
@@ -393,6 +448,9 @@
   }
   .empty-description { color: var(--color-text-muted); font-size: 0.875rem; }
   .empty-action { margin-top: 1rem; }
+  @media (max-width: 640px) {
+    .empty-state { padding: 2rem 1rem; }
+  }
 
   .progress-bar {
     width: 100%;
@@ -514,6 +572,18 @@
     transform: translateX(0.25rem);
   }
   .toggle-checked .toggle-thumb { transform: translateX(1.5rem); }
+
+  /* ============================================
+     Popular Cities Carousel — Responsive
+     ============================================ */
+  .city-slide {
+    flex: 0 0 var(--city-card-w);
+    width: var(--city-card-w);
+    min-width: var(--city-card-w);
+    max-width: var(--city-card-w);
+    height: var(--city-card-h);
+    scroll-snap-align: start;
+  }
 }
 
 /* ============================================
@@ -557,13 +627,28 @@
     background-color: rgba(198, 161, 76, 0.6);
   }
 
+  /* scrollbar-hide — یکپارچه */
+  .scrollbar-hide,
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar,
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
   .backdrop-blur-glass {
     backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
     background-color: rgba(255, 255, 255, 0.8);
   }
   .glass-effect {
     background-color: rgba(255, 255, 255, 0.8);
     backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   }
@@ -600,68 +685,6 @@
 
   .hover-scale { transition: transform var(--transition-base); }
   .hover-scale:hover { transform: scale(1.05); }
-
-  /* ============================================
-     Popular Cities Carousel
-     نسبت ابعاد ۱ : ۱.۲ (کارت‌های کم‌ارتفاع)
-     ============================================ */
-  .city-slide {
-    flex: 0 0 150px !important;
-    width: 150px !important;
-    min-width: 150px !important;
-    max-width: 150px !important;
-    height: 180px !important;
-  }
-}
-
-@media (min-width: 480px) {
-  .city-slide {
-    flex: 0 0 160px !important;
-    width: 160px !important;
-    min-width: 160px !important;
-    max-width: 160px !important;
-    height: 192px !important;
-  }
-}
-
-@media (min-width: 640px) {
-  .city-slide {
-    flex: 0 0 170px !important;
-    width: 170px !important;
-    min-width: 170px !important;
-    max-width: 170px !important;
-    height: 204px !important;
-  }
-}
-
-@media (min-width: 768px) {
-  .city-slide {
-    flex: 0 0 180px !important;
-    width: 180px !important;
-    min-width: 180px !important;
-    max-width: 180px !important;
-    height: 216px !important;
-  }
-}
-
-@media (min-width: 1024px) {
-  .city-slide {
-    flex: 0 0 190px !important;
-    width: 190px !important;
-    min-width: 190px !important;
-    max-width: 190px !important;
-    height: 228px !important;
-  }
-}
-
-@media (min-width: 1280px) {
-  .city-slide {
-    flex: 0 0 200px !important;
-    width: 200px !important;
-    min-width: 200px !important;
-    max-width: 200px !important;
-    height: 240px !important;
-  }
 }
 
 /* ============================================
@@ -739,8 +762,8 @@
 
 .Toastify__toast-container--top-left {
   top: 1rem !important;
-  left: 1rem !important;
-  right: auto !important;
+  right: 1rem !important;
+  left: auto !important;
   bottom: auto !important;
 }
 
@@ -977,6 +1000,14 @@
   transition: all 0.15s ease;
 }
 
+@media (max-width: 640px) {
+  .leaflet-control-zoom a {
+    width: 40px !important;
+    height: 40px !important;
+    line-height: 40px !important;
+  }
+}
+
 .leaflet-control-zoom a:last-child { border-bottom: none !important; }
 .leaflet-control-zoom a:hover { background: #FBF7EC !important; color: #A8853A !important; }
 
@@ -989,13 +1020,3 @@
 .leaflet-control-attribution a { color: #64748b !important; }
 
 .leaflet-drag-target { cursor: grabbing !important; }
-
-@layer utilities {
-  .scrollbar-hide {
-    -ms-overflow-style: none;      /* IE & Edge */
-    scrollbar-width: none;          /* Firefox */
-  }
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;                  /* Chrome, Safari, Opera */
-  }
-}

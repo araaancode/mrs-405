@@ -28,15 +28,19 @@ export default function Carousel({
         }
     }, []);
 
+    /* ============================================================
+       تشخیص وضعیت اسکرول — با abs برای RTL
+       ============================================================ */
     const updateScrollState = useCallback(() => {
         const el = trackRef.current;
         if (!el) return;
         const { scrollLeft, scrollWidth, clientWidth } = el;
         const max = scrollWidth - clientWidth;
-        const normalized = isRTL ? Math.abs(scrollLeft) : scrollLeft;
+        // در RTL، scrollLeft از 0 به منفی می‌رود (Chrome/Firefox)
+        const normalized = Math.abs(scrollLeft);
         setCanScrollPrev(normalized > 4);
         setCanScrollNext(normalized < max - 4);
-    }, [isRTL]);
+    }, []);
 
     useEffect(() => {
         const el = trackRef.current;
@@ -50,6 +54,10 @@ export default function Carousel({
         };
     }, [updateScrollState]);
 
+    /* ============================================================
+       اسکرول صفحه‌ای — اصلاح‌شده برای RTL
+       در RTL: "بعدی" یعنی scrollLeft منفی‌تر → left: -amount
+       ============================================================ */
     const scrollByPage = useCallback((dir) => {
         const el = trackRef.current;
         if (!el) return;
@@ -60,35 +68,44 @@ export default function Carousel({
         });
     }, []);
 
-    const handlePrev = useCallback(
-        () => scrollByPage(isRTL ? "next" : "prev"),
-        [isRTL, scrollByPage]
-    );
-    const handleNext = useCallback(
-        () => scrollByPage(isRTL ? "prev" : "next"),
-        [isRTL, scrollByPage]
-    );
+    const handlePrev = useCallback(() => scrollByPage("prev"), [scrollByPage]);
+    const handleNext = useCallback(() => scrollByPage("next"), [scrollByPage]);
 
     const handleKeyDown = useCallback(
         (e) => {
             if (e.key === "ArrowRight") {
                 e.preventDefault();
-                isRTL ? handlePrev() : handleNext();
+                handlePrev();
             } else if (e.key === "ArrowLeft") {
                 e.preventDefault();
-                isRTL ? handleNext() : handlePrev();
+                handleNext();
             }
         },
-        [handleNext, handlePrev, isRTL]
+        [handleNext, handlePrev]
     );
 
+    /* ============================================================
+       دکمه‌ها — بدون منطق پیچیده isRTL روی disabled
+       ============================================================ */
     const PrevButton = (
         <button
             type="button"
             onClick={handlePrev}
-            disabled={isRTL ? !canScrollNext : !canScrollPrev}
+            disabled={!canScrollPrev}
             aria-label="اسلاید قبلی"
-            className="inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50 hover:border-slate-300 active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-gold-500/30 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="
+                inline-flex items-center justify-center
+                w-9 h-9 sm:w-10 sm:h-10 rounded-xl
+                bg-white text-slate-700
+                border border-slate-200 shadow-sm
+                hover:bg-slate-50 hover:border-slate-300
+                active:scale-95
+                focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#C6A14C]/30
+                transition-all duration-200
+                disabled:opacity-40 disabled:cursor-not-allowed
+                shrink-0
+                cursor-pointer
+            "
         >
             <PiCaretRightBold aria-hidden="true" className="w-3.5 h-3.5" />
         </button>
@@ -98,9 +115,21 @@ export default function Carousel({
         <button
             type="button"
             onClick={handleNext}
-            disabled={isRTL ? !canScrollPrev : !canScrollNext}
+            disabled={!canScrollNext}
             aria-label="اسلاید بعدی"
-            className="inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50 hover:border-slate-300 active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-gold-500/30 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="
+                inline-flex items-center justify-center
+                w-9 h-9 sm:w-10 sm:h-10 rounded-xl
+                bg-white text-slate-700
+                border border-slate-200 shadow-sm
+                hover:bg-slate-50 hover:border-slate-300
+                active:scale-95
+                focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#C6A14C]/30
+                transition-all duration-200
+                disabled:opacity-40 disabled:cursor-not-allowed
+                shrink-0
+                cursor-pointer
+            "
         >
             <PiCaretLeftBold aria-hidden="true" className="w-3.5 h-3.5" />
         </button>
@@ -115,31 +144,37 @@ export default function Carousel({
         >
             {(title || subtitle) && (
                 <div className={containerClassName}>
-                    <header className="flex items-start justify-between gap-4 mb-5 sm:mb-6">
-                        <div className="min-w-0">
+                    <header className="flex items-end justify-between gap-3 sm:gap-4 mb-5 sm:mb-6 flex-wrap">
+                        <div className="min-w-0 flex-1">
                             {eyebrow && (
-                                <span className="inline-block mb-1.5 text-[11px] sm:text-xs font-bold tracking-wider text-gold-700">
-                                    {eyebrow}
-                                </span>
+                                <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
+                                    <span
+                                        className="w-5 sm:w-6 h-1 rounded-full bg-gradient-to-l from-[#C6A14C] to-[#A8853A]"
+                                        aria-hidden="true"
+                                    />
+                                    <span className="text-[10px] sm:text-[11px] font-bold text-[#A8853A] tracking-wide">
+                                        {eyebrow}
+                                    </span>
+                                </div>
                             )}
                             {title && (
                                 <h2
                                     id={`${ariaLabel}-heading`}
-                                    className="text-lg sm:text-xl md:text-2xl font-black text-slate-900 tracking-tight leading-snug"
+                                    className="text-lg sm:text-xl md:text-2xl font-black text-slate-800 tracking-tight leading-snug"
                                 >
                                     {title}
                                 </h2>
                             )}
                             {subtitle && (
-                                <p className="mt-1.5 text-slate-500 text-xs sm:text-sm max-w-2xl leading-relaxed">
+                                <p className="mt-1 text-slate-500 text-xs md:text-sm max-w-2xl leading-relaxed">
                                     {subtitle}
                                 </p>
                             )}
                         </div>
 
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                             {headerAction}
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1.5 sm:gap-2">
                                 {PrevButton}
                                 {NextButton}
                             </div>
@@ -152,8 +187,19 @@ export default function Carousel({
                 ref={trackRef}
                 onKeyDown={handleKeyDown}
                 tabIndex={0}
-                className={`flex ${gapClassName} ${trackPaddingClassName} overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-hide focus-visible:outline-none`}
-                style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                className={`
+                    flex ${gapClassName} ${trackPaddingClassName}
+                    overflow-x-auto scroll-smooth snap-x snap-mandatory
+                    scrollbar-hide
+                    focus-visible:outline-none
+                    focus-visible:ring-2 focus-visible:ring-[#C6A14C]/40
+                    rounded-2xl
+                `}
+                style={{
+                    scrollbarWidth: "none",
+                    msOverflowStyle: "none",
+                    scrollPaddingInline: "1rem",
+                }}
             >
                 {items.map((child, i) => (
                     <div
@@ -166,6 +212,9 @@ export default function Carousel({
                         {child}
                     </div>
                 ))}
+
+                {/* Spacer انتهایی برای اسکرول راحت آخرین کارت */}
+                <div className="flex-shrink-0 w-2" aria-hidden="true" />
             </div>
         </div>
     );

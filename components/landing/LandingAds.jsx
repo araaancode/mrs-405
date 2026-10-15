@@ -96,7 +96,6 @@ function trackEvent(adId, type) {
     const url = TRACK_URL(adId)
     const payload = JSON.stringify({ type })
 
-    // اولویت با sendBeacon (پایدارتر در unload)
     if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
         try {
             const blob = new Blob([payload], { type: 'application/json' })
@@ -107,7 +106,6 @@ function trackEvent(adId, type) {
         }
     }
 
-    // fallback به fetch
     fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -152,7 +150,7 @@ export default function LandingAds() {
 
     const maxIndex = Math.max(0, ads.length - itemsPerView)
 
-    /* ---------- Nav — با setState callback برای جلوگیری از stale ---------- */
+    /* ---------- Nav ---------- */
     const goTo = useCallback(
         (idx) => {
             setCurrentIndex((prev) => {
@@ -166,7 +164,6 @@ export default function LandingAds() {
     const next = useCallback(() => goTo((i) => i + 1), [goTo])
     const prev = useCallback(() => goTo((i) => i - 1), [goTo])
 
-    /* Reset index وقتی itemsPerView تغییر می‌کند */
     useEffect(() => {
         setCurrentIndex((prev) => Math.min(prev, maxIndex))
     }, [maxIndex])
@@ -202,7 +199,7 @@ export default function LandingAds() {
         scroller.scrollTo({ left: targetLeft, behavior: 'smooth' })
     }, [currentIndex])
 
-    /* ---------- Sync index on user scroll — با RAF ---------- */
+    /* ---------- Sync index on user scroll ---------- */
     useEffect(() => {
         const scroller = scrollerRef.current
         if (!scroller) return
@@ -245,7 +242,7 @@ export default function LandingAds() {
         }
     }, [maxIndex])
 
-    /* ---------- View tracking با IntersectionObserver ---------- */
+    /* ---------- View tracking ---------- */
     useEffect(() => {
         const scroller = scrollerRef.current
         if (!scroller || !ads.length) return
@@ -286,17 +283,17 @@ export default function LandingAds() {
     if (loading) {
         return (
             <section
-                className="w-full py-10 sm:py-14"
+                className="w-full py-8 sm:py-10 md:py-14"
                 style={{ backgroundColor: THEME.bg }}
                 aria-busy="true"
             >
-                <div className="px-4 sm:px-6 lg:px-8">
-                    <div className="h-8 w-52 rounded-lg mb-6 bg-white/10 animate-pulse" />
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                <div className="px-3 sm:px-4 md:px-6 lg:px-8">
+                    <div className="h-7 sm:h-8 w-44 sm:w-52 rounded-lg mb-5 sm:mb-6 bg-white/10 animate-pulse" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
                         {[1, 2, 3].map((i) => (
                             <div
                                 key={i}
-                                className="h-[210px] rounded-2xl bg-white/5 animate-pulse"
+                                className="h-[200px] sm:h-[210px] rounded-2xl bg-white/5 animate-pulse"
                             />
                         ))}
                     </div>
@@ -309,7 +306,7 @@ export default function LandingAds() {
 
     return (
         <section
-            className="relative w-full py-10 sm:py-14 overflow-hidden"
+            className="relative w-full py-8 sm:py-10 md:py-14 overflow-hidden"
             style={{ backgroundColor: THEME.bg }}
             aria-labelledby="landing-ads-title"
         >
@@ -319,18 +316,18 @@ export default function LandingAds() {
                 aria-hidden="true"
             >
                 <div
-                    className="absolute -top-24 right-0 w-96 h-96 rounded-full blur-3xl"
+                    className="absolute -top-24 right-0 w-64 sm:w-96 h-64 sm:h-96 rounded-full blur-3xl"
                     style={{ backgroundColor: 'rgba(198,161,76,0.15)' }}
                 />
                 <div
-                    className="absolute -bottom-24 left-0 w-96 h-96 rounded-full blur-3xl"
+                    className="absolute -bottom-24 left-0 w-64 sm:w-96 h-64 sm:h-96 rounded-full blur-3xl"
                     style={{ backgroundColor: 'rgba(198,161,76,0.10)' }}
                 />
             </div>
 
             {/* ==================== هدر ==================== */}
-            <header className="relative flex items-start justify-between gap-4 mb-8 px-4 sm:px-6 lg:px-8 flex-wrap">
-                <div className="flex items-center gap-3.5 flex-1 min-w-0">
+            <header className="relative flex items-start justify-between gap-3 sm:gap-4 mb-6 sm:mb-8 px-3 sm:px-4 md:px-6 lg:px-8 flex-wrap">
+                <div className="flex items-center gap-2.5 sm:gap-3.5 flex-1 min-w-0">
                     <div className="relative shrink-0">
                         <div
                             className="absolute inset-0 rounded-2xl blur-md"
@@ -338,7 +335,7 @@ export default function LandingAds() {
                             aria-hidden="true"
                         />
                         <div
-                            className="relative w-12 h-12 rounded-2xl flex items-center justify-center ring-1"
+                            className="relative w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center ring-1"
                             style={{
                                 backgroundImage: GOLD_GRADIENT,
                                 boxShadow: GOLD_GLOW,
@@ -346,7 +343,7 @@ export default function LandingAds() {
                             }}
                         >
                             <PiMegaphone
-                                className="w-6 h-6 text-white"
+                                className="w-5 h-5 sm:w-6 sm:h-6 text-white"
                                 aria-hidden="true"
                             />
                         </div>
@@ -354,7 +351,7 @@ export default function LandingAds() {
 
                     <div className="min-w-0">
                         <div
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide mb-1.5"
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold tracking-wide mb-1 sm:mb-1.5"
                             style={{
                                 backgroundColor: 'rgba(198,161,76,0.10)',
                                 border: `1px solid rgba(198,161,76,0.30)`,
@@ -367,18 +364,18 @@ export default function LandingAds() {
 
                         <h2
                             id="landing-ads-title"
-                            className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white tracking-tight"
+                            className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-extrabold text-white tracking-tight"
                         >
                             کمپین‌های ویژه
                         </h2>
 
-                        <p className="text-xs sm:text-sm mt-1 text-white/60">
+                        <p className="text-[11px] sm:text-xs md:text-sm mt-0.5 sm:mt-1 text-white/60">
                             فرصت‌های محدود با تخفیف‌های استثنایی
                         </p>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                     <NavButton
                         onClick={next}
                         disabled={currentIndex >= maxIndex}
@@ -396,12 +393,13 @@ export default function LandingAds() {
                         href="/halls"
                         prefetch={false}
                         className="
-                            hidden sm:inline-flex items-center gap-2
-                            h-10 px-5 rounded-xl
+                            hidden md:inline-flex items-center gap-2
+                            h-10 px-4 lg:px-5 rounded-xl
                             text-[#2A1F1F] text-xs font-extrabold
                             focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#E0C67B]/40
                             transition-all duration-300
                             hover:shadow-xl hover:-translate-y-0.5
+                            motion-reduce:hover:translate-y-0
                         "
                         style={{
                             backgroundImage: GOLD_GRADIENT,
@@ -425,11 +423,11 @@ export default function LandingAds() {
                 className="
                     flex overflow-x-auto snap-x snap-mandatory scroll-smooth
                     scrollbar-hide
-                    px-4 sm:px-6 lg:px-8 pb-2
+                    px-3 sm:px-4 md:px-6 lg:px-8 pb-2
                     focus-visible:outline-none
                     focus-visible:ring-2 focus-visible:ring-[#E0C67B]/40
                     rounded-2xl
-                    mx-4 sm:mx-6 lg:mx-8
+                    mx-3 sm:mx-4 md:mx-6 lg:mx-8
                 "
                 style={{
                     gap: `${GAP}px`,
@@ -453,7 +451,7 @@ export default function LandingAds() {
             {ads.length > itemsPerView && (
                 <nav
                     aria-label="صفحه‌بندی اسلایدر"
-                    className="flex items-center justify-center gap-2 mt-8 flex-wrap px-4"
+                    className="flex items-center justify-center gap-2 mt-6 sm:mt-8 flex-wrap px-4"
                     aria-live="polite"
                     aria-atomic="true"
                 >
@@ -530,8 +528,8 @@ function AdCardH({ ad, onClick, cardBasis, index = 0 }) {
             })}
             className="
                 group relative flex flex-row
-                h-[200px] sm:h-[210px]
-                bg-white rounded-2xl overflow-hidden
+                h-[180px] sm:h-[200px] md:h-[210px]
+                bg-white rounded-xl sm:rounded-2xl overflow-hidden
                 ring-1 ring-[#EDDCA9] hover:ring-[#D3B263]
                 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#E0C67B]/50
                 transition-all duration-300
@@ -551,7 +549,8 @@ function AdCardH({ ad, onClick, cardBasis, index = 0 }) {
                     src={image}
                     alt={ad.title || 'تبلیغ'}
                     fill
-                    sizes="(max-width: 768px) 45vw, 25vw"
+                    sizes="(max-width: 640px) 45vw, (max-width: 768px) 40vw, 25vw"
+                    quality={80}
                     priority={index < 3}
                     loading={index < 3 ? 'eager' : 'lazy'}
                     className="
@@ -571,26 +570,26 @@ function AdCardH({ ad, onClick, cardBasis, index = 0 }) {
                 {discount > 0 && (
                     <div
                         className="
-                            absolute top-3 left-3
+                            absolute top-2.5 left-2.5 sm:top-3 sm:left-3
                             flex flex-col items-center justify-center
-                            w-12 h-12 rounded-full
+                            w-10 h-10 sm:w-12 sm:h-12 rounded-full
                             text-white shadow-lg ring-4 ring-white/90
                             group-hover:scale-110 transition-transform duration-300
                             motion-reduce:transition-none
                         "
                         style={{ backgroundImage: GOLD_GRADIENT }}
                     >
-                        <span className="text-sm font-extrabold leading-none">
+                        <span className="text-xs sm:text-sm font-extrabold leading-none">
                             {faNum(discount)}٪
                         </span>
-                        <span className="text-[8px] font-bold mt-0.5">تخفیف</span>
+                        <span className="text-[7px] sm:text-[8px] font-bold mt-0.5">تخفیف</span>
                     </div>
                 )}
 
                 {/* امتیاز */}
-                <div className="absolute bottom-3 left-3 inline-flex items-center gap-1 bg-black/60 backdrop-blur-sm rounded-full px-2 py-0.5 text-[10px] text-white">
+                <div className="absolute bottom-2.5 left-2.5 sm:bottom-3 sm:left-3 inline-flex items-center gap-1 bg-black/60 backdrop-blur-sm rounded-full px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] text-white">
                     <PiStarFill
-                        className="w-3 h-3 text-[#E0C67B]"
+                        className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#E0C67B]"
                         aria-hidden="true"
                     />
                     <span className="font-bold">{rating.toFixed(1)}</span>
@@ -599,18 +598,18 @@ function AdCardH({ ad, onClick, cardBasis, index = 0 }) {
             </div>
 
             {/* ==================== محتوا ==================== */}
-            <div className="flex flex-col flex-1 p-4 bg-white min-w-0">
-                <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex flex-col flex-1 p-3 sm:p-4 bg-white min-w-0">
+                <div className="flex items-center justify-between gap-2 mb-1.5 sm:mb-2">
                     {sponsorName ? (
                         <span className="
                             inline-flex items-center gap-1
-                            px-2 py-0.5 rounded-md
+                            px-1.5 sm:px-2 py-0.5 rounded-md
                             bg-[#FBF7EC] border border-[#EDDCA9]
-                            text-[#85672C] text-[10px] font-bold
+                            text-[#85672C] text-[9px] sm:text-[10px] font-bold
                             max-w-[55%]
                         ">
                             <PiSealCheckFill
-                                className="w-3 h-3 shrink-0"
+                                className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0"
                                 aria-hidden="true"
                             />
                             <span className="line-clamp-1">{sponsorName}</span>
@@ -620,9 +619,9 @@ function AdCardH({ ad, onClick, cardBasis, index = 0 }) {
                     )}
 
                     {location && (
-                        <span className="inline-flex items-center gap-1 text-[10px] text-gray-500 font-medium shrink-0">
+                        <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] text-gray-500 font-medium shrink-0">
                             <PiMapPin
-                                className="w-3 h-3 text-[#C6A14C]"
+                                className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#C6A14C]"
                                 aria-hidden="true"
                             />
                             {location}
@@ -630,30 +629,30 @@ function AdCardH({ ad, onClick, cardBasis, index = 0 }) {
                     )}
                 </div>
 
-                <h3 className="text-sm sm:text-base font-extrabold text-[#3B2F2F] line-clamp-2 leading-snug group-hover:text-[#85672C] transition-colors">
+                <h3 className="text-xs sm:text-sm md:text-base font-extrabold text-[#3B2F2F] line-clamp-2 leading-snug group-hover:text-[#85672C] transition-colors">
                     {ad.title}
                 </h3>
 
                 {ad.description && (
-                    <p className="text-[11px] text-gray-500 line-clamp-2 leading-relaxed mt-1.5">
+                    <p className="text-[10px] sm:text-[11px] text-gray-500 line-clamp-2 leading-relaxed mt-1 sm:mt-1.5">
                         {ad.description}
                     </p>
                 )}
 
-                <div className="border-t border-dashed border-[#EDDCA9] mt-auto pt-2.5" />
+                <div className="border-t border-dashed border-[#EDDCA9] mt-auto pt-2 sm:pt-2.5" />
 
-                <div className="flex items-center justify-between gap-3 mt-2">
+                <div className="flex items-center justify-between gap-2 sm:gap-3 mt-1.5 sm:mt-2">
                     <div className="flex flex-col min-w-0">
                         {originalPrice > finalPrice && originalPrice > 0 && (
-                            <span className="text-[10px] text-gray-400 line-through leading-none tabular-nums">
+                            <span className="text-[9px] sm:text-[10px] text-gray-400 line-through leading-none tabular-nums">
                                 {formatPrice(originalPrice)}
                             </span>
                         )}
                         <div className="flex items-baseline gap-1 mt-0.5">
-                            <span className="text-base sm:text-lg font-extrabold text-[#85672C] leading-none tabular-nums">
+                            <span className="text-sm sm:text-base md:text-lg font-extrabold text-[#85672C] leading-none tabular-nums">
                                 {formatPrice(finalPrice)}
                             </span>
-                            <span className="text-[9px] text-gray-500 font-medium whitespace-nowrap">
+                            <span className="text-[8px] sm:text-[9px] text-gray-500 font-medium whitespace-nowrap">
                                 تومان / شب
                             </span>
                         </div>
@@ -661,9 +660,9 @@ function AdCardH({ ad, onClick, cardBasis, index = 0 }) {
 
                     <span
                         className="
-                            inline-flex items-center gap-1.5
-                            h-9 px-3 rounded-lg
-                            text-[#2A1F1F] text-xs font-extrabold
+                            inline-flex items-center gap-1 sm:gap-1.5
+                            h-8 sm:h-9 px-2.5 sm:px-3 rounded-lg
+                            text-[#2A1F1F] text-[10px] sm:text-xs font-extrabold
                             shrink-0
                             transition-all duration-300
                             group-hover:shadow-lg
@@ -671,7 +670,7 @@ function AdCardH({ ad, onClick, cardBasis, index = 0 }) {
                         style={{ backgroundImage: GOLD_GRADIENT }}
                     >
                         {ad.cta_text || 'رزرو کن'}
-                        <PiArrowLeft className="w-3.5 h-3.5" aria-hidden="true" />
+                        <PiArrowLeft className="w-3 h-3 sm:w-3.5 sm:h-3.5" aria-hidden="true" />
                     </span>
                 </div>
             </div>
@@ -692,7 +691,7 @@ function NavButton({ onClick, disabled, direction, children, ...rest }) {
             aria-disabled={disabled}
             {...rest}
             className={`
-                w-10 h-10 rounded-xl
+                w-9 h-9 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl
                 flex items-center justify-center
                 border transition-all duration-200
                 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#E0C67B]/40
@@ -703,7 +702,7 @@ function NavButton({ onClick, disabled, direction, children, ...rest }) {
                 }
             `}
         >
-            {children || <Icon className="w-4 h-4" aria-hidden="true" />}
+            {children || <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" aria-hidden="true" />}
         </button>
     )
 }

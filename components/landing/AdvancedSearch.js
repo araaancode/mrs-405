@@ -231,11 +231,7 @@ export default function AdvancedSearch({ onSearch }) {
                             <h2 className="text-[14px] font-extrabold text-slate-800 truncate">
                                 جستجوی هوشمند تالار
                             </h2>
-                            <p className="text-[11px] text-slate-500 truncate hidden sm:block">
-                                {activeCount > 0
-                                    ? `${activeCount} فیلتر فعال`
-                                    : 'برای شروع، فیلترها را انتخاب کنید'}
-                            </p>
+                          
                         </div>
                     </div>
 

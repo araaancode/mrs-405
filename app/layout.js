@@ -95,7 +95,12 @@ export const viewport = {
    ============================================================ */
 export default function RootLayout({ children }) {
     return (
-        <html lang="fa" dir="rtl" suppressHydrationWarning>
+        <html
+            lang="fa"
+            dir="rtl"
+            suppressHydrationWarning
+            className="bg-[#2A1F1F]"
+        >
             <head>
                 <link
                     rel="preload"
@@ -124,47 +129,64 @@ export default function RootLayout({ children }) {
                 />
             </head>
 
-            {/* ✅ تغییر: گرادیانت روی body — یکنواخت در کل صفحه */}
             <body
-                className="antialiased text-slate-900 min-h-screen flex flex-col bg-gradient-to-br from-[#FDFCF9] via-[#FAF8F2] to-[#F7F3E8]"
+                className="antialiased text-slate-900 min-h-screen flex flex-col"
                 style={{ fontFamily: "'IranianSans', system-ui, sans-serif" }}
             >
                 <AuthProvider>
                     <NotificationProvider>
-                        <Suspense
-                            fallback={
-                                <div className="h-16 bg-white border-b border-slate-100 animate-pulse" />
-                            }
-                        >
-                            <Navbar />
-                        </Suspense>
-
-                        <main className="flex-1 w-full" role="main">
+                        {/* ============================================================
+                            wrapper اصلی
+                            flex-col + min-h-screen → پوشش کل ارتفاع صفحه
+                           ============================================================ */}
+                        <div className="flex flex-col min-h-screen">
+                            {/* ==================== Navbar ==================== */}
                             <Suspense
                                 fallback={
-                                    <div className="flex items-center justify-center min-h-[60vh]">
-                                        <div className="flex flex-col items-center gap-3">
-                                            <div className="w-12 h-12 rounded-full border-4 border-gold-500 border-t-transparent animate-spin" />
-                                            <p className="text-slate-500 text-sm">
-                                                در حال بارگذاری...
-                                            </p>
-                                        </div>
-                                    </div>
+                                    <div className="h-16 bg-white border-b border-slate-100 animate-pulse" />
                                 }
                             >
-                                {children}
+                                <Navbar />
                             </Suspense>
-                        </main>
 
-                        <Suspense
-                            fallback={
-                                <div className="h-32 bg-slate-100 animate-pulse" />
-                            }
-                        >
-                            <Footer />
-                        </Suspense>
+                            {/* ==================== Main ==================== */}
+                            <main
+                                className="
+                                    flex-1 w-full
+                                    bg-gradient-to-br
+                                    from-[#FDFCF9]
+                                    via-[#FAF8F2]
+                                    to-[#F7F3E8]
+                                "
+                                role="main"
+                            >
+                                <Suspense
+                                    fallback={
+                                        <div className="flex items-center justify-center min-h-[60vh]">
+                                            <div className="flex flex-col items-center gap-3">
+                                                <div className="w-12 h-12 rounded-full border-4 border-gold-500 border-t-transparent animate-spin" />
+                                                <p className="text-slate-500 text-sm">
+                                                    در حال بارگذاری...
+                                                </p>
+                                            </div>
+                                        </div>
+                                    }
+                                >
+                                    {children}
+                                </Suspense>
+                            </main>
 
-                        {/* ToastContainer — همه‌ی toast های برنامه */}
+                            {/* ==================== Footer ==================== */}
+                            <Suspense
+                                fallback={
+                                    <div className="h-32 bg-slate-100 animate-pulse" />
+                                }
+                            >
+                                <Footer />
+                            </Suspense>
+                        </div>
+
+                        {/* ==================== ToastContainer ==================== */}
                         <ToastProvider />
                     </NotificationProvider>
                 </AuthProvider>

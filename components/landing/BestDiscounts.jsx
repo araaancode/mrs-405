@@ -12,7 +12,7 @@ import { useCarousel } from './shared/useCarousel'
 import { pickBestDiscounts, computePricing, faNum } from './shared/helpers'
 
 /* ============================================================
-   CountdownBadge — تایمر طلایی تا پایان امروز
+   CountdownBadge
    ============================================================ */
 const CountdownBadge = memo(function CountdownBadge() {
     const endOfDay = useMemo(() => {
@@ -40,14 +40,14 @@ const CountdownBadge = memo(function CountdownBadge() {
         <div
             className="
                 hidden sm:inline-flex items-center gap-1.5
-                px-3 h-9 rounded-2xl
+                px-2.5 sm:px-3 h-8 sm:h-9 rounded-xl sm:rounded-2xl
                 bg-[#FBF7EC] ring-1 ring-[#C6A14C]/25
-                text-[#85672C] text-[11px] font-bold
+                text-[#85672C] text-[10px] sm:text-[11px] font-bold
                 tabular-nums
             "
             aria-label={`زمان باقی‌مانده تا پایان امروز: ${pad(hours)} ساعت و ${pad(minutes)} دقیقه`}
         >
-            <PiLightningFill className="w-3.5 h-3.5" aria-hidden="true" />
+            <PiLightningFill className="w-3 h-3 sm:w-3.5 sm:h-3.5" aria-hidden="true" />
             <span>پایان تا</span>
             <span className="font-black">
                 {pad(hours)}:{pad(minutes)}:{pad(seconds)}
@@ -57,7 +57,7 @@ const CountdownBadge = memo(function CountdownBadge() {
 })
 
 /* ============================================================
-   BestDiscounts — اسلایدر پرتخفیف‌ترین تالارها (تم طلایی)
+   BestDiscounts — اسلایدر پرتخفیف‌ترین تالارها
    ============================================================ */
 export default function BestDiscounts({ halls = [], limit = 10 }) {
     const discounted = useMemo(
@@ -84,17 +84,16 @@ export default function BestDiscounts({ halls = [], limit = 10 }) {
 
     if (discounted.length === 0) return null
 
-    const totalCards = discounted.length + 1 // + MoreCard
+    const totalCards = discounted.length + 1
 
     return (
         <section
             className="
-                relative py-12 md:py-16
+                relative py-10 sm:py-12 md:py-16
                 bg-gradient-to-b from-[#FBF7EC]/60 via-[#FBF7EC]/20 to-transparent
             "
             aria-labelledby="best-discounts-heading"
         >
-            {/* دکور طلایی پس‌زمینه */}
             <div
                 className="
                     pointer-events-none absolute inset-0 opacity-[0.05]
@@ -103,15 +102,15 @@ export default function BestDiscounts({ halls = [], limit = 10 }) {
                 aria-hidden="true"
             />
 
-            <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="relative max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
                 {/* ==================== هدر ==================== */}
-                <div className="flex items-end justify-between gap-4 mb-7 flex-wrap">
-                    <div className="min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-end justify-between gap-3 sm:gap-4 mb-5 sm:mb-7 flex-wrap">
+                    <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
                             <span
                                 className="
                                     inline-flex items-center justify-center
-                                    w-6 h-6 rounded-lg
+                                    w-5 h-5 sm:w-6 sm:h-6 rounded-md sm:rounded-lg
                                     shadow-[0_4px_12px_-2px_rgba(168,133,58,0.5)]
                                 "
                                 style={{
@@ -120,18 +119,18 @@ export default function BestDiscounts({ halls = [], limit = 10 }) {
                                 }}
                             >
                                 <PiFireFill
-                                    className="w-3.5 h-3.5 text-white"
+                                    className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white"
                                     aria-hidden="true"
                                 />
                             </span>
-                            <span className="text-[11px] font-bold text-[#A8853A] tracking-wide">
+                            <span className="text-[10px] sm:text-[11px] font-bold text-[#A8853A] tracking-wide">
                                 پیشنهاد داغ
                             </span>
                         </div>
 
                         <h2
                             id="best-discounts-heading"
-                            className="text-xl md:text-2xl font-black text-slate-800 mb-1"
+                            className="text-lg sm:text-xl md:text-2xl font-black text-slate-800 mb-1"
                         >
                             پرتخفیف‌ترین تالارها
                         </h2>
@@ -151,7 +150,11 @@ export default function BestDiscounts({ halls = [], limit = 10 }) {
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-2 self-start shrink-0">
+                    {/* ============================================================
+                        دکمه‌های ناوبری — همیشه نمایش داده می‌شوند
+                        CountdownBadge فقط در sm+ نمایش داده می‌شود
+                       ============================================================ */}
+                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 order-2 sm:order-1">
                         <CountdownBadge />
 
                         <NavButton
@@ -167,12 +170,13 @@ export default function BestDiscounts({ halls = [], limit = 10 }) {
                             variant="hot"
                         />
 
+                        {/* لینک "همه تخفیف‌ها" فقط در دسکتاپ */}
                         <Link
                             href="/halls?sort=discount"
                             prefetch={false}
                             className="
-                                hidden sm:inline-flex items-center gap-1.5
-                                h-10 px-4 rounded-2xl
+                                hidden md:inline-flex items-center gap-1.5
+                                h-9 lg:h-10 px-3 lg:px-4 rounded-xl lg:rounded-2xl
                                 bg-white text-[#A8853A]
                                 text-xs font-bold
                                 ring-1 ring-[#C6A14C]/25
@@ -202,8 +206,8 @@ export default function BestDiscounts({ halls = [], limit = 10 }) {
                     tabIndex={0}
                     onKeyDown={onKeyDown}
                     className="
-                        flex gap-4 overflow-x-auto scroll-smooth
-                        hide-scrollbar px-4 sm:px-6 lg:px-8 pb-2
+                        flex gap-3 sm:gap-4 overflow-x-auto scroll-smooth
+                        hide-scrollbar px-3 sm:px-4 md:px-6 lg:px-8 pb-2
                         snap-x snap-mandatory
                         focus-visible:outline-none
                         focus-visible:ring-2 focus-visible:ring-[#C6A14C]/40
@@ -237,7 +241,7 @@ export default function BestDiscounts({ halls = [], limit = 10 }) {
                 {/* ==================== Dot Indicators (موبایل) ==================== */}
                 {totalCards > 3 && (
                     <div
-                        className="flex items-center justify-center gap-1.5 mt-5 md:hidden"
+                        className="flex items-center justify-center gap-1.5 mt-4 sm:mt-5 md:hidden"
                         role="tablist"
                         aria-label="صفحه‌بندی اسلایدر تخفیف‌ها"
                     >
@@ -261,6 +265,29 @@ export default function BestDiscounts({ halls = [], limit = 10 }) {
                         ))}
                     </div>
                 )}
+
+                {/* ==================== دکمه موبایل: مشاهده همه تخفیف‌ها ==================== */}
+                <div className="flex justify-center mt-4 sm:mt-5 md:hidden px-3">
+                    <Link
+                        href="/halls?sort=discount"
+                        prefetch={false}
+                        className="
+                            inline-flex items-center gap-1.5
+                            h-10 px-5 rounded-xl
+                            bg-white text-[#A8853A]
+                            text-xs font-bold
+                            ring-1 ring-[#C6A14C]/25
+                            shadow-[0_2px_8px_-2px_rgba(15,23,42,0.1)]
+                            hover:bg-[#C6A14C] hover:text-white hover:ring-[#C6A14C]
+                            focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#C6A14C]/40
+                            transition-all duration-300
+                            w-full max-w-xs justify-center
+                        "
+                    >
+                        <span>مشاهده همه تخفیف‌ها</span>
+                        <PiArrowLeft className="w-3.5 h-3.5" aria-hidden="true" />
+                    </Link>
+                </div>
             </div>
         </section>
     )

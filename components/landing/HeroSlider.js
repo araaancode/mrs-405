@@ -2,13 +2,10 @@
 'use client'
 
 import { useState, useEffect, useCallback, memo } from 'react'
-import Link from 'next/link'
 import Image from 'next/image'
 import {
     PiCaretLeft,
     PiCaretRight,
-    PiCrownSimpleFill,
-    PiArrowLeft,
     PiSparkle,
 } from 'react-icons/pi'
 
@@ -17,7 +14,7 @@ const SLIDES = [
         id: 1,
         title: 'مراسم خود را در بهترین تالارها برگزار کنید',
         subtitle: 'منتخب لوکس‌ترین تالارهای ایران با امکانات مدرن',
-        bgImage: '/images/landing/hero/hero5.jfif',
+        bgImage: '/images/landing/hero/new/1.jfif',
         ctaText: 'رزرو تالار',
         ctaLink: '/halls',
         badge: 'ویژه',
@@ -26,7 +23,7 @@ const SLIDES = [
         id: 2,
         title: 'تالار رویایی‌تان را پیدا کنید',
         subtitle: 'از سالن‌های کوچک تا باغ‌تالارهای باشکوه',
-        bgImage: '/images/landing/hero/hero6.jfif',
+        bgImage: '/images/landing/hero/new/2.jfif',
         ctaText: 'مشاهده تالارها',
         ctaLink: '/halls',
         badge: 'منتخب',
@@ -35,7 +32,7 @@ const SLIDES = [
         id: 3,
         title: 'لحظه‌های خاص را ماندگار کنید',
         subtitle: 'تالارهای مجهز با خدمات کامل و قیمت منصفانه',
-        bgImage: '/images/landing/hero/hero7.jfif',
+        bgImage: '/images/landing/hero/new/3.jfif',
         ctaText: 'شروع رزرو',
         ctaLink: '/halls',
         badge: 'لوکس',
@@ -44,12 +41,30 @@ const SLIDES = [
         id: 4,
         title: 'هر مراسمی، در جای خودش',
         subtitle: 'عروسی، تولد، همایش و هر مناسبت دیگری',
-        bgImage: '/images/landing/hero/hero8.jfif',
+        bgImage: '/images/landing/hero/new/4.jfif',
         ctaText: 'جستجوی تالار',
         ctaLink: '/halls',
         badge: 'همه‌کاره',
     },
-]
+    {
+        id: 5,
+        title: 'تجربه‌ای به یادماندنی برای مهمانان‌تان بسازید',
+        subtitle: 'تالارهایی با طراحی منحصر به فرد و تیم حرفه‌ای',
+        bgImage: '/images/landing/hero/new/5.jfif',
+        ctaText: 'مشاهده جزئیات',
+        ctaLink: '/halls',
+        badge: 'پیشنهاد ویژه',
+    },
+    {
+        id: 6,
+        title: 'رزرو آنلاین، سریع و بدون دردسر',
+        subtitle: 'در چند دقیقه تالار مورد نظرتان را رزرو کنید',
+        bgImage: '/images/landing/hero/new/6.jfif',
+        ctaText: 'رزرو سریع',
+        ctaLink: '/halls',
+        badge: 'آنلاین',
+    },
+];
 
 const SLIDES_COUNT = SLIDES.length
 const AUTO_PLAY_MS = 6000
@@ -63,9 +78,11 @@ const Slide = memo(function Slide({ slide, isActive, priority }) {
             className={`
                 absolute inset-0
                 transition-opacity duration-[1200ms]
+                motion-reduce:transition-none
                 ${isActive ? 'opacity-100' : 'opacity-0 pointer-events-none'}
             `}
             style={{ zIndex: isActive ? 1 : 0 }}
+            aria-hidden={!isActive}
         >
             <Image
                 src={slide.bgImage}
@@ -78,7 +95,6 @@ const Slide = memo(function Slide({ slide, isActive, priority }) {
                 className="object-cover"
             />
 
-            {/* گرادیان‌ها */}
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/40 to-transparent" />
             <div className="absolute inset-0 bg-gradient-to-l from-slate-950/50 via-slate-950/10 to-transparent" />
         </div>
@@ -99,23 +115,28 @@ const NavButton = memo(function NavButton({ direction, onClick }) {
             aria-label={isNext ? 'اسلاید بعدی' : 'اسلاید قبلی'}
             className={`
                 group absolute top-1/2 -translate-y-1/2
-                ${isNext ? 'left-4 sm:left-6 md:left-8' : 'right-4 sm:right-6 md:right-8'}
-                w-11 h-11 sm:w-12 sm:h-12 md:w-14 md:h-14
+                ${isNext
+                    ? 'left-2 sm:left-4 md:left-6 lg:left-8'
+                    : 'right-2 sm:right-4 md:right-6 lg:right-8'}
+                w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 lg:w-14 lg:h-14
                 rounded-full
                 flex items-center justify-center
                 bg-white/10 hover:bg-white/20
                 backdrop-blur-xl
+                -webkit-backdrop-filter: blur(20px)
                 text-white
                 ring-1 ring-white/30 hover:ring-[#E0C67B]/60
                 hover:scale-110 active:scale-95
+                motion-reduce:hover:scale-100 motion-reduce:active:scale-100
                 cursor-pointer
                 transition-all duration-300
                 z-30
+                touch-manipulation
             `}
             style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}
         >
             <Icon
-                className="w-5 h-5 sm:w-6 sm:h-6"
+                className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6"
                 strokeWidth={2.5}
                 aria-hidden="true"
             />
@@ -165,7 +186,7 @@ export default function HeroSlider() {
     return (
         <section
             aria-label="اسلایدر اصلی"
-            className="w-full px-3 sm:px-4 md:px-6 lg:px-8 pt-20 sm:pt-24 md:pt-28"
+            className="w-full px-2 sm:px-4 md:px-6 lg:px-8 pt-16 sm:pt-20 md:pt-24"
         >
             <div
                 onKeyDown={onKeyDown}
@@ -174,12 +195,13 @@ export default function HeroSlider() {
                 tabIndex={0}
                 className="
                     relative overflow-hidden
-                    h-[70vh] min-h-[460px]
-                    sm:h-[75vh] sm:min-h-[500px]
-                    md:h-[78vh] md:min-h-[560px]
-                    lg:h-[82vh]
-                    rounded-3xl sm:rounded-[2rem]
+                    h-[60svh] min-h-[400px]
+                    sm:h-[70svh] sm:min-h-[480px]
+                    md:h-[75svh] md:min-h-[540px]
+                    lg:h-[80svh] lg:min-h-[600px]
+                    rounded-2xl sm:rounded-3xl md:rounded-[2rem]
                     ring-1 ring-white/10
+                    touch-pan-y
                 "
                 style={{ boxShadow: '0 30px 80px -20px rgba(15,23,42,0.6)' }}
             >
@@ -198,68 +220,20 @@ export default function HeroSlider() {
                     className="
                         absolute inset-0
                         flex items-center justify-center
-                        px-6 sm:px-8 md:px-12
-                        pt-8 sm:pt-12
+                        px-4 sm:px-6 md:px-8 lg:px-12
+                        py-6 sm:py-8 md:py-10
                     "
                     style={{ zIndex: 20 }}
                 >
                     <div className="text-center max-w-4xl mx-auto w-full">
-                        <div className="space-y-4 sm:space-y-5">
-                            {/* بج */}
-                            {currentSlide.badge && (
-                                <div className="flex justify-center">
-                                    <span
-                                        className="
-                                            inline-flex items-center gap-1.5
-                                            px-4 py-1.5 rounded-full
-                                            text-[11px] sm:text-xs font-bold text-white
-                                        "
-                                        style={{
-                                            background: 'rgba(255,255,255,0.12)',
-                                            border: '1px solid rgba(255,255,255,0.2)',
-                                            backdropFilter: 'blur(8px)',
-                                        }}
-                                    >
-                                        <PiSparkle
-                                            className="w-3 h-3 text-[#E0C67B]"
-                                            aria-hidden="true"
-                                        />
-                                        {currentSlide.badge}
-                                    </span>
-                                </div>
-                            )}
-
-                            {/* آیکن تاج */}
-                            <div className="flex justify-center">
-                                <div
-                                    className="
-                                        relative
-                                        w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20
-                                        rounded-2xl
-                                        flex items-center justify-center
-                                        ring-4 ring-white/20
-                                    "
-                                    style={{
-                                        background:
-                                            'linear-gradient(135deg, #E0C67B 0%, #C6A14C 50%, #85672C 100%)',
-                                        boxShadow:
-                                            '0 10px 40px -8px rgba(198,161,76,0.6)',
-                                    }}
-                                >
-                                    <PiCrownSimpleFill
-                                        className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 text-white"
-                                        aria-hidden="true"
-                                    />
-                                </div>
-                            </div>
-
+                        <div className="space-y-3 sm:space-y-4 md:space-y-5">
                             {/* عنوان */}
                             <h1
                                 className="
-                                    text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl
+                                    text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl
                                     font-black text-white
-                                    leading-[1.25] sm:leading-tight
-                                    px-2 tracking-tight
+                                    leading-[1.3] sm:leading-tight
+                                    tracking-tight
                                 "
                                 style={{
                                     textShadow:
@@ -270,21 +244,21 @@ export default function HeroSlider() {
                             </h1>
 
                             {/* جداکننده */}
-                            <div className="flex items-center justify-center gap-3">
-                                <div className="w-12 sm:w-16 h-[2px] bg-gradient-to-r from-transparent to-[#E0C67B]/80" />
+                            <div className="flex items-center justify-center gap-2 sm:gap-3">
+                                <div className="w-8 sm:w-12 md:w-16 h-[2px] bg-gradient-to-r from-transparent to-[#E0C67B]/80" />
                                 <PiSparkle
-                                    className="w-4 h-4 text-[#E0C67B]"
+                                    className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#E0C67B]"
                                     aria-hidden="true"
                                 />
-                                <div className="w-12 sm:w-16 h-[2px] bg-gradient-to-l from-transparent to-[#E0C67B]/80" />
+                                <div className="w-8 sm:w-12 md:w-16 h-[2px] bg-gradient-to-l from-transparent to-[#E0C67B]/80" />
                             </div>
 
                             {/* زیرعنوان */}
                             <p
                                 className="
-                                    text-sm sm:text-base md:text-lg lg:text-xl
+                                    text-xs sm:text-base md:text-lg lg:text-xl
                                     font-bold text-[#E0C67B]
-                                    px-4 leading-relaxed
+                                    px-2 sm:px-4 leading-relaxed
                                 "
                                 style={{
                                     textShadow: '0 2px 10px rgba(0,0,0,0.8)',
@@ -293,39 +267,10 @@ export default function HeroSlider() {
                                 {currentSlide.subtitle}
                             </p>
 
-                            {/* CTA */}
-                            <div className="flex justify-center pt-1">
-                                <Link
-                                    href={currentSlide.ctaLink}
-                                    prefetch={false}
-                                    className="
-                                        group inline-flex items-center gap-2
-                                        px-6 sm:px-8 py-3 sm:py-3.5
-                                        rounded-2xl
-                                        text-[#2A1F1F] text-sm sm:text-base font-extrabold
-                                        hover:-translate-y-0.5
-                                        active:scale-[0.97]
-                                        transition-all duration-300
-                                    "
-                                    style={{
-                                        background:
-                                            'linear-gradient(180deg, #E0C67B 0%, #C6A14C 50%, #A8853A 100%)',
-                                        boxShadow:
-                                            '0 10px 30px -6px rgba(198,161,76,0.6)',
-                                    }}
-                                >
-                                    <span>{currentSlide.ctaText}</span>
-                                    <PiArrowLeft
-                                        className="w-4 h-4"
-                                        aria-hidden="true"
-                                    />
-                                </Link>
-                            </div>
-
                             {/* متن کوچک */}
                             <p
                                 className="
-                                    text-[11px] sm:text-xs md:text-sm
+                                    text-[10px] sm:text-xs md:text-sm
                                     text-white/75
                                     max-w-xl mx-auto px-4
                                 "
@@ -342,6 +287,30 @@ export default function HeroSlider() {
                 {/* Nav Buttons */}
                 <NavButton direction="prev" onClick={prevSlide} />
                 <NavButton direction="next" onClick={nextSlide} />
+
+                {/* Dot Indicators — نمایش در همه دستگاه‌ها */}
+                <div
+                    className="absolute bottom-3 sm:bottom-4 md:bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 sm:gap-2 z-30"
+                    role="tablist"
+                    aria-label="اسلایدها"
+                >
+                    {SLIDES.map((_, i) => (
+                        <button
+                            key={i}
+                            type="button"
+                            role="tab"
+                            aria-selected={i === currentIndex}
+                            aria-label={`اسلاید ${i + 1}`}
+                            onClick={() => setCurrentIndex(i)}
+                            className={`
+                                h-1.5 rounded-full transition-all duration-300
+                                ${i === currentIndex
+                                    ? 'w-6 sm:w-8 bg-[#E0C67B]'
+                                    : 'w-1.5 sm:w-2 bg-white/40 hover:bg-white/70'}
+                            `}
+                        />
+                    ))}
+                </div>
             </div>
         </section>
     )

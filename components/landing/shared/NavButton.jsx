@@ -20,7 +20,6 @@ const NavButton = memo(function NavButton({
     const isNext = direction === 'next'
     const isHot = variant === 'hot'
 
-    // ✅ هر دو طلایی
     const palette = isHot
         ? {
               hoverBg: 'hover:bg-[#A8853A]',
@@ -41,11 +40,14 @@ const NavButton = memo(function NavButton({
             aria-label={label || defaultLabel}
             aria-disabled={disabled}
             className={`
-                hidden md:flex w-10 h-10 rounded-2xl
+                inline-flex
+                w-9 h-9 sm:w-10 sm:h-10
+                rounded-xl sm:rounded-2xl
                 bg-white
                 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.1)]
                 ${palette.hoverShadow}
                 items-center justify-center
+                shrink-0
                 text-slate-700
                 ${palette.hoverBg} hover:text-white
                 active:scale-95
@@ -58,9 +60,9 @@ const NavButton = memo(function NavButton({
             `}
         >
             {isNext ? (
-                <PiArrowLeft className="w-4 h-4" aria-hidden="true" />
+                <PiArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" aria-hidden="true" />
             ) : (
-                <PiArrowRight className="w-4 h-4" aria-hidden="true" />
+                <PiArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" aria-hidden="true" />
             )}
         </button>
     )

@@ -31,33 +31,33 @@ export default function PopularHalls({ halls = [] }) {
 
     if (popularHalls.length === 0) return null
 
-    const totalCards = popularHalls.length + 1 // + MoreCard
+    const totalCards = popularHalls.length + 1
 
     return (
         <section
             className="
-                relative py-12 md:py-16
+                relative py-10 sm:py-12 md:py-16
                 bg-gradient-to-b from-transparent via-[#FBF7EC]/30 to-transparent
             "
             aria-labelledby="popular-halls-heading"
         >
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
                 {/* ==================== هدر ==================== */}
-                <div className="flex items-end justify-between gap-4 mb-7 flex-wrap">
-                    <div className="min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-end justify-between gap-3 sm:gap-4 mb-5 sm:mb-7 flex-wrap">
+                    <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
                             <span
-                                className="w-6 h-1 rounded-full bg-gradient-to-l from-[#C6A14C] to-[#A8853A]"
+                                className="w-5 sm:w-6 h-1 rounded-full bg-gradient-to-l from-[#C6A14C] to-[#A8853A]"
                                 aria-hidden="true"
                             />
-                            <span className="text-[11px] font-bold text-[#A8853A] tracking-wide">
+                            <span className="text-[10px] sm:text-[11px] font-bold text-[#A8853A] tracking-wide">
                                 پیشنهاد ویژه
                             </span>
                         </div>
 
                         <h2
                             id="popular-halls-heading"
-                            className="text-xl md:text-2xl font-black text-slate-800 mb-1"
+                            className="text-lg sm:text-xl md:text-2xl font-black text-slate-800 mb-1"
                         >
                             محبوب‌ترین تالارها
                         </h2>
@@ -67,7 +67,12 @@ export default function PopularHalls({ halls = [] }) {
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-2 self-start shrink-0">
+                    {/* ============================================================
+                        دکمه‌های ناوبری — همیشه نمایش داده می‌شوند
+                        در دسکتاپ: کنار عنوان
+                        در موبایل: در ردیف جداگانه زیر عنوان
+                       ============================================================ */}
+                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 order-2 sm:order-1">
                         <NavButton
                             direction="prev"
                             onClick={() => scrollByDirection('prev')}
@@ -81,12 +86,13 @@ export default function PopularHalls({ halls = [] }) {
                             variant="gold"
                         />
 
+                        {/* لینک "مشاهده همه" فقط در دسکتاپ */}
                         <Link
                             href="/halls"
                             prefetch={false}
                             className="
-                                hidden sm:inline-flex items-center gap-1.5
-                                h-10 px-4 rounded-2xl
+                                hidden md:inline-flex items-center gap-1.5
+                                h-9 lg:h-10 px-3 lg:px-4 rounded-xl lg:rounded-2xl
                                 bg-white text-slate-700
                                 text-xs font-bold
                                 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.1)]
@@ -115,8 +121,8 @@ export default function PopularHalls({ halls = [] }) {
                     tabIndex={0}
                     onKeyDown={onKeyDown}
                     className="
-                        flex gap-4 overflow-x-auto scroll-smooth
-                        hide-scrollbar px-4 sm:px-6 lg:px-8 pb-2
+                        flex gap-3 sm:gap-4 overflow-x-auto scroll-smooth
+                        hide-scrollbar px-3 sm:px-4 md:px-6 lg:px-8 pb-2
                         snap-x snap-mandatory
                         focus-visible:outline-none
                         focus-visible:ring-2 focus-visible:ring-[#C6A14C]/40
@@ -131,7 +137,6 @@ export default function PopularHalls({ halls = [] }) {
                 >
                     {popularHalls.map((hall, index) => (
                         <div key={hall._id || `idx-${index}`} data-card>
-                            {/* 🔥 forceCarousel برای نمایش اسلایدر حتی با ۱ تصویر */}
                             <HallCard
                                 hall={hall}
                                 index={index}
@@ -150,14 +155,13 @@ export default function PopularHalls({ halls = [] }) {
                         />
                     </div>
 
-                    {/* Spacer انتهایی برای اسکرول راحت آخرین کارت */}
                     <div className="flex-shrink-0 w-2" aria-hidden="true" />
                 </div>
 
                 {/* ==================== Dot Indicators (موبایل) ==================== */}
                 {totalCards > 3 && (
                     <div
-                        className="flex items-center justify-center gap-1.5 mt-5 md:hidden"
+                        className="flex items-center justify-center gap-1.5 mt-4 sm:mt-5 md:hidden"
                         role="tablist"
                         aria-label="صفحه‌بندی اسلایدر محبوب‌ترین تالارها"
                     >
@@ -181,6 +185,29 @@ export default function PopularHalls({ halls = [] }) {
                         ))}
                     </div>
                 )}
+
+                {/* ==================== دکمه موبایل: مشاهده همه ==================== */}
+                <div className="flex justify-center mt-4 sm:mt-5 md:hidden px-3">
+                    <Link
+                        href="/halls"
+                        prefetch={false}
+                        className="
+                            inline-flex items-center gap-1.5
+                            h-10 px-5 rounded-xl
+                            bg-white text-slate-700
+                            text-xs font-bold
+                            ring-1 ring-slate-200
+                            shadow-[0_2px_8px_-2px_rgba(15,23,42,0.1)]
+                            hover:bg-[#C6A14C] hover:text-white hover:ring-[#C6A14C]
+                            focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#C6A14C]/40
+                            transition-all duration-300
+                            w-full max-w-xs justify-center
+                        "
+                    >
+                        <span>مشاهده همه تالارها</span>
+                        <PiArrowLeft className="w-3.5 h-3.5" aria-hidden="true" />
+                    </Link>
+                </div>
             </div>
         </section>
     )

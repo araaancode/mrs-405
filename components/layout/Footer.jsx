@@ -10,6 +10,8 @@ import {
     PiWhatsappLogo,
     PiArrowUpRight,
     PiHeart,
+    PiStorefront,
+    PiShieldCheck,
 } from 'react-icons/pi'
 
 /* ============================================================
@@ -32,6 +34,22 @@ const SERVICES = [
     { href: '/user/tickets', label: 'پشتیبانی' },
     { href: '/faq', label: 'سوالات متداول' },
     { href: '/terms', label: 'قوانین و مقررات' },
+]
+
+/* 🔴 جدید: پنل‌های کاربری */
+const PANELS = [
+    {
+        href: '/auth/hall_owner/login',
+        label: 'پنل تالاردار',
+        description: 'مدیریت تالار و رزروها',
+        icon: PiStorefront,
+    },
+    {
+        href: '/auth/admin/login',
+        label: 'پنل مدیریت',
+        description: 'مدیریت سیستم',
+        icon: PiShieldCheck,
+    },
 ]
 
 const SOCIALS = [
@@ -100,6 +118,67 @@ function FooterLink({ href, children }) {
                 "
                 aria-hidden="true"
             />
+        </Link>
+    )
+}
+
+/* ============================================================
+   PanelLink — لینک پنل با آیکون و توضیح
+   ============================================================ */
+function PanelLink({ href, label, description, icon: Icon }) {
+    return (
+        <Link
+            href={href}
+            className="
+                group/panel flex items-start gap-2.5
+                p-2.5 rounded-xl
+                bg-white/[0.02] hover:bg-white/[0.06]
+                ring-1 ring-white/5 hover:ring-[#C6A14C]/30
+                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6A14C]/40
+                motion-reduce:transition-none
+                transition-all duration-200
+                hover:-translate-y-0.5
+            "
+        >
+            <span
+                className="
+                    w-8 h-8 rounded-lg shrink-0
+                    bg-[#C6A14C]/10 ring-1 ring-[#C6A14C]/20
+                    flex items-center justify-center
+                    group-hover/panel:bg-[#C6A14C] group-hover/panel:ring-[#C6A14C]
+                    motion-reduce:transition-none
+                    transition-all duration-200
+                "
+            >
+                <Icon
+                    className="
+                        w-4 h-4 text-[#E0C67B]
+                        group-hover/panel:text-white
+                        transition-colors
+                    "
+                    aria-hidden="true"
+                />
+            </span>
+            <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1">
+                    <span className="text-[13px] font-bold text-slate-200 group-hover/panel:text-[#E0C67B] transition-colors">
+                        {label}
+                    </span>
+                    <PiArrowUpRight
+                        className="
+                            w-3 h-3 text-[#E0C67B]
+                            opacity-0 -translate-x-1
+                            group-hover/panel:opacity-100 group-hover/panel:translate-x-0
+                            motion-reduce:transition-none
+                            transition-all duration-200
+                        "
+                        aria-hidden="true"
+                    />
+                </div>
+                <p className="text-[11px] text-slate-500 leading-relaxed mt-0.5">
+                    {description}
+                </p>
+            </div>
         </Link>
     )
 }
@@ -188,8 +267,9 @@ export default function Footer() {
             role="contentinfo"
             aria-label="فوتر سایت"
             className="
-                relative mt-16 overflow-hidden
+                relative overflow-hidden
                 text-white
+                bg-[#1a1510]
                 bg-gradient-to-br from-[#2C2418] via-[#221c13] to-[#1a1510]
             "
         >
@@ -211,9 +291,14 @@ export default function Footer() {
                 aria-hidden="true"
             />
 
-            <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-14">
+            <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-14 pb-8">
+                {/* ============================================================
+                    گرید اصلی — ۴ ستون در دسکتاپ
+                    1) درباره  2) پنل‌ها  3) دسترسی سریع  4) تماس
+                   ============================================================ */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10">
-                    {/* ==================== درباره ==================== */}
+
+                    {/* ==================== 1. درباره ==================== */}
                     <div className="sm:col-span-2 lg:col-span-1">
                         <Link
                             href="/"
@@ -290,35 +375,48 @@ export default function Footer() {
                         </ul>
                     </div>
 
-                    {/* ==================== دسترسی سریع ==================== */}
-                    <nav aria-label="دسترسی سریع">
-                        <ColumnTitle>دسترسی سریع</ColumnTitle>
-                        <ul className="space-y-3 text-[13px]">
-                            {QUICK_LINKS.map((link) => (
-                                <li key={link.href}>
-                                    <FooterLink href={link.href}>
-                                        {link.label}
-                                    </FooterLink>
+                    {/* ==================== 2. پنل‌ها (جدید) ==================== */}
+                    <nav aria-label="پنل‌های کاربری">
+                        <ColumnTitle>پنل‌های کاربری</ColumnTitle>
+                        <ul className="space-y-2.5">
+                            {PANELS.map((panel) => (
+                                <li key={panel.href}>
+                                    <PanelLink {...panel} />
                                 </li>
                             ))}
                         </ul>
                     </nav>
 
-                    {/* ==================== خدمات ==================== */}
-                    <nav aria-label="خدمات">
-                        <ColumnTitle>خدمات</ColumnTitle>
-                        <ul className="space-y-3 text-[13px]">
-                            {SERVICES.map((link) => (
-                                <li key={link.href}>
-                                    <FooterLink href={link.href}>
-                                        {link.label}
-                                    </FooterLink>
-                                </li>
-                            ))}
-                        </ul>
-                    </nav>
+                    {/* ==================== 3. دسترسی سریع + خدمات ==================== */}
+                    <div className="grid grid-cols-2 sm:grid-cols-2 gap-6 sm:gap-8">
+                        <nav aria-label="دسترسی سریع">
+                            <ColumnTitle>دسترسی سریع</ColumnTitle>
+                            <ul className="space-y-3 text-[13px]">
+                                {QUICK_LINKS.map((link) => (
+                                    <li key={link.href}>
+                                        <FooterLink href={link.href}>
+                                            {link.label}
+                                        </FooterLink>
+                                    </li>
+                                ))}
+                            </ul>
+                        </nav>
 
-                    {/* ==================== تماس ==================== */}
+                        <nav aria-label="خدمات">
+                            <ColumnTitle>خدمات</ColumnTitle>
+                            <ul className="space-y-3 text-[13px]">
+                                {SERVICES.map((link) => (
+                                    <li key={link.href}>
+                                        <FooterLink href={link.href}>
+                                            {link.label}
+                                        </FooterLink>
+                                    </li>
+                                ))}
+                            </ul>
+                        </nav>
+                    </div>
+
+                    {/* ==================== 4. تماس ==================== */}
                     <section aria-label="اطلاعات تماس">
                         <ColumnTitle>تماس با ما</ColumnTitle>
                         <ul className="space-y-3 text-[13px]">
