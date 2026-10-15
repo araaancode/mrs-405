@@ -1,45 +1,71 @@
-import { NextResponse } from "next/server"
-import connectDB from "@/lib/db"
-import Hall from "@/models/Hall"
+// app/api/halls/search/route.js (یا هر مسیری که داری)
+import { NextResponse } from 'next/server'
+import connectDB from '@/lib/db'
+import Hall from '@/models/Hall'
+
+function escapeRegex(str) {
+    return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function normalizeText(str) {
+    if (!str || typeof str !== 'string') return ''
+    return str
+        .trim()
+        .replace(/ي/g, 'ی')
+        .replace(/ك/g, 'ک')
+        .replace(/\u200c/g, ' ')
+        .replace(/\s+/g, ' ')
+}
+
+function buildFlexibleRegex(input) {
+    const normalized = normalizeText(input)
+    if (!normalized) return null
+    const parts = normalized
+        .split(/\s+/)
+        .map((w) => escapeRegex(w))
+        .filter(Boolean)
+    if (parts.length === 0) return null
+    return { $regex: parts.join('[\\s\\u200c]*'), $options: 'i' }
+}
 
 export async function GET(req) {
+    try {
+        await connectDB()
+        const { searchParams } = new URL(req.url)
+        const city = searchParams.get('city')
 
-    await connectDB()
+        if (!city || !city.trim()) {
+            return NextResponse.json(
+                { success: false, message: 'city is required' },
+                { status: 400 }
+            )
+        }
 
-    const { searchParams } = new URL(req.url)
+        const query = {
+            is_active: true,
+            city: buildFlexibleRegex(city),
+        }
 
-    const province = searchParams.get("province")
-    const city = searchParams.get("city")
-    const event_type = searchParams.get("event_type")
-    const hall_type = searchParams.get("hall_type")
+        const halls = await Hall.find(query)
+            .select(
+                'title province city address capacity duration ' +
+                'images image thumbnail event_type hall_type ' +
+                'sans_price sans_discount main_price has_sans description ' +
+                'isFavorite createdAt'
+            )
+            .sort({ createdAt: -1 })
+            .lean()
 
-    let query = {
-        is_active: true
+        return NextResponse.json({
+            success: true,
+            count: halls.length,
+            data: halls,
+        })
+    } catch (err) {
+        console.error('[/api/halls/search] error:', err)
+        return NextResponse.json(
+            { success: false, message: 'خطا در جستجو', error: err.message },
+            { status: 500 }
+        )
     }
-
-    if (province) {
-        query.province = province
-    }
-
-    if (city) {
-        query.city = { $regex: city, $options: "i" }
-    }
-
-    if (event_type) {
-        query.event_type = event_type
-    }
-
-    if (hall_type) {
-        query.hall_type = hall_type
-    }
-
-    const halls = await Hall.find(query)
-        .select("title province city capacity images event_type hall_type")
-        .lean()
-
-    return NextResponse.json({
-        success: true,
-        count: halls.length,
-        data: halls
-    })
 }

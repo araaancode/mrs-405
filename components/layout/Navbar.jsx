@@ -332,7 +332,7 @@ export default function Navbar() {
                             />
                         </div>
                         <span className="font-black text-lg text-slate-900 hidden sm:block tracking-tight">
-                            رزرو تالار
+                           مراسمینو
                         </span>
                     </Link>
 

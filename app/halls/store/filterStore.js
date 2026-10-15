@@ -20,9 +20,41 @@ export const useFilterStore = create((set, get) => ({
     sort: "newest",
     viewMode: "grid", // grid | list
 
+    /* ============================================================
+       setFilter — تنظیم یک فیلتر
+       ============================================================ */
     setFilter: (key, value) =>
         set((state) => ({ filters: { ...state.filters, [key]: value } })),
 
+    /* ============================================================
+       🔥 setFilters — تنظیم چند فیلتر یک‌جا (از URL میاد)
+       این تابع قبلاً وجود نداشت و همین باعث مشکل بود!
+       ============================================================ */
+    setFilters: (newFilters) =>
+        set((state) => ({
+            filters: {
+                ...state.filters,
+                // فقط فیلدهای معتبر رو set کن
+                ...Object.fromEntries(
+                    Object.entries(newFilters).filter(([key]) =>
+                        key in initialFilters
+                    )
+                ),
+            },
+        })),
+
+    /* ============================================================
+       resetFilters — پاک کردن همه فیلترها (به جز sort و viewMode)
+       ============================================================ */
+    resetFilters: () =>
+        set({
+            filters: { ...initialFilters },
+            sort: "newest",
+        }),
+
+    /* ============================================================
+       toggleProperty
+       ============================================================ */
     toggleProperty: (prop) =>
         set((state) => {
             const props = state.filters.properties;
@@ -36,11 +68,15 @@ export const useFilterStore = create((set, get) => ({
             };
         }),
 
+    /* ============================================================
+       setSort / setViewMode
+       ============================================================ */
     setSort: (sort) => set({ sort }),
     setViewMode: (viewMode) => set({ viewMode }),
 
-    resetFilters: () => set({ filters: { ...initialFilters }, sort: "newest" }),
-
+    /* ============================================================
+       hasActiveFilters
+       ============================================================ */
     hasActiveFilters: () => {
         const f = get().filters;
         return Object.entries(f).some(([key, val]) => {
@@ -51,6 +87,9 @@ export const useFilterStore = create((set, get) => ({
         });
     },
 
+    /* ============================================================
+       getActiveFilterCount
+       ============================================================ */
     getActiveFilterCount: () => {
         const f = get().filters;
         let count = 0;

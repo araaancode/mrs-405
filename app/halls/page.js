@@ -1,7 +1,8 @@
 // app/halls/page.js
 'use client'
 
-import { useState, useMemo, useEffect, useCallback, memo } from 'react'
+import { useState, useMemo, useEffect, useCallback, memo, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     PiBuildings,
@@ -28,7 +29,8 @@ import SkeletonCard from './components/SkeletonCard'
    Constants
    ============================================================ */
 const PER_PAGE = 9
-const GOLD_GRADIENT = 'linear-gradient(180deg, #D3B263 0%, #C6A14C 50%, #A8853A 100%)'
+const GOLD_GRADIENT =
+    'linear-gradient(180deg, #D3B263 0%, #C6A14C 50%, #A8853A 100%)'
 const GOLD_GRADIENT_TEXT = 'linear-gradient(90deg, #C6A14C 0%, #85672C 100%)'
 
 const FA_NUM = new Intl.NumberFormat('fa-IR')
@@ -357,20 +359,29 @@ const Pagination = memo(function Pagination({
             </div>
 
             <p className="text-[11px] text-slate-400">
-                صفحه <span className="font-bold text-slate-600">{faNum(currentPage)}</span>{' '}
-                از <span className="font-bold text-slate-600">{faNum(totalPages)}</span>
+                صفحه{' '}
+                <span className="font-bold text-slate-600">
+                    {faNum(currentPage)}
+                </span>{' '}
+                از{' '}
+                <span className="font-bold text-slate-600">
+                    {faNum(totalPages)}
+                </span>
             </p>
         </motion.nav>
     )
 })
 
 /* ============================================================
-   Page
+   HallsContent — کامپوننت اصلی که از useSearchParams استفاده می‌کنه
    ============================================================ */
-export default function HallsPage() {
+function HallsContent() {
+    const searchParams = useSearchParams()
+
     const { halls, loading, error, refresh } = useHalls()
 
     const filters = useFilterStore((s) => s.filters)
+    const setFilters = useFilterStore((s) => s.setFilters)
     const sort = useFilterStore((s) => s.sort)
     const viewMode = useFilterStore((s) => s.viewMode)
     const getActiveFilterCount = useFilterStore((s) => s.getActiveFilterCount)
@@ -379,10 +390,46 @@ export default function HallsPage() {
     const [drawerOpen, setDrawerOpen] = useState(false)
     const [currentPage, setCurrentPage] = useState(1)
 
+    /* ============================================================
+       🔥 خواندن فیلترها از URL و ست کردن توی store
+       ============================================================ */
+    useEffect(() => {
+        const urlFilters = {
+            province: searchParams.get('province') || '',
+            city: searchParams.get('city') || '',
+            event_type: searchParams.get('event_type') || '',
+            hall_type: searchParams.get('hall_type') || '',
+            search: searchParams.get('search') || '',
+        }
+
+        // 🔥 DEBUG — برای اطمینان از اینکه فیلترها خونده می‌شن
+        console.log('📥 URL filters loaded:', urlFilters)
+
+        setFilters(urlFilters)
+    }, [searchParams, setFilters])
+
     const filtered = useHallFilters(halls, filters, sort)
     const activeCount = getActiveFilterCount()
 
-    /* Pagination logic */
+    /* ============================================================
+       🔥 DEBUG — نتایج فیلترشده
+       ============================================================ */
+    useEffect(() => {
+        if (filtered.length > 0) {
+            console.log(
+                '🎯 Filtered results:',
+                filtered.slice(0, 5).map((h) => ({
+                    title: h.title,
+                    province: h.province,
+                    city: h.city,
+                }))
+            )
+        }
+    }, [filtered])
+
+    /* ============================================================
+       Pagination logic
+       ============================================================ */
     const totalPages = useMemo(
         () => Math.ceil(filtered.length / PER_PAGE) || 1,
         [filtered.length]
@@ -422,8 +469,6 @@ export default function HallsPage() {
                     transition={{ duration: 0.4 }}
                     className="text-center mb-8 sm:mb-10"
                 >
-                  
-
                     <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 mb-3 tracking-tight">
                         تالارهای{' '}
                         <span
@@ -595,5 +640,42 @@ export default function HallsPage() {
                 </div>
             </div>
         </div>
+    )
+}
+
+/* ============================================================
+   HallsPage — با Suspense wrapper (الزامی برای useSearchParams)
+   ============================================================ */
+export default function HallsPage() {
+    return (
+        <Suspense
+            fallback={
+                <div className="min-h-screen bg-gradient-to-br from-[#FDFCF9] via-[#FAF8F2] to-[#F7F3E8] pt-24 pb-12">
+                    <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+                        <div className="text-center mb-8">
+                            <div className="h-10 w-64 bg-slate-100 rounded-lg mx-auto mb-3 animate-pulse" />
+                            <div className="h-4 w-96 bg-slate-100 rounded-md mx-auto animate-pulse" />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                            {Array.from({ length: 6 }).map((_, i) => (
+                                <div
+                                    key={i}
+                                    className="bg-white rounded-3xl ring-1 ring-slate-100 overflow-hidden"
+                                >
+                                    <div className="aspect-[4/3] bg-slate-100 animate-pulse" />
+                                    <div className="p-4 space-y-3">
+                                        <div className="h-5 w-3/4 bg-slate-100 rounded-lg animate-pulse" />
+                                        <div className="h-3.5 w-1/2 bg-slate-100 rounded-md animate-pulse" />
+                                        <div className="h-9 w-full bg-slate-100 rounded-lg animate-pulse mt-4" />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            }
+        >
+            <HallsContent />
+        </Suspense>
     )
 }

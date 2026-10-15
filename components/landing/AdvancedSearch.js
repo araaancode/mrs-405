@@ -17,32 +17,27 @@ import {
     PiSpinnerGap,
     PiBuildings,
     PiXCircleFill,
-    PiFunnelSimple,
 } from 'react-icons/pi'
 
-import Field from './advanced-search/Field'
+import CustomSelect from './advanced-search/CustomSelect'
 import {
     EVENT_TYPES,
     HALL_TYPES,
     PROVINCES,
     INITIAL_FILTERS,
     FILTER_LABELS,
+    getCitiesByProvince,
 } from './advanced-search/constants'
-import {
-    INPUT_CLASS,
-    SELECT_CLASS,
-    SELECT_BG_IMAGE,
-} from './advanced-search/styles'
 
 /* ------------------------------------------------------------------ */
-/*  Options — یک بار در ماژول، نه در هر render                        */
+/*  Options — یک بار در ماژول                                          */
 /* ------------------------------------------------------------------ */
 const PROVINCE_OPTIONS = PROVINCES.map((p) => ({ value: p, label: p }))
 
 /* ------------------------------------------------------------------ */
-/*  SelectField — با آیکن و پشتیبانی RTL                              */
+/*  SelectFieldWrapper — کاملاً مستقل (بدون Field)                     */
 /* ------------------------------------------------------------------ */
-const SelectField = memo(function SelectField({
+const SelectFieldWrapper = memo(function SelectFieldWrapper({
     id,
     icon,
     label,
@@ -50,36 +45,41 @@ const SelectField = memo(function SelectField({
     value,
     options,
     onChange,
+    disabled = false,
+    searchable = false,
 }) {
     return (
-        <Field
-            icon={icon}
-            label={label}
-            value={value}
-            onClear={() => onChange(id, '')}
-            htmlFor={id}
-        >
-            <select
+        <div className="relative flex-1 min-w-0 flex flex-col">
+            {/* Label */}
+            <label
+                htmlFor={id}
+                className="
+                    block text-[11px] font-bold text-slate-600
+                    mb-1.5 text-right
+                    select-none
+                "
+            >
+                {label}
+            </label>
+
+            {/* CustomSelect با icon */}
+            <CustomSelect
                 id={id}
                 value={value}
-                onChange={(e) => onChange(id, e.target.value)}
-                className={SELECT_CLASS}
-                style={SELECT_BG_IMAGE}
-                aria-label={label}
-            >
-                <option value="">{placeholder}</option>
-                {options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                    </option>
-                ))}
-            </select>
-        </Field>
+                onChange={(val) => onChange(id, val)}
+                options={options}
+                placeholder={placeholder}
+                disabled={disabled}
+                searchable={searchable}
+                ariaLabel={label}
+                icon={icon}
+            />
+        </div>
     )
 })
 
 /* ------------------------------------------------------------------ */
-/*  ActiveChip — با انیمیشن و دسترسی                                  */
+/*  ActiveChip                                                         */
 /* ------------------------------------------------------------------ */
 const ActiveChip = memo(function ActiveChip({ label, value, onRemove }) {
     return (
@@ -116,24 +116,49 @@ export default function AdvancedSearch({ onSearch }) {
     const [filters, setFilters] = useState(INITIAL_FILTERS)
     const [isPending, startTransition] = useTransition()
 
-    /* ------------- تغییر یک فیلد ------------- */
+    /* ----------------------------------------------------------------
+       تغییر یک فیلد — اگه استان عوض شد، شهر پاک بشه
+       ---------------------------------------------------------------- */
     const handleChange = useCallback((name, value) => {
-        setFilters((prev) => ({ ...prev, [name]: value }))
+        setFilters((prev) => {
+            const next = { ...prev, [name]: value }
+
+            if (name === 'province' && prev.province !== value) {
+                next.city = ''
+            }
+
+            return next
+        })
     }, [])
 
-    /* ------------- تعداد فیلترهای فعال ------------- */
+    /* ----------------------------------------------------------------
+       لیست شهرهای استان انتخاب‌شده
+       ---------------------------------------------------------------- */
+    const cityOptions = useMemo(() => {
+        if (!filters.province) return []
+        const cities = getCitiesByProvince(filters.province)
+        return cities.map((c) => ({ value: c, label: c }))
+    }, [filters.province])
+
+    /* ----------------------------------------------------------------
+       تعداد فیلترهای فعال
+       ---------------------------------------------------------------- */
     const activeEntries = useMemo(
         () => Object.entries(filters).filter(([, v]) => Boolean(v)),
         [filters]
     )
     const activeCount = activeEntries.length
 
-    /* ------------- پاک کردن همه ------------- */
+    /* ----------------------------------------------------------------
+       پاک کردن همه
+       ---------------------------------------------------------------- */
     const handleReset = useCallback(() => {
         setFilters(INITIAL_FILTERS)
     }, [])
 
-    /* ------------- Submit ------------- */
+    /* ----------------------------------------------------------------
+       Submit
+       ---------------------------------------------------------------- */
     const handleSearch = useCallback(
         (e) => {
             e.preventDefault()
@@ -143,6 +168,10 @@ export default function AdvancedSearch({ onSearch }) {
                 if (value) params.set(key, value)
             }
             const qs = params.toString()
+
+            console.log('🔍 Filters being sent:', filters)
+            console.log('🌐 URL:', qs ? `/halls?${qs}` : '/halls')
+            console.log('=====================================')
 
             onSearch?.(filters)
 
@@ -166,7 +195,7 @@ export default function AdvancedSearch({ onSearch }) {
             <form
                 onSubmit={handleSearch}
                 className="
-                    overflow-hidden
+                    overflow-visible
                     rounded-3xl
                     bg-white/95 backdrop-blur-md
                     shadow-[0_20px_60px_-20px_rgba(15,23,42,0.25)]
@@ -174,20 +203,25 @@ export default function AdvancedSearch({ onSearch }) {
                 "
             >
                 {/* ==================== Header ==================== */}
-                <header className="
-                    flex items-center justify-between gap-3
-                    border-b border-slate-100
-                    bg-gradient-to-l from-[#FBF7EC]/60 via-white to-white
-                    px-5 py-4
-                ">
+                <header
+                    className="
+                        flex items-center justify-between gap-3
+                        border-b border-slate-100
+                        bg-gradient-to-l from-[#FBF7EC]/60 via-white to-white
+                        px-5 py-4
+                        rounded-t-3xl
+                    "
+                >
                     <div className="flex items-center gap-2.5 min-w-0">
-                        <span className="
-                            flex h-8 w-8 items-center justify-center
-                            rounded-xl
-                            bg-gradient-to-br from-[#C6A14C] to-[#A8853A]
-                            shadow-[0_4px_12px_-2px_rgba(198,161,76,0.4)]
-                            shrink-0
-                        ">
+                        <span
+                            className="
+                                flex h-8 w-8 items-center justify-center
+                                rounded-xl
+                                bg-gradient-to-br from-[#C6A14C] to-[#A8853A]
+                                shadow-[0_4px_12px_-2px_rgba(198,161,76,0.4)]
+                                shrink-0
+                            "
+                        >
                             <PiBuildings
                                 className="h-4 w-4 text-white"
                                 aria-hidden="true"
@@ -229,41 +263,39 @@ export default function AdvancedSearch({ onSearch }) {
 
                 {/* ==================== Fields ==================== */}
                 <div className="p-4 sm:p-5 md:p-6">
-                    <div className="
-                        flex flex-col items-stretch gap-3
-                        md:flex-row md:items-stretch
-                    ">
-                        <SelectField
+                    <div
+                        className="
+                            flex flex-col items-stretch gap-3
+                            md:flex-row md:items-stretch
+                        "
+                    >
+                        {/* استان */}
+                        <SelectFieldWrapper
                             id="province"
                             icon={PiMapPin}
                             label={FILTER_LABELS.province}
-                            placeholder="انتخاب استان"
+                            placeholder="استان"
                             value={filters.province}
                             options={PROVINCE_OPTIONS}
                             onChange={handleChange}
+                            searchable
                         />
 
-                        <Field
+                        {/* شهر — وابسته به استان */}
+                        <SelectFieldWrapper
+                            id="city"
                             icon={PiMapPin}
                             label={FILTER_LABELS.city}
+                            placeholder="شهر"
                             value={filters.city}
-                            onClear={() => handleChange('city', '')}
-                            htmlFor="city"
-                        >
-                            <input
-                                id="city"
-                                type="text"
-                                inputMode="search"
-                                enterKeyHint="search"
-                                autoComplete="address-level2"
-                                placeholder="نام شهر"
-                                value={filters.city}
-                                onChange={(e) => handleChange('city', e.target.value)}
-                                className={INPUT_CLASS}
-                            />
-                        </Field>
+                            options={cityOptions}
+                            onChange={handleChange}
+                            disabled={!filters.province}
+                            searchable
+                        />
 
-                        <SelectField
+                        {/* نوع مراسم */}
+                        <SelectFieldWrapper
                             id="event_type"
                             icon={PiCalendarBlank}
                             label={FILTER_LABELS.event_type}
@@ -273,7 +305,8 @@ export default function AdvancedSearch({ onSearch }) {
                             onChange={handleChange}
                         />
 
-                        <SelectField
+                        {/* نوع تالار */}
+                        <SelectFieldWrapper
                             id="hall_type"
                             icon={PiSparkle}
                             label={FILTER_LABELS.hall_type}
@@ -283,48 +316,61 @@ export default function AdvancedSearch({ onSearch }) {
                             onChange={handleChange}
                         />
 
-                        {/* دکمه جستجو */}
-                        <button
-                            type="submit"
-                            disabled={isPending}
-                            aria-busy={isPending}
-                            className="
-                                group flex min-w-[120px] flex-shrink-0
-                                items-center justify-center gap-2
-                                rounded-xl
-                                bg-gradient-to-b from-[#D3B263] to-[#A8853A]
-                                px-6 py-3.5
-                                text-sm font-extrabold text-white
-                                shadow-[0_8px_20px_-6px_rgba(198,161,76,0.5)]
-                                transition-all duration-200
-                                hover:-translate-y-0.5
-                                hover:from-[#C6A14C] hover:to-[#85672C]
-                                hover:shadow-[0_12px_28px_-6px_rgba(198,161,76,0.6)]
-                                focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#C6A14C]/30
-                                active:scale-[0.97]
-                                disabled:cursor-not-allowed disabled:opacity-70
-                                disabled:hover:translate-y-0 disabled:hover:shadow-[0_8px_20px_-6px_rgba(198,161,76,0.5)]
-                                sm:px-8
-                            "
-                        >
-                            {isPending ? (
-                                <>
-                                    <PiSpinnerGap
-                                        className="h-5 w-5 animate-spin"
-                                        aria-hidden="true"
-                                    />
-                                    <span>در حال جستجو…</span>
-                                </>
-                            ) : (
-                                <>
-                                    <PiMagnifyingGlass
-                                        className="h-5 w-5 transition-transform group-hover:scale-110"
-                                        aria-hidden="true"
-                                    />
-                                    <span>جستجو</span>
-                                </>
-                            )}
-                        </button>
+                        {/* 🔥 دکمه جستجو — با label نامرئی برای تراز ارتفاع */}
+                        <div className="relative flex flex-col shrink-0 md:min-w-[140px]">
+                            {/* label نامرئی — فقط برای یکسان‌سازی ارتفاع */}
+                            <span
+                                className="
+                                    block text-[11px] font-bold
+                                    mb-1.5 invisible select-none
+                                "
+                                aria-hidden="true"
+                            >
+                                &nbsp;
+                            </span>
+
+                            <button
+                                type="submit"
+                                disabled={isPending}
+                                aria-busy={isPending}
+                                className="
+                                    group flex w-full h-12
+                                    items-center justify-center gap-2
+                                    rounded-xl
+                                    bg-gradient-to-b from-[#D3B263] to-[#A8853A]
+                                    px-6
+                                    text-sm font-extrabold text-white
+                                    shadow-[0_8px_20px_-6px_rgba(198,161,76,0.5)]
+                                    transition-all duration-200
+                                    hover:-translate-y-0.5
+                                    hover:from-[#C6A14C] hover:to-[#85672C]
+                                    hover:shadow-[0_12px_28px_-6px_rgba(198,161,76,0.6)]
+                                    focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#C6A14C]/30
+                                    active:scale-[0.97]
+                                    disabled:cursor-not-allowed disabled:opacity-70
+                                    disabled:hover:translate-y-0 disabled:hover:shadow-[0_8px_20px_-6px_rgba(198,161,76,0.5)]
+                                    sm:px-8
+                                "
+                            >
+                                {isPending ? (
+                                    <>
+                                        <PiSpinnerGap
+                                            className="h-5 w-5 animate-spin"
+                                            aria-hidden="true"
+                                        />
+                                        <span>در حال جستجو…</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <PiMagnifyingGlass
+                                            className="h-5 w-5 transition-transform group-hover:scale-110"
+                                            aria-hidden="true"
+                                        />
+                                        <span>جستجو</span>
+                                    </>
+                                )}
+                            </button>
+                        </div>
                     </div>
 
                     {/* ==================== Active chips ==================== */}

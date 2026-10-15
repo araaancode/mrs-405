@@ -3,78 +3,175 @@ import { NextResponse } from 'next/server'
 import connectDB from '@/lib/db'
 import Hall from '@/models/Hall'
 
-const HALL_LIST_FIELDS = [
-    'title',
-    'city',
-    'province',
-    'images',
-    'capacity',
-    'duration',
-    'sans_price',
-    'main_price',
-    'sans_discount',
-    'has_sans',
-    'parking_count',
-    'hall_type',
-    'host_type',
-    'event_type',
-    'description',
-    'createdAt',
-    'is_active',     // ← اضافه کن تا در response باشد
-].join(' ')
+/* ============================================================
+   Helpers
+   ============================================================ */
+function escapeRegex(str) {
+    return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
 
-export async function GET(request) {
+function normalizeText(str) {
+    if (!str || typeof str !== 'string') return ''
+    return str
+        .trim()
+        .replace(/ي/g, 'ی')
+        .replace(/ك/g, 'ک')
+        .replace(/\u200c/g, ' ')
+        .replace(/\s+/g, ' ')
+}
+
+/**
+ * regex انعطاف‌پذیر — فقط partial match روی یه فیلد
+ */
+function flexibleRegex(input) {
+    const normalized = normalizeText(input)
+    if (!normalized) return null
+    const parts = normalized
+        .split(/\s+/)
+        .map((w) => escapeRegex(w))
+        .filter(Boolean)
+    if (parts.length === 0) return null
+    return {
+        $regex: parts.join('[\\s\\u200c]*'),
+        $options: 'i',
+    }
+}
+
+/* ============================================================
+   ساخت شرط برای فیلدهایی که ممکنه string یا array باشن
+   ============================================================ */
+function buildFieldCondition(fieldName, value) {
+    const normalized = normalizeText(value)
+    if (!normalized) return null
+
+    const rx = flexibleRegex(value)
+    if (!rx) return null
+
+    // پوشش همه حالت‌ها:
+    // 1. فیلد string دقیقاً برابر
+    // 2. فیلد string که شامل مقدار هست (partial)
+    // 3. فیلد array که شامل مقدار هست
+    // 4. فیلد array که شامل یه آیتم partial
+    return {
+        $or: [
+            { [fieldName]: normalized },
+            { [fieldName]: rx },
+            { [fieldName]: { $in: [normalized] } },
+            {
+                [fieldName]: {
+                    $elemMatch: { $regex: rx.$regex, $options: 'i' },
+                },
+            },
+        ],
+    }
+}
+
+/* ============================================================
+   GET /api/halls
+   ============================================================ */
+export async function GET(req) {
     try {
         await connectDB()
 
-        const { searchParams } = new URL(request.url)
-        const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10))
-        const limit = Math.min(
-            50,
-            Math.max(1, parseInt(searchParams.get('limit') || '12', 10))
-        )
-        const skip = (page - 1) * limit
+        const { searchParams } = new URL(req.url)
+        const province = searchParams.get('province')
+        const city = searchParams.get('city')
+        const event_type = searchParams.get('event_type')
+        const hall_type = searchParams.get('hall_type')
 
-        // ✅ فیلتر: فقط تالارهای فعال (اگر نیاز داری)
-        // اگر می‌خواهی همه را برگردانی، این خط را حذف کن
-        const filter = { is_active: true }
+        /* ------------------------------------------------------------
+           Query پایه — همه شرط‌ها با $and ترکیب می‌شن
+           ------------------------------------------------------------ */
+        const conditions = []
 
-        const [halls, total] = await Promise.all([
-            Hall.find(filter)
-                .select(HALL_LIST_FIELDS)
-                .sort({ createdAt: -1 })
-                .skip(skip)
-                .limit(limit)
-                .lean(),
-            Hall.countDocuments(filter),
-        ])
+        // ✅ is_active: یا true هست یا اصلاً وجود نداره
+        conditions.push({
+            $or: [
+                { is_active: true },
+                { is_active: { $exists: false } },
+            ],
+        })
 
-        const totalPages = Math.ceil(total / limit)
+        /* ------------------------------------------------------------
+           🔥 هر فیلتر **فقط** روی فیلد خودش اعمال می‌شه
+           ------------------------------------------------------------ */
 
-        return NextResponse.json(
-            {
-                success: true,
-                count: halls.length,
-                total,
-                page,
-                totalPages,
-                data: halls,
-            },
-            {
-                status: 200,
-                headers: {
-                    'Cache-Control':
-                        'public, s-maxage=300, stale-while-revalidate=600',
-                },
-            }
-        )
-    } catch (error) {
-        console.error('Error fetching halls:', error)
+        // province
+        if (province && province.trim()) {
+            const cond = buildFieldCondition('province', province)
+            if (cond) conditions.push(cond)
+        }
 
+        // city — این مهم‌ترین فیلتره که قبلاً کار نمی‌کرد
+        if (city && city.trim()) {
+            const cond = buildFieldCondition('city', city)
+            if (cond) conditions.push(cond)
+        }
+
+        // event_type
+        if (event_type && event_type.trim()) {
+            const cond = buildFieldCondition('event_type', event_type)
+            if (cond) conditions.push(cond)
+        }
+
+        // hall_type
+        if (hall_type && hall_type.trim()) {
+            const cond = buildFieldCondition('hall_type', hall_type)
+            if (cond) conditions.push(cond)
+        }
+
+        /* ------------------------------------------------------------
+           Query نهایی — همه با $and
+           ------------------------------------------------------------ */
+        const query = { $and: conditions }
+
+        // 🔥 DEBUG
+        console.log('========== [/api/halls] ==========')
+        console.log('📥 Filters:', { province, city, event_type, hall_type })
+        console.log('🔍 Query:', JSON.stringify(query, null, 2))
+
+        /* ------------------------------------------------------------
+           اجرا
+           ------------------------------------------------------------ */
+        const halls = await Hall.find(query)
+            .select(
+                'title ' +
+                'province city address ' +
+                'capacity duration ' +
+                'images image thumbnail ' +
+                'event_type event_types ' +
+                'hall_type hall_types ' +
+                'sans_price sans_discount main_price has_sans ' +
+                'description is_active isFavorite createdAt'
+            )
+            .sort({ createdAt: -1 })
+            .lean()
+
+        console.log('✅ Found:', halls.length, 'halls')
+        if (halls.length > 0) {
+            console.log(
+                '📋 Cities:',
+                [...new Set(halls.map((h) => h.city))].join(', ')
+            )
+            console.log(
+                '📋 Provinces:',
+                [...new Set(halls.map((h) => h.province))].join(', ')
+            )
+        }
+        console.log('===================================')
+
+        return NextResponse.json({
+            success: true,
+            count: halls.length,
+            data: halls,
+        })
+    } catch (err) {
+        console.error('[/api/halls] error:', err)
         return NextResponse.json(
             {
                 success: false,
-                message: 'خطا در دریافت لیست تالارها',
+                message: 'خطا در دریافت تالارها',
+                error: err.message,
             },
             { status: 500 }
         )
