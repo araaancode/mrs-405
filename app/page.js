@@ -1,27 +1,26 @@
 // app/page.js — Server Component (بدون "use client")
-import dynamic from "next/dynamic";
-import { Suspense } from "react";
-import { cache } from "react";
-import { PiBuildings, PiWarningCircle, PiFireFill } from "react-icons/pi";
+import dynamic from 'next/dynamic'
+import { Suspense, cache } from 'react'
+import { PiBuildings, PiWarningCircle } from 'react-icons/pi'
 
 /* ============================================================
    Lazy Load — کامپوننت‌های تعاملی (Client)
    ============================================================ */
 
-const HeroSlider = dynamic(() => import("@/components/landing/HeroSlider"), {
+const HeroSlider = dynamic(() => import('@/components/landing/HeroSlider'), {
     loading: () => (
         <div className="w-full h-[500px] bg-slate-100 animate-pulse rounded-2xl" />
     ),
-});
+})
 
-const LandingAds = dynamic(() => import("@/components/landing/LandingAds"), {
+const LandingAds = dynamic(() => import('@/components/landing/LandingAds'), {
     loading: () => (
         <div className="w-full h-[500px] bg-slate-100 animate-pulse rounded-2xl" />
     ),
-});
+})
 
 const AdvancedSearch = dynamic(
-    () => import("@/components/landing/AdvancedSearch"),
+    () => import('@/components/landing/AdvancedSearch'),
     {
         loading: () => (
             <div className="w-full max-w-6xl mx-auto p-6 bg-white rounded-2xl shadow-lg min-h-[400px] animate-pulse">
@@ -34,10 +33,10 @@ const AdvancedSearch = dynamic(
             </div>
         ),
     }
-);
+)
 
 const PopularCities = dynamic(
-    () => import("@/components/landing/PopularCities"),
+    () => import('@/components/landing/PopularCities'),
     {
         loading: () => (
             <div className="w-full py-12">
@@ -55,20 +54,20 @@ const PopularCities = dynamic(
             </div>
         ),
     }
-);
+)
 
 const PopularHalls = dynamic(
-    () => import("@/components/landing/PopularHalls"),
+    () => import('@/components/landing/PopularHalls'),
     {
         loading: () => (
             <div className="w-full py-12">
                 <div className="max-w-7xl mx-auto px-4">
                     <div className="h-8 w-48 bg-slate-100 rounded-lg mx-auto mb-8 animate-pulse" />
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <div className="flex gap-4 overflow-hidden">
+                        {[1, 2, 3, 4].map((i) => (
                             <div
                                 key={i}
-                                className="h-72 bg-slate-100 rounded-xl animate-pulse"
+                                className="flex-shrink-0 w-[260px] sm:w-[272px] h-[380px] bg-slate-100 rounded-3xl animate-pulse"
                             />
                         ))}
                     </div>
@@ -76,15 +75,29 @@ const PopularHalls = dynamic(
             </div>
         ),
     }
-);
+)
 
-/* ✅ کامپوننت جدید — تالارهای با بیشترین تخفیف */
-const TopDiscountHalls = dynamic(
-    () => import("@/components/landing/TopDiscountHalls"),
+const BestDiscounts = dynamic(
+    () => import('@/components/landing/BestDiscounts'),
     {
-        loading: () => <DiscountHallsSkeleton />,
+        loading: () => (
+            <div className="w-full py-12 md:py-16 bg-gradient-to-b from-rose-50/40 via-white to-white">
+                <div className="max-w-7xl mx-auto px-4">
+                    <div className="h-6 w-40 bg-rose-100 rounded-full mx-auto mb-4 animate-pulse" />
+                    <div className="h-9 w-56 bg-slate-100 rounded-lg mx-auto mb-8 animate-pulse" />
+                    <div className="flex gap-4 overflow-hidden">
+                        {[1, 2, 3, 4].map((i) => (
+                            <div
+                                key={i}
+                                className="flex-shrink-0 w-[260px] sm:w-[272px] h-[380px] bg-slate-100 rounded-3xl animate-pulse"
+                            />
+                        ))}
+                    </div>
+                </div>
+            </div>
+        ),
     }
-);
+)
 
 /* ============================================================
    Empty & Error
@@ -102,7 +115,7 @@ function EmptyState() {
                 به زودی تالارهای جدید به سیستم اضافه خواهند شد
             </p>
         </div>
-    );
+    )
 }
 
 function ErrorState({ message }) {
@@ -115,10 +128,10 @@ function ErrorState({ message }) {
                 خطا در بارگذاری
             </h3>
             <p className="text-slate-500 text-sm max-w-md mx-auto leading-relaxed">
-                {message || "متأسفانه در دریافت اطلاعات مشکلی پیش آمد."}
+                {message || 'متأسفانه در دریافت اطلاعات مشکلی پیش آمد.'}
             </p>
         </div>
-    );
+    )
 }
 
 /* ============================================================
@@ -149,10 +162,9 @@ function HallsSkeleton() {
                 </div>
             </div>
         </div>
-    );
+    )
 }
 
-/* ✅ Skeleton اختصاصی برای بخش تخفیف‌ها — با رنگ‌بندی گرم */
 function DiscountHallsSkeleton() {
     return (
         <div className="w-full py-16 md:py-20 bg-gradient-to-b from-rose-50/40 via-white to-white">
@@ -181,7 +193,7 @@ function DiscountHallsSkeleton() {
                 </div>
             </div>
         </div>
-    );
+    )
 }
 
 /* ============================================================
@@ -192,52 +204,52 @@ const getHalls = cache(async () => {
         const baseUrl =
             process.env.NEXT_PUBLIC_BASE_URL ||
             (process.env.VERCEL_URL && `https://${process.env.VERCEL_URL}`) ||
-            "http://localhost:3000";
+            'http://localhost:3000'
 
         const res = await fetch(`${baseUrl}/api/halls`, {
             next: { revalidate: 300 }, // ISR: هر ۵ دقیقه
-            headers: { Accept: "application/json" },
-        });
+            headers: { Accept: 'application/json' },
+        })
 
-        if (!res.ok) return { halls: [], error: `خطای سرور: ${res.status}` };
+        if (!res.ok) return { halls: [], error: `خطای سرور: ${res.status}` }
 
-        const data = await res.json();
+        const data = await res.json()
 
-        let halls = [];
-        if (Array.isArray(data)) halls = data;
-        else if (Array.isArray(data?.data)) halls = data.data;
-        else if (Array.isArray(data?.halls)) halls = data.halls;
-        else if (Array.isArray(data?.results)) halls = data.results;
-        else if (Array.isArray(data?.items)) halls = data.items;
+        let halls = []
+        if (Array.isArray(data)) halls = data
+        else if (Array.isArray(data?.data)) halls = data.data
+        else if (Array.isArray(data?.halls)) halls = data.halls
+        else if (Array.isArray(data?.results)) halls = data.results
+        else if (Array.isArray(data?.items)) halls = data.items
 
-        return { halls, error: null };
+        return { halls, error: null }
     } catch (err) {
-        return { halls: [], error: err.message || "خطا در بارگذاری داده‌ها" };
+        return { halls: [], error: err.message || 'خطا در بارگذاری داده‌ها' }
     }
-});
+})
 
 /* ============================================================
    Async Components — Streaming
    ============================================================ */
 
 async function PopularHallsAsync() {
-    const { halls, error } = await getHalls();
+    const { halls, error } = await getHalls()
 
-    if (error && halls.length === 0) return <ErrorState message={error} />;
-    if (halls.length === 0) return <EmptyState />;
+    if (error && halls.length === 0) return <ErrorState message={error} />
+    if (halls.length === 0) return <EmptyState />
 
-    return <PopularHalls halls={halls} />;
+    return <PopularHalls halls={halls} />
 }
 
-/* ✅ بخش تخفیف‌ها — از همان داده cache شده استفاده می‌کند */
-async function TopDiscountHallsAsync() {
-    const { halls, error } = await getHalls();
+async function BestDiscountsAsync() {
+    const { halls, error } = await getHalls()
 
-    // در صورت خطا یا خالی بودن داده‌ها، کامپوننت خودش EmptyState را نشان می‌دهد
-    if (error && halls.length === 0) return null;
-    if (halls.length === 0) return null;
+    // اگر خطا یا خالی بود، پیچ تخفیف‌ها را رندر نکن
+    // (چون ممکن است تالار تخفیف‌داری وجود نداشته باشد)
+    if (error && halls.length === 0) return null
+    if (halls.length === 0) return null
 
-    return <TopDiscountHalls halls={halls} limit={10} />;
+    return <BestDiscounts halls={halls} limit={10} />
 }
 
 /* ============================================================
@@ -254,24 +266,21 @@ export default function HomePage() {
                 <AdvancedSearch />
             </div>
 
-      
-
-
             {/* ==================== Popular Halls ==================== */}
             <Suspense fallback={<HallsSkeleton />}>
                 <PopularHallsAsync />
             </Suspense>
 
-            <LandingAds />
-
-
-            {/* ✅ ==================== Top Discount Halls ==================== */}
+            {/* ==================== Best Discounts ==================== */}
             <Suspense fallback={<DiscountHallsSkeleton />}>
-                <TopDiscountHallsAsync />
+                <BestDiscountsAsync />
             </Suspense>
 
-                  {/* ==================== Popular Cities ==================== */}
+            {/* ==================== Landing Ads ==================== */}
+            <LandingAds />
+
+            {/* ==================== Popular Cities ==================== */}
             <PopularCities />
         </div>
-    );
+    )
 }

@@ -1,7 +1,7 @@
 // components/landing/PopularCities.jsx
 "use client";
 
-import { memo } from "react";
+import { memo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -28,7 +28,7 @@ import {
 import Carousel from "../../components/landing/Carousel";
 
 /* ============================================================
-   Cities Data — ۲۴ شهر محبوب ایران
+   Cities Data — فقط شهرهایی که تصویرشان موجود است
    ============================================================ */
 const POPULAR_CITIES = [
     {
@@ -121,180 +121,102 @@ const POPULAR_CITIES = [
     },
     {
         id: 9,
-        name: "یزد",
-        slug: "yazd",
-        province: "یزد",
-        propertyCount: 412,
-        image: "/images/landing/cities/yazd.jpg",
-        iconName: "PiSunFill",
-        description: "شهر بادگیرها",
-        rating: 4.7,
-    },
-    {
-        id: 10,
-        name: "همدان",
-        slug: "hamedan",
-        province: "همدان",
-        propertyCount: 298,
-        image: "/images/landing/cities/hamedan.jpg",
-        iconName: "PiLeafFill",
-        description: "پایتخت تاریخ و تمدن",
-        rating: 4.5,
-    },
-    {
-        id: 11,
         name: "کاشان",
         slug: "kashan",
         province: "اصفهان",
         propertyCount: 356,
-        image: "/images/landing/cities/kashan.jpg",
+        image: "/images/landing/cities/kashan.png",
         iconName: "PiFlowerLotusFill",
         description: "شهر گل و گلاب",
         rating: 4.8,
     },
     {
-        id: 12,
-        name: "ماسال",
-        slug: "masal",
-        province: "گیلان",
-        propertyCount: 187,
-        image: "/images/landing/cities/masal.jpg",
-        iconName: "PiTreeFill",
-        description: "بهشت گمشده گیلان",
-        rating: 4.9,
-    },
-    {
-        id: 13,
+        id: 10,
         name: "رامسر",
         slug: "ramsar",
         province: "مازندران",
         propertyCount: 234,
-        image: "/images/landing/cities/ramsar.jpg",
+        image: "/images/landing/cities/ramsar.png",
         iconName: "PiDropFill",
         description: "عروس شهرهای ایران",
         rating: 4.8,
     },
     {
-        id: 14,
+        id: 11,
         name: "بندر انزلی",
         slug: "anzali",
         province: "گیلان",
         propertyCount: 201,
-        image: "/images/landing/cities/anzali.jpg",
+        image: "/images/landing/cities/anzali.png",
         iconName: "PiAnchorFill",
         description: "شهر تالاب‌ها",
         rating: 4.6,
     },
     {
-        id: 15,
-        name: "نوشهر",
-        slug: "nowshahr",
+        id: 12,
+        name: "قشم",
+        slug: "qeshm",
+        province: "هرمزگان",
+        propertyCount: 312,
+        image: "/images/landing/cities/gheshm.png",
+        iconName: "PiAnchorFill",
+        description: "بزرگ‌ترین جزیره خلیج فارس",
+        rating: 4.7,
+    },
+    {
+        id: 13,
+        name: "اهواز",
+        slug: "ahvaz",
+        province: "خوزستان",
+        propertyCount: 356,
+        image: "/images/landing/cities/ahvaz.png",
+        iconName: "PiFireFill",
+        description: "شهر کارون",
+        rating: 4.4,
+    },
+    {
+        id: 14,
+        name: "بابل",
+        slug: "babol",
         province: "مازندران",
-        propertyCount: 176,
-        image: "/images/landing/cities/nowshahr.jpg",
+        propertyCount: 287,
+        image: "/images/landing/cities/babol.png",
+        iconName: "PiTreeFill",
+        description: "شهر بهارنارنج",
+        rating: 4.6,
+    },
+    {
+        id: 15,
+        name: "چالوس",
+        slug: "chalus",
+        province: "مازندران",
+        propertyCount: 234,
+        image: "/images/landing/cities/chalos.png",
         iconName: "PiCloudFill",
         description: "شهر جنگل و دریا",
         rating: 4.7,
     },
     {
         id: 16,
-        name: "اردبیل",
-        slug: "ardabil",
-        province: "اردبیل",
-        propertyCount: 245,
-        image: "/images/landing/cities/ardabil.jpg",
-        iconName: "PiCastleTurretFill",
-        description: "سرزمین سرسبز",
-        rating: 4.6,
-    },
-    /* ---------- ۸ شهر جدید ---------- */
-    {
-        id: 17,
-        name: "قشم",
-        slug: "qeshm",
-        province: "هرمزگان",
-        propertyCount: 312,
-        image: "/images/landing/cities/qeshm.jpg",
-        iconName: "PiAnchorFill",
-        description: "بزرگ‌ترین جزیره خلیج فارس",
-        rating: 4.7,
-    },
-    {
-        id: 18,
-        name: "چابهار",
-        slug: "chabahar",
-        province: "سیستان و بلوچستان",
-        propertyCount: 143,
-        image: "/images/landing/cities/chabahar.jpg",
-        iconName: "PiCompassFill",
-        description: "بهشت سواحل مکران",
-        rating: 4.6,
-    },
-    {
-        id: 19,
-        name: "ساری",
-        slug: "sari",
-        province: "مازندران",
-        propertyCount: 267,
-        image: "/images/landing/cities/sari.jpg",
-        iconName: "PiTreeFill",
-        description: "مرکز مازندران",
-        rating: 4.5,
-    },
-    {
-        id: 20,
-        name: "گرگان",
-        slug: "gorgan",
-        province: "گلستان",
-        propertyCount: 234,
-        image: "/images/landing/cities/gorgan.jpg",
-        iconName: "PiTreeFill",
-        description: "شهر جنگل‌های هیرکانی",
-        rating: 4.6,
-    },
-    {
-        id: 21,
-        name: "اهواز",
-        slug: "ahvaz",
-        province: "خوزستان",
-        propertyCount: 356,
-        image: "/images/landing/cities/ahvaz.jpg",
-        iconName: "PiFireFill",
-        description: "شهر کارون",
+        name: "کرج",
+        slug: "karaj",
+        province: "البرز",
+        propertyCount: 543,
+        image: "/images/landing/cities/karaj.png",
+        iconName: "PiBuildingsFill",
+        description: "کلان‌شهر البرز",
         rating: 4.4,
     },
     {
-        id: 22,
-        name: "بوشهر",
-        slug: "bushehr",
-        province: "بوشهر",
-        propertyCount: 189,
-        image: "/images/landing/cities/bushehr.jpg",
-        iconName: "PiAnchorFill",
-        description: "بندر تاریخی خلیج فارس",
-        rating: 4.5,
-    },
-    {
-        id: 23,
-        name: "زنجان",
-        slug: "zanjan",
-        province: "زنجان",
-        propertyCount: 178,
-        image: "/images/landing/cities/zanjan.jpg",
-        iconName: "PiSnowflakeFill",
-        description: "شهر چاقو و ملیله",
-        rating: 4.5,
-    },
-    {
-        id: 24,
-        name: "سنندج",
-        slug: "sanandaj",
-        province: "کردستان",
-        propertyCount: 165,
-        image: "/images/landing/cities/sanandaj.jpg",
+        id: 17,
+        name: "سوادکوه",
+        slug: "savadkoh",
+        province: "مازندران",
+        propertyCount: 156,
+        image: "/images/landing/cities/savadkoh.png",
         iconName: "PiMountainsFill",
-        description: "شهر موسیقی و فرهنگ",
-        rating: 4.6,
+        description: "بهشت طبیعت‌گردی",
+        rating: 4.9,
     },
 ];
 
@@ -328,11 +250,12 @@ const faNumFormatter = new Intl.NumberFormat("fa-IR");
 const faNum = (n) => faNumFormatter.format(Number(n) || 0);
 
 /* ============================================================
-   CityCard — استایل جاباما (نسبت ۱:۱.۲)
+   CityCard — با fallback گرادیان طلایی در صورت خطای تصویر
    ============================================================ */
 const CityCard = memo(function CityCard({ city, index }) {
     const IconComponent = ICON_MAP[city.iconName];
     const isPriority = index < 4;
+    const [imgError, setImgError] = useState(false);
 
     return (
         <Link
@@ -340,17 +263,36 @@ const CityCard = memo(function CityCard({ city, index }) {
             aria-label={`مشاهده ${faNum(city.propertyCount)} تالار در ${city.name}`}
             className="group relative block h-full w-full rounded-2xl overflow-hidden shadow-sm hover:shadow-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#C6A14C]/40 transition-all duration-300 cursor-pointer"
         >
-            {/* تصویر پس‌زمینه */}
-            <Image
-                src={city.image}
-                alt={city.name}
-                fill
-                sizes="(max-width: 480px) 150px, (max-width: 640px) 160px, (max-width: 768px) 170px, (max-width: 1024px) 180px, (max-width: 1280px) 190px, 200px"
-                quality={85}
-                priority={isPriority}
-                loading={isPriority ? "eager" : "lazy"}
-                className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-            />
+            {/* تصویر پس‌زمینه — با fallback */}
+            {!imgError ? (
+                <Image
+                    src={city.image}
+                    alt={city.name}
+                    fill
+                    sizes="(max-width: 480px) 150px, (max-width: 640px) 160px, (max-width: 768px) 170px, (max-width: 1024px) 180px, (max-width: 1280px) 190px, 200px"
+                    quality={85}
+                    priority={isPriority}
+                    loading={isPriority ? "eager" : "lazy"}
+                    onError={() => setImgError(true)}
+                    className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                />
+            ) : (
+                /* Fallback: پس‌زمینه گرادیان طلایی */
+                <div
+                    className="absolute inset-0 bg-gradient-to-br from-[#C6A14C] via-[#A8853A] to-[#85672C]"
+                    aria-hidden="true"
+                >
+                    {/* الگوی تزئینی */}
+                    <div
+                        className="absolute inset-0 opacity-20"
+                        style={{
+                            backgroundImage:
+                                "radial-gradient(circle at 20% 30%, rgba(255,255,255,0.3) 0%, transparent 40%), radial-gradient(circle at 80% 70%, rgba(255,255,255,0.2) 0%, transparent 40%)",
+                        }}
+                        aria-hidden="true"
+                    />
+                </div>
+            )}
 
             {/* گرادیانت تیره */}
             <div

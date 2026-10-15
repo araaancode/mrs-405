@@ -989,3 +989,13 @@
 .leaflet-control-attribution a { color: #64748b !important; }
 
 .leaflet-drag-target { cursor: grabbing !important; }
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;      /* IE & Edge */
+    scrollbar-width: none;          /* Firefox */
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;                  /* Chrome, Safari, Opera */
+  }
+}

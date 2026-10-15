@@ -1,10 +1,10 @@
 // app/halls/components/HallCard.jsx
-"use client";
+'use client'
 
-import Image from "next/image";
-import Link from "next/link";
-import { useState, useRef, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import Image from 'next/image'
+import Link from 'next/link'
+import { useState, useRef, useCallback, useEffect, memo } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
     PiMapPinFill,
     PiUsersThreeFill,
@@ -14,101 +14,161 @@ import {
     PiCaretRight,
     PiHeart,
     PiArrowLeft,
-} from "react-icons/pi";
+} from 'react-icons/pi'
+
+/* ============================================================
+   Constants
+   ============================================================ */
+const PLACEHOLDER = '/images/placeholder-hall.jpg'
+const GOLD_GRADIENT = 'linear-gradient(135deg, #D3B263 0%, #C6A14C 50%, #A8853A 100%)'
+
+const FA_NUM = new Intl.NumberFormat('fa-IR')
+const faNum = (n) => FA_NUM.format(Number(n) || 0)
 
 /* ============================================================
    Helpers
    ============================================================ */
-function normalizeImageUrl(url, fallback = "/images/placeholder-hall.jpg") {
-    if (!url || typeof url !== "string") return fallback;
-    const trimmed = url.trim();
-    if (!trimmed) return fallback;
-    if (trimmed.startsWith("http://") || trimmed.startsWith("https://"))
-        return trimmed;
-    if (trimmed.startsWith("data:")) return trimmed;
-    if (trimmed.startsWith("./")) return "/" + trimmed.slice(2);
-    if (!trimmed.startsWith("/")) return "/" + trimmed;
-    return trimmed;
+function normalizeImageUrl(url, fallback = PLACEHOLDER) {
+    if (!url || typeof url !== 'string') return fallback
+    const trimmed = url.trim()
+    if (!trimmed) return fallback
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://'))
+        return trimmed
+    if (trimmed.startsWith('data:')) return trimmed
+    if (trimmed.startsWith('./')) return '/' + trimmed.slice(2)
+    if (!trimmed.startsWith('/')) return '/' + trimmed
+    return trimmed
 }
 
-function getHallImages(hall, fallback = "/images/placeholder-hall.jpg") {
-    if (!hall) return [fallback];
-    const raw = Array.isArray(hall.images) ? hall.images : [];
+function getHallImages(hall, fallback = PLACEHOLDER) {
+    if (!hall) return [fallback]
+    const raw = Array.isArray(hall.images) ? hall.images : []
     const cleaned = raw
-        .filter((img) => typeof img === "string" && img.trim())
-        .map((img) => normalizeImageUrl(img, fallback));
+        .filter((img) => typeof img === 'string' && img.trim())
+        .map((img) => normalizeImageUrl(img, fallback))
 
     if (cleaned.length === 0) {
-        const single = hall.image || hall.thumbnail;
-        return [normalizeImageUrl(single, fallback)];
+        const single = hall.image || hall.thumbnail
+        return [normalizeImageUrl(single, fallback)]
     }
-    return cleaned;
+    return cleaned
 }
 
-const faNum = (n) => Number(n || 0).toLocaleString("fa-IR");
+/**
+ * محاسبه قیمت — سازگار با Schema (sans_discount = درصد)
+ */
+function computePricing(hall) {
+    const price = Number(hall?.sans_price || 0)
+    const discountPercent = Number(hall?.sans_discount || 0)
+    const mainPrice = Number(hall?.main_price || 0)
+
+    const discountAmount = Math.round((price * discountPercent) / 100)
+    const finalPrice = Math.max(price - discountAmount, 0)
+
+    const strikethroughPrice =
+        mainPrice > price ? mainPrice : discountPercent > 0 ? price : 0
+
+    return {
+        price,
+        finalPrice,
+        discountPercent,
+        discountAmount,
+        mainPrice: strikethroughPrice,
+        hasDiscount: discountPercent > 0 && price > 0,
+        hasPrice: price > 0,
+    }
+}
 
 /* ============================================================
-   PhotoSlider — ناوبری در هاور، swipe در موبایل
-   ✅ focus-visible، aria-label، انیمیشن نرم
+   PhotoSlider
    ============================================================ */
-function PhotoSlider({ images, alt, index }) {
-    const [current, setCurrent] = useState(0);
-    const [direction, setDirection] = useState(0);
-    const touchStartX = useRef(null);
-    const touchEndX = useRef(null);
+const PhotoSlider = memo(function PhotoSlider({ images, alt, index }) {
+    const [current, setCurrent] = useState(0)
+    const [direction, setDirection] = useState(0)
+    const [imgErrors, setImgErrors] = useState({})
+    const touchStartX = useRef(null)
+    const touchEndX = useRef(null)
 
-    const total = images.length;
-    const hasMultiple = total > 1;
+    const total = images.length
+    const hasMultiple = total > 1
+
+    // اگر لیست تصاویر تغییر کرد، ایندکس را ریست کن
+    useEffect(() => {
+        setCurrent(0)
+    }, [images])
 
     const goNext = useCallback(
         (e) => {
-            e?.preventDefault();
-            e?.stopPropagation();
-            setDirection(1);
-            setCurrent((c) => (c + 1) % total);
+            e?.preventDefault()
+            e?.stopPropagation()
+            setDirection(1)
+            setCurrent((c) => (c + 1) % total)
         },
         [total]
-    );
+    )
 
     const goPrev = useCallback(
         (e) => {
-            e?.preventDefault();
-            e?.stopPropagation();
-            setDirection(-1);
-            setCurrent((c) => (c - 1 + total) % total);
+            e?.preventDefault()
+            e?.stopPropagation()
+            setDirection(-1)
+            setCurrent((c) => (c - 1 + total) % total)
         },
         [total]
-    );
+    )
 
     /* Swipe */
-    const onTouchStart = (e) => {
-        touchEndX.current = null;
-        touchStartX.current = e.targetTouches[0].clientX;
-    };
-    const onTouchMove = (e) => {
-        touchEndX.current = e.targetTouches[0].clientX;
-    };
-    const onTouchEnd = () => {
-        if (touchStartX.current == null || touchEndX.current == null) return;
-        const distance = touchStartX.current - touchEndX.current;
-        if (distance > 50) goNext();
-        else if (distance < -50) goPrev();
-        touchStartX.current = null;
-        touchEndX.current = null;
-    };
+    const onTouchStart = useCallback((e) => {
+        touchEndX.current = null
+        touchStartX.current = e.targetTouches[0].clientX
+    }, [])
+
+    const onTouchMove = useCallback((e) => {
+        touchEndX.current = e.targetTouches[0].clientX
+    }, [])
+
+    const onTouchEnd = useCallback(() => {
+        if (touchStartX.current == null || touchEndX.current == null) return
+        const distance = touchStartX.current - touchEndX.current
+        if (distance > 50) goNext()
+        else if (distance < -50) goPrev()
+        touchStartX.current = null
+        touchEndX.current = null
+    }, [goNext, goPrev])
+
+    /* Keyboard */
+    const onKeyDown = useCallback(
+        (e) => {
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault()
+                goNext()
+            } else if (e.key === 'ArrowRight') {
+                e.preventDefault()
+                goPrev()
+            }
+        },
+        [goNext, goPrev]
+    )
 
     const variants = {
-        enter: (dir) => ({ x: dir > 0 ? "100%" : "-100%", opacity: 0 }),
+        enter: (dir) => ({ x: dir > 0 ? '100%' : '-100%', opacity: 0 }),
         center: { x: 0, opacity: 1 },
-        exit: (dir) => ({ x: dir < 0 ? "100%" : "-100%", opacity: 0 }),
-    };
+        exit: (dir) => ({ x: dir < 0 ? '100%' : '-100%', opacity: 0 }),
+    }
+
+    const currentSrc = imgErrors[current] ? PLACEHOLDER : images[current]
 
     return (
         <div
-            className="relative h-52 sm:h-56 overflow-hidden rounded-t-2xl select-none bg-slate-100"
+            className="
+                relative h-52 sm:h-56 overflow-hidden rounded-t-2xl select-none
+                bg-slate-100
+            "
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
+            onKeyDown={hasMultiple ? onKeyDown : undefined}
+            tabIndex={hasMultiple ? 0 : -1}
             role="region"
             aria-roledescription="carousel"
             aria-label={`تصاویر ${alt}`}
@@ -122,19 +182,31 @@ function PhotoSlider({ images, alt, index }) {
                     animate="center"
                     exit="exit"
                     transition={{
-                        x: { type: "spring", stiffness: 300, damping: 30 },
+                        x: { type: 'spring', stiffness: 300, damping: 30 },
                         opacity: { duration: 0.2 },
                     }}
                     className="absolute inset-0"
                 >
                     <Image
-                        src={images[current]}
+                        src={currentSrc}
                         alt={`${alt} - تصویر ${current + 1}`}
                         fill
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px"
-                        className="object-cover transition-transform duration-700 ease-out group-hover/card:scale-105 will-change-transform"
+                        className="
+                            object-cover
+                            transition-transform duration-700 ease-out
+                            group-hover/card:scale-105
+                            will-change-transform
+                            motion-reduce:transition-none motion-reduce:group-hover/card:scale-100
+                        "
                         priority={index < 3}
-                        loading={index < 3 ? "eager" : "lazy"}
+                        loading={index < 3 ? 'eager' : 'lazy'}
+                        onError={() =>
+                            setImgErrors((prev) => ({
+                                ...prev,
+                                [current]: true,
+                            }))
+                        }
                     />
                 </motion.div>
             </AnimatePresence>
@@ -148,7 +220,6 @@ function PhotoSlider({ images, alt, index }) {
             {/* ==================== دکمه‌های ناوبری ==================== */}
             {hasMultiple && (
                 <>
-                    {/* دکمه راست (تصویر بعدی) */}
                     <button
                         type="button"
                         onClick={goNext}
@@ -166,12 +237,12 @@ function PhotoSlider({ images, alt, index }) {
                             focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#C6A14C]/60
                             transition-all duration-200
                             cursor-pointer
+                            opacity-0 group-hover/card:opacity-100 focus-visible:opacity-100
                         "
                     >
-                        <PiCaretRight className="w-4 h-4" strokeWidth={2.5} />
+                        <PiCaretRight className="w-4 h-4" strokeWidth={2.5} aria-hidden="true" />
                     </button>
 
-                    {/* دکمه چپ (تصویر قبلی) */}
                     <button
                         type="button"
                         onClick={goPrev}
@@ -189,9 +260,10 @@ function PhotoSlider({ images, alt, index }) {
                             focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#C6A14C]/60
                             transition-all duration-200
                             cursor-pointer
+                            opacity-0 group-hover/card:opacity-100 focus-visible:opacity-100
                         "
                     >
-                        <PiCaretLeft className="w-4 h-4" strokeWidth={2.5} />
+                        <PiCaretLeft className="w-4 h-4" strokeWidth={2.5} aria-hidden="true" />
                     </button>
                 </>
             )}
@@ -199,77 +271,218 @@ function PhotoSlider({ images, alt, index }) {
             {/* شمارنده تصویر */}
             {hasMultiple && (
                 <div
-                    className="absolute bottom-3 left-3 z-20 px-2.5 py-1 rounded-full bg-black/55 backdrop-blur-md text-white text-[10px] font-bold"
+                    className="
+                        absolute bottom-3 left-3 z-20
+                        px-2.5 py-1 rounded-full
+                        bg-black/55 backdrop-blur-md
+                        text-white text-[10px] font-bold
+                        tabular-nums
+                    "
                     aria-hidden="true"
                 >
                     {faNum(current + 1)} / {faNum(total)}
                 </div>
             )}
         </div>
-    );
-}
+    )
+})
 
 /* ============================================================
-   HallCard — گرید و لیست
+   FavoriteButton
    ============================================================ */
-export default function HallCard({ hall, index = 0, viewMode = "grid" }) {
-    const [isFavorite, setIsFavorite] = useState(hall?.isFavorite || false);
+const FavoriteButton = memo(function FavoriteButton({
+    initialFavorite = false,
+    hallId,
+}) {
+    const [isFavorite, setIsFavorite] = useState(initialFavorite)
 
-    if (!hall) return null;
+    useEffect(() => {
+        setIsFavorite(initialFavorite)
+    }, [initialFavorite])
 
-    const images = getHallImages(hall);
-    const hallUrl = `/halls/${hall._id || hall.id}`;
+    const handleClick = useCallback(
+        (e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            setIsFavorite((v) => !v)
 
-    const price = Number(hall.sans_price || 0);
-    const discount = Number(hall.sans_discount || 0);
-    const finalPrice = Math.max(price - discount, 0);
-    const hasPrice = price > 0;
-    const hasDiscount = discount > 0;
+            // 🔔 اینجا می‌تونی API صدا بزنی
+            // fetch(`/api/halls/${hallId}/favorite`, { method: 'POST' })
+            //     .catch(() => setIsFavorite((v) => !v))
+        },
+        [hallId]
+    )
 
-    /* دکمه علاقه‌مندی مشترک */
-    const FavoriteButton = (
+    return (
         <button
             type="button"
-            onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsFavorite((v) => !v);
-            }}
-            aria-label={isFavorite ? "حذف از علاقه‌مندی" : "افزودن به علاقه‌مندی"}
+            onClick={handleClick}
+            aria-label={isFavorite ? 'حذف از علاقه‌مندی' : 'افزودن به علاقه‌مندی'}
+            aria-pressed={isFavorite}
             className={`
                 absolute top-3 left-3 z-20
-                w-9 h-9 rounded-full flex items-center justify-center
-                backdrop-blur-md transition-all duration-300
-                focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-rose-300/60
+                w-9 h-9 rounded-full
+                flex items-center justify-center
+                backdrop-blur-md
+                transition-all duration-300
                 active:scale-90
+                focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#C6A14C]/60
+                motion-reduce:transition-none
                 ${
                     isFavorite
-                        ? "bg-rose-500 text-white shadow-lg shadow-rose-500/40"
-                        : "bg-white/90 text-slate-500 hover:text-rose-500 hover:bg-white shadow-md"
+                        ? 'bg-[#C6A14C] text-white shadow-lg shadow-[#C6A14C]/40'
+                        : 'bg-white/90 text-slate-500 hover:text-[#C6A14C] hover:bg-white shadow-md'
                 }
             `}
         >
             <PiHeart
-                className={`w-4 h-4 ${isFavorite ? "fill-white" : ""}`}
+                className={`w-4 h-4 ${isFavorite ? 'fill-white' : ''}`}
                 aria-hidden="true"
             />
         </button>
-    );
+    )
+})
 
-    /* بج تخفیف */
-    const DiscountBadge = hasDiscount ? (
+/* ============================================================
+   DiscountBadge
+   ============================================================ */
+const DiscountBadge = memo(function DiscountBadge({ percent }) {
+    if (!percent || percent <= 0) return null
+
+    return (
         <div className="absolute top-3 right-3 z-20">
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-green-500 text-white text-[11px] font-bold shadow-md">
+            <span
+                className="
+                    inline-flex items-center gap-1
+                    px-2.5 py-1 rounded-lg
+                    text-white text-[11px] font-bold
+                    shadow-[0_4px_12px_-2px_rgba(198,161,76,0.5)]
+                "
+                style={{ backgroundImage: GOLD_GRADIENT }}
+            >
                 <PiTagFill className="w-3 h-3" aria-hidden="true" />
-                {faNum(discount)}٪
+                {faNum(percent)}٪
             </span>
         </div>
-    ) : null;
+    )
+})
+
+/* ============================================================
+   Features — چیپ‌های ویژگی
+   ============================================================ */
+const Features = memo(function Features({ hall, size = 'sm' }) {
+    const padding = size === 'lg' ? 'px-2.5 py-1' : 'px-2 py-1'
+    const gap = size === 'lg' ? 'gap-2' : 'gap-1.5'
+
+    return (
+        <div className={`flex flex-wrap ${gap} text-xs text-gray-600`}>
+            {hall.capacity && (
+                <span
+                    className={`inline-flex items-center gap-1 bg-gray-50 ${padding} rounded-lg`}
+                >
+                    <PiUsersThreeFill
+                        className="w-3.5 h-3.5 text-[#C6A14C]"
+                        aria-hidden="true"
+                    />
+                    {faNum(hall.capacity)} نفر
+                </span>
+            )}
+            {hall.duration && (
+                <span
+                    className={`inline-flex items-center gap-1 bg-gray-50 ${padding} rounded-lg`}
+                >
+                    <PiCalendarBlank
+                        className="w-3.5 h-3.5 text-[#C6A14C]"
+                        aria-hidden="true"
+                    />
+                    {faNum(hall.duration)} ساعت
+                </span>
+            )}
+            {hall.hall_type && (
+                <span className={`bg-gray-50 ${padding} rounded-lg`}>
+                    {hall.hall_type}
+                </span>
+            )}
+        </div>
+    )
+})
+
+/* ============================================================
+   PriceBlock
+   ============================================================ */
+const PriceBlock = memo(function PriceBlock({ pricing, size = 'sm' }) {
+    const { finalPrice, hasPrice, hasDiscount, mainPrice } = pricing
+    const priceSize = size === 'lg' ? 'text-base sm:text-lg' : 'text-sm sm:text-base'
+
+    if (!hasPrice) {
+        return <span className="text-xs text-gray-400">تماس بگیرید</span>
+    }
+
+    return (
+        <div className="flex flex-col">
+            <div className="flex items-baseline gap-1">
+                <span
+                    className={`${priceSize} font-black text-[#C6A14C] leading-none tabular-nums`}
+                >
+                    {faNum(finalPrice)}
+                </span>
+                <span className="text-[10px] text-gray-400">تومان</span>
+            </div>
+            {hasDiscount && mainPrice > finalPrice && (
+                <span className="text-[10px] text-gray-400 line-through mt-0.5 tabular-nums">
+                    {faNum(mainPrice)} تومان
+                </span>
+            )}
+        </div>
+    )
+})
+
+/* ============================================================
+   CTAButton
+   ============================================================ */
+const CTAButton = memo(function CTAButton({ href, size = 'sm' }) {
+    const padding = size === 'lg' ? 'px-4 py-2' : 'px-3 py-1.5'
+    const iconSize = size === 'lg' ? 'w-3.5 h-3.5' : 'w-3 h-3'
+
+    return (
+        <Link
+            href={href}
+            className={`
+                inline-flex items-center gap-1.5
+                text-xs font-bold
+                border-2 border-[#C6A14C]
+                ${padding} rounded-lg
+                text-[#C6A14C]
+                hover:bg-[#C6A14C] hover:text-white
+                hover:shadow-[0_4px_12px_-2px_rgba(198,161,76,0.5)]
+                focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#C6A14C]/40
+                transition-all duration-200
+                motion-reduce:transition-none
+            `}
+        >
+            <span>مشاهده و رزرو</span>
+            <PiArrowLeft className={iconSize} aria-hidden="true" />
+        </Link>
+    )
+})
+
+/* ============================================================
+   HallCard
+   ============================================================ */
+function HallCard({ hall, index = 0, viewMode = 'grid' }) {
+    if (!hall) return null
+
+    const images = getHallImages(hall)
+    const hallUrl = `/halls/${hall._id || hall.id}`
+    const pricing = computePricing(hall)
+
+    const isList = viewMode === 'list'
+    const titleSize = isList ? 'text-base sm:text-lg' : 'text-base'
 
     /* ============================================================
-       حالت LIST
+       List Mode
        ============================================================ */
-    if (viewMode === "list") {
+    if (isList) {
         return (
             <motion.article
                 initial={{ opacity: 0, y: 25 }}
@@ -280,34 +493,36 @@ export default function HallCard({ hall, index = 0, viewMode = "grid" }) {
                 }}
                 className="
                     group/card bg-white rounded-2xl
-                    border border-gray-100
-                    shadow-sm hover:shadow-xl hover:shadow-slate-900/5
+                    shadow-[0_2px_16px_-4px_rgba(15,23,42,0.08)]
+                    hover:shadow-[0_20px_40px_-12px_rgba(15,23,42,0.15)]
                     focus-within:ring-2 focus-within:ring-[#C6A14C]/40
-                    transition-all duration-300
+                    transition-shadow duration-300
                     flex flex-col md:flex-row
                     overflow-hidden
                 "
             >
-                {/* اسلایدر */}
-                <div className="relative w-full md:w-72 lg:w-80 flex-shrink-0">
+                <div className="relative w-full md:w-72 lg:w-80 shrink-0">
                     <PhotoSlider
                         images={images}
-                        alt={hall.title || "تالار"}
+                        alt={hall.title || 'تالار'}
                         index={index}
                     />
-                    {DiscountBadge}
-                    {FavoriteButton}
+                    <DiscountBadge percent={pricing.discountPercent} />
+                    <FavoriteButton
+                        initialFavorite={hall?.isFavorite}
+                        hallId={hall._id}
+                    />
                 </div>
 
-                {/* محتوا */}
                 <div className="flex-1 p-5 flex flex-col min-w-0">
-                    {/* عنوان و موقعیت */}
                     <div className="mb-3">
                         <Link
                             href={hallUrl}
                             className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6A14C]/40 rounded"
                         >
-                            <h3 className="text-base sm:text-lg font-bold line-clamp-1 text-[#2C2418] group-hover/card:text-[#A8853A] transition-colors">
+                            <h3
+                                className={`${titleSize} font-bold line-clamp-1 text-[#2C2418] group-hover/card:text-[#A8853A] transition-colors`}
+                            >
                                 {hall.title}
                             </h3>
                         </Link>
@@ -320,7 +535,7 @@ export default function HallCard({ hall, index = 0, viewMode = "grid" }) {
                                 {hall.city}
                                 {hall.province && (
                                     <span className="text-gray-400">
-                                        {" "}
+                                        {' '}
                                         | {hall.province}
                                     </span>
                                 )}
@@ -328,90 +543,25 @@ export default function HallCard({ hall, index = 0, viewMode = "grid" }) {
                         </div>
                     </div>
 
-                    {/* توضیحات */}
                     <p className="text-xs sm:text-sm text-gray-600 mb-4 line-clamp-2 leading-relaxed">
-                        {hall.description ||
-                            "لورم ایپسوم متن تستی برای توضیحات تالار"}
+                        {hall.description || 'توضیحات این تالار به زودی تکمیل می‌شود'}
                     </p>
 
-                    {/* ویژگی‌ها */}
-                    <div className="flex flex-wrap gap-2 text-xs text-gray-600 mb-4">
-                        <span className="inline-flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-lg">
-                            <PiUsersThreeFill
-                                className="w-3.5 h-3.5 text-[#C6A14C]"
-                                aria-hidden="true"
-                            />
-                            {faNum(hall.capacity)} نفر
-                        </span>
-                        {hall.duration && (
-                            <span className="inline-flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-lg">
-                                <PiCalendarBlank
-                                    className="w-3.5 h-3.5 text-[#C6A14C]"
-                                    aria-hidden="true"
-                                />
-                                {faNum(hall.duration)} ساعت
-                            </span>
-                        )}
-                        {hall.hall_type && (
-                            <span className="bg-gray-50 px-2.5 py-1 rounded-lg">
-                                {hall.hall_type}
-                            </span>
-                        )}
+                    <div className="mb-4">
+                        <Features hall={hall} size="lg" />
                     </div>
 
-                    {/* قیمت و دکمه */}
                     <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100">
-                        <div className="flex flex-col">
-                            {hasPrice ? (
-                                <>
-                                    <div className="flex items-baseline gap-1">
-                                        <span className="text-base sm:text-lg font-black text-[#C6A14C] leading-none">
-                                            {faNum(finalPrice)}
-                                        </span>
-                                        <span className="text-[10px] text-gray-400">
-                                            تومان
-                                        </span>
-                                    </div>
-                                    {hasDiscount && price > finalPrice && (
-                                        <span className="text-[10px] text-gray-400 line-through mt-0.5">
-                                            {faNum(price)} تومان
-                                        </span>
-                                    )}
-                                </>
-                            ) : (
-                                <span className="text-xs text-gray-400">
-                                    تماس بگیرید
-                                </span>
-                            )}
-                        </div>
-
-                        <Link
-                            href={hallUrl}
-                            className="
-                                inline-flex items-center gap-1.5
-                                text-xs font-bold
-                                border-2 border-[#C6A14C]
-                                px-4 py-2 rounded-lg
-                                text-[#C6A14C]
-                                hover:bg-[#C6A14C] hover:text-white hover:shadow-md
-                                focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#C6A14C]/40
-                                transition-all duration-200
-                            "
-                        >
-                            <span>مشاهده و رزرو</span>
-                            <PiArrowLeft
-                                className="w-3.5 h-3.5"
-                                aria-hidden="true"
-                            />
-                        </Link>
+                        <PriceBlock pricing={pricing} size="lg" />
+                        <CTAButton href={hallUrl} size="lg" />
                     </div>
                 </div>
             </motion.article>
-        );
+        )
     }
 
     /* ============================================================
-       حالت GRID (پیش‌فرض)
+       Grid Mode
        ============================================================ */
     return (
         <motion.article
@@ -423,35 +573,39 @@ export default function HallCard({ hall, index = 0, viewMode = "grid" }) {
             }}
             className="
                 group/card bg-white rounded-2xl
-                border border-gray-100
-                shadow-sm hover:shadow-xl hover:shadow-slate-900/5
+                shadow-[0_2px_16px_-4px_rgba(15,23,42,0.08)]
+                hover:shadow-[0_20px_40px_-12px_rgba(15,23,42,0.15)]
                 focus-within:ring-2 focus-within:ring-[#C6A14C]/40
-                transition-all duration-300
+                transition-[transform,box-shadow] duration-300
                 flex flex-col
-                hover:-translate-y-1 will-change-transform
+                hover:-translate-y-1
+                will-change-transform
+                motion-reduce:transition-none motion-reduce:hover:translate-y-0
                 overflow-hidden
             "
         >
-            {/* ==================== اسلایدر ==================== */}
             <div className="relative">
                 <PhotoSlider
                     images={images}
-                    alt={hall.title || "تالار"}
+                    alt={hall.title || 'تالار'}
                     index={index}
                 />
-                {DiscountBadge}
-                {FavoriteButton}
+                <DiscountBadge percent={pricing.discountPercent} />
+                <FavoriteButton
+                    initialFavorite={hall?.isFavorite}
+                    hallId={hall._id}
+                />
             </div>
 
-            {/* ==================== محتوا ==================== */}
             <div className="p-4 flex flex-col flex-grow">
-                {/* عنوان و موقعیت */}
                 <div className="mb-2">
                     <Link
                         href={hallUrl}
                         className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6A14C]/40 rounded"
                     >
-                        <h3 className="text-base font-bold line-clamp-1 text-[#2C2418] group-hover/card:text-[#A8853A] transition-colors">
+                        <h3
+                            className={`${titleSize} font-bold line-clamp-1 text-[#2C2418] group-hover/card:text-[#A8853A] transition-colors`}
+                        >
                             {hall.title}
                         </h3>
                     </Link>
@@ -464,7 +618,7 @@ export default function HallCard({ hall, index = 0, viewMode = "grid" }) {
                             {hall.city}
                             {hall.province && (
                                 <span className="text-gray-400">
-                                    {" "}
+                                    {' '}
                                     | {hall.province}
                                 </span>
                             )}
@@ -472,81 +626,21 @@ export default function HallCard({ hall, index = 0, viewMode = "grid" }) {
                     </div>
                 </div>
 
-                {/* توضیحات */}
                 <p className="text-xs text-gray-600 mb-3 line-clamp-2 leading-relaxed">
-                    {hall.description ||
-                        "لورم ایپسوم متن تستی برای توضیحات تالار"}
+                    {hall.description || 'توضیحات این تالار به زودی تکمیل می‌شود'}
                 </p>
 
-                {/* ویژگی‌ها */}
-                <div className="flex flex-wrap gap-1.5 text-xs text-gray-600 mb-3">
-                    <span className="inline-flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-lg">
-                        <PiUsersThreeFill
-                            className="w-3.5 h-3.5 text-[#C6A14C]"
-                            aria-hidden="true"
-                        />
-                        {faNum(hall.capacity)} نفر
-                    </span>
-                    {hall.duration && (
-                        <span className="inline-flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-lg">
-                            <PiCalendarBlank
-                                className="w-3.5 h-3.5 text-[#C6A14C]"
-                                aria-hidden="true"
-                            />
-                            {faNum(hall.duration)} ساعت
-                        </span>
-                    )}
-                    {hall.hall_type && (
-                        <span className="bg-gray-50 px-2 py-1 rounded-lg">
-                            {hall.hall_type}
-                        </span>
-                    )}
+                <div className="mb-3">
+                    <Features hall={hall} size="sm" />
                 </div>
 
-                {/* قیمت و دکمه */}
                 <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100">
-                    <div className="flex flex-col">
-                        {hasPrice ? (
-                            <>
-                                <div className="flex items-baseline gap-1">
-                                    <span className="text-sm sm:text-base font-black text-[#C6A14C] leading-none">
-                                        {faNum(finalPrice)}
-                                    </span>
-                                    <span className="text-[10px] text-gray-400">
-                                        تومان
-                                    </span>
-                                </div>
-                                {hasDiscount && price > finalPrice && (
-                                    <span className="text-[10px] text-gray-400 line-through mt-0.5">
-                                        {faNum(price)} تومان
-                                    </span>
-                                )}
-                            </>
-                        ) : (
-                            <span className="text-xs text-gray-400">
-                                تماس بگیرید
-                            </span>
-                        )}
-                    </div>
-
-                    <Link
-                        href={hallUrl}
-                        className="
-                            inline-flex items-center gap-1
-                            text-xs font-bold
-                            border-2 border-[#C6A14C]
-                            px-3 py-1.5 rounded-lg
-                            text-[#C6A14C]
-                            hover:bg-[#C6A14C] hover:text-white hover:shadow-md
-                            focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#C6A14C]/40
-                            transition-all duration-200
-                        "
-                    >
-                        <span>مشاهده و رزرو</span>
-                        <PiArrowLeft className="w-3 h-3" aria-hidden="true" />
-                    </Link>
+                    <PriceBlock pricing={pricing} size="sm" />
+                    <CTAButton href={hallUrl} size="sm" />
                 </div>
             </div>
         </motion.article>
-    );
+    )
 }
+
+export default memo(HallCard)
