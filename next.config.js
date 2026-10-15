@@ -18,7 +18,6 @@ const nextConfig = {
             "@headlessui/react",
             "@heroicons/react",
         ],
-        //  فعال‌سازی بهینه‌سازی CSS (نیاز به نصب critters)
         optimizeCss: true,
     },
 
@@ -31,21 +30,33 @@ const nextConfig = {
         imageSizes: [16, 32, 48, 64, 96, 128, 180, 256, 384],
         minimumCacheTTL: 60 * 60 * 24 * 30,
 
-        //  دامنه‌های دقیق — اینجا را با دامنه‌های خودت پر کن
+        // 🔥 برای SVG و data URLs
+        dangerouslyAllowSVG: true,
+        contentDispositionType: "attachment",
+        contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+
+        // 🔥 دامنه‌های مجاز
         remotePatterns: [
-            // اگر روی Vercel هستی:
+            // Vercel Blob
             { protocol: "https", hostname: "*.public.blob.vercel-storage.com" },
-            // اگر از Cloudinary استفاده می‌کنی:
-            // { protocol: "https", hostname: "res.cloudinary.com" },
-            // اگر از S3 استفاده می‌کنی:
-            // { protocol: "https", hostname: "*.s3.amazonaws.com" },
-            // اگر از CDN خودت استفاده می‌کنی:
-            // { protocol: "https", hostname: "cdn.yoursite.com" },
-            // ⚠️ اگر مطمئن نیستی، این را موقتاً باز کن (ناامن):
-            // { protocol: "https", hostname: "**" },
+            // Cloudinary
+            { protocol: "https", hostname: "res.cloudinary.com" },
+            // AWS S3
+            { protocol: "https", hostname: "*.s3.amazonaws.com" },
+            { protocol: "https", hostname: "*.s3.*.amazonaws.com" },
+            // Supabase Storage
+            { protocol: "https", hostname: "*.supabase.co" },
+            // 🔥 توسعه محلی — برای بک‌اند روی localhost
+            { protocol: "http", hostname: "localhost" },
+            { protocol: "http", hostname: "127.0.0.1" },
+            // 🔥 اگه روی شبکه محلی تسته
+            { protocol: "http", hostname: "192.168.*.*" },
+            // 🔥 اگه بک‌اند از IP مستقیم استفاده می‌کنه
+            { protocol: "https", hostname: "**" }, // موقت — برای پروداکشن حذف کن
         ],
 
-        dangerouslyAllowSVG: false,
+        // 🔥 برای تصاویری که از بک‌اند میان و ممکنه مشکل داشته باشن
+        unoptimized: false,
     },
 
     /* ============================================================

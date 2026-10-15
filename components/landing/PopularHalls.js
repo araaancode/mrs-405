@@ -131,7 +131,13 @@ export default function PopularHalls({ halls = [] }) {
                 >
                     {popularHalls.map((hall, index) => (
                         <div key={hall._id || `idx-${index}`} data-card>
-                            <HallCard hall={hall} index={index} accent="gold" />
+                            {/* 🔥 forceCarousel برای نمایش اسلایدر حتی با ۱ تصویر */}
+                            <HallCard
+                                hall={hall}
+                                index={index}
+                                accent="gold"
+                                forceCarousel
+                            />
                         </div>
                     ))}
 
