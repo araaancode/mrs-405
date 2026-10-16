@@ -5,11 +5,7 @@ import { useSession } from "next-auth/react";
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
-import { toast } from "react-toastify";
-import DatePicker from "react-multi-date-picker";
-import persian from "react-date-object/calendars/persian";
-import persian_fa from "react-date-object/locales/persian_fa";
-import "react-multi-date-picker/styles/colors/teal.css";
+
 import {
   PiUser,
   PiIdentificationCard,
@@ -20,65 +16,40 @@ import {
   PiArrowCounterClockwise,
   PiCheck,
   PiCircleNotch,
-  PiCalendarBlank,
-  PiNote,
+  PiShieldCheck,
 } from "react-icons/pi";
+
+import { InputField, SelectField } from "@/components/ui/FormField";
+import { SectionTitle } from "@/components/ui/SectionTitle";
+import { BirthDatePicker } from "@/components/ui/BirthDatePicker";
+import { DocumentUploader } from "@/components/ui/DocumentUploader";
+import { ProfileHeader } from "@/components/ui/ProfileHeader";
+import { ProvinceCitySelector } from "@/components/ui/ProvinceCitySelector";
 import { notify } from "@/lib/toast";
 
 /* ============================================================
-   Helpers
+   FormSection — بخش فرم با انیمیشن ورود
    ============================================================ */
-function parseDate(value) {
-  if (!value) return null;
-  try {
-    const d = new Date(value);
-    return isNaN(d.getTime()) ? null : d;
-  } catch {
-    return null;
-  }
-}
-
-function formatDate(value) {
-  const d = parseDate(value);
-  return d ? d.toLocaleDateString("fa-IR") : "—";
-}
-
-function toGregorian(dateObject) {
-  if (!dateObject) return null;
-  return dateObject.toDate().toISOString().split("T")[0];
-}
-
-/* ============================================================
-   FormSection
-   ============================================================ */
-function FormSection({ icon: Icon, title, description, children, index = 0 }) {
+function FormSection({ icon, title, description, children, badge, index = 0 }) {
   return (
     <motion.section
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: index * 0.06 }}
-      className="py-7 sm:py-8 border-b border-slate-100 last:border-b-0"
+      className="
+        relative
+        py-7 sm:py-8
+        border-b border-slate-100
+        last:border-b-0
+      "
     >
-      <div className="flex items-start gap-3 pb-3 border-b border-slate-100 mb-5">
-        <div
-          className="
-            w-10 h-10 rounded-xl
-            bg-gradient-to-br from-gold-400 to-gold-600
-            text-white
-            flex items-center justify-center flex-shrink-0
-            shadow-sm shadow-gold-500/25
-          "
-        >
-          <Icon className="w-5 h-5" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="text-[15px] font-bold text-slate-900">{title}</h3>
-          {description && (
-            <p className="text-[12px] text-slate-500 mt-0.5">{description}</p>
-          )}
-        </div>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+      <SectionTitle
+        icon={icon}
+        title={title}
+        description={description}
+        badge={badge}
+      />
+      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
         {children}
       </div>
     </motion.section>
@@ -86,204 +57,15 @@ function FormSection({ icon: Icon, title, description, children, index = 0 }) {
 }
 
 /* ============================================================
-   InputField
-   ============================================================ */
-function InputField({
-  label,
-  name,
-  icon: Icon,
-  type = "text",
-  value,
-  onChange,
-  placeholder,
-  dir = "rtl",
-  required,
-  inputMode,
-  maxLength,
-  error,
-  hint,
-  className = "",
-}) {
-  return (
-    <div>
-      <label className="block text-[13px] font-medium text-slate-700 mb-1.5">
-        {label}
-        {required && <span className="text-rose-500 mr-1">*</span>}
-      </label>
-
-      <div className="relative group">
-        {Icon && (
-          <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none z-10">
-            <Icon className="w-4 h-4 text-gold-500 group-focus-within:text-gold-600 transition-colors duration-200" />
-          </div>
-        )}
-
-        <input
-          type={type}
-          name={name}
-          value={value}
-          onChange={onChange}
-          placeholder={placeholder}
-          dir={dir}
-          required={required}
-          inputMode={inputMode}
-          maxLength={maxLength}
-          className={`
-            w-full
-            ${Icon ? "pr-10" : "pr-3.5"} pl-3.5
-            py-2.5
-            bg-white border rounded-xl
-            text-[13.5px] text-slate-900
-            placeholder:text-slate-400
-            transition-all duration-200
-            focus:outline-none focus:ring-4
-            ${
-              error
-                ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500/10"
-                : "border-slate-200 hover:border-gold-300 focus:border-gold-500 focus:ring-gold-500/10"
-            }
-            ${dir === "ltr" ? "text-left" : "text-right"}
-            ${className}
-          `}
-        />
-      </div>
-
-      {error ? (
-        <p className="text-[11px] text-rose-600 mt-1.5">{error}</p>
-      ) : hint ? (
-        <p className="text-[11px] text-slate-400 mt-1.5">{hint}</p>
-      ) : null}
-    </div>
-  );
-}
-
-/* ============================================================
-   ProfileHeader — طلایی روشن
-   ============================================================ */
-function ProfileHeader({ form, isDirty }) {
-  const fields = [
-    "full_name",
-    "email",
-    "phone",
-    "national_code",
-    "birth_date",
-    "gender",
-    "province",
-    "city",
-  ];
-  const filled = fields.filter((f) => form?.[f]?.toString()?.trim()).length;
-  const completion = Math.round((filled / fields.length) * 100);
-
-  const initials = (form?.full_name || form?.username || "؟")
-    .split(" ")
-    .map((s) => s[0])
-    .slice(0, 2)
-    .join("");
-
-  return (
-    <div className="mb-6 pb-6 border-b border-slate-100">
-      <div className="flex flex-col sm:flex-row items-center sm:items-center gap-5">
-        {/* آواتار طلایی با نشان ADMIN */}
-        <div className="relative flex-shrink-0">
-          <div
-            className="
-              relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl
-              bg-gradient-to-br from-gold-400 to-gold-600
-              ring-4 ring-gold-100/60
-              flex items-center justify-center
-              text-2xl sm:text-3xl font-bold text-white
-              shadow-lg shadow-gold-500/30
-            "
-          >
-            {initials}
-          </div>
-          <span
-            className="
-              absolute -bottom-1.5 -left-1.5
-              px-2 py-0.5 rounded-full
-              bg-white
-              text-gold-700 text-[9px] font-black
-              shadow-md shadow-gold-500/30
-              ring-2 ring-gold-400
-            "
-          >
-            ADMIN
-          </span>
-        </div>
-
-        {/* اطلاعات */}
-        <div className="flex-1 text-center sm:text-right min-w-0">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 truncate">
-              {form?.full_name || "مدیر بدون نام"}
-            </h1>
-
-            {isDirty ? (
-              <span className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-full bg-gold-50 border border-gold-200 text-gold-700 text-[11px] font-medium self-center sm:self-auto">
-                <span className="w-1.5 h-1.5 rounded-full bg-gold-500 animate-pulse" />
-                تغییرات ذخیره نشده
-              </span>
-            ) : (
-              <span className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-full bg-gold-50 border border-gold-200 text-gold-700 text-[11px] font-medium self-center sm:self-auto">
-                <PiCheck className="w-3.5 h-3.5" strokeWidth={3} />
-                ذخیره شده
-              </span>
-            )}
-          </div>
-
-          <p className="text-sm text-slate-500 mt-1 truncate">
-            {form?.email || form?.username || "—"}
-          </p>
-        </div>
-
-        {/* درصد تکمیل */}
-        <div className="w-full sm:w-auto flex-shrink-0">
-          <div className="flex items-center gap-3 bg-gold-50/60 border border-gold-100 rounded-xl px-4 py-3 sm:min-w-[200px]">
-            <div className="relative w-10 h-10 flex-shrink-0">
-              <svg className="w-10 h-10 -rotate-90" viewBox="0 0 36 36">
-                <circle
-                  cx="18"
-                  cy="18"
-                  r="16"
-                  fill="none"
-                  stroke="#F6EED5"
-                  strokeWidth="3"
-                />
-                <circle
-                  cx="18"
-                  cy="18"
-                  r="16"
-                  fill="none"
-                  stroke="#C6A14C"
-                  strokeWidth="3"
-                  strokeDasharray={`${completion}, 100`}
-                  strokeLinecap="round"
-                />
-              </svg>
-              <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-gold-700">
-                {completion}%
-              </span>
-            </div>
-            <div className="text-right">
-              <p className="text-xs text-slate-500">تکمیل پروفایل</p>
-              <p className="text-sm font-bold text-slate-800">
-                {filled} از {fields.length} فیلد
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ============================================================
-   ProfileSkeleton
+   Skeleton — لودینگ اولیه
    ============================================================ */
 function ProfileSkeleton() {
   return (
     <div className="space-y-5 animate-pulse">
+      {/* هدر */}
       <div className="h-32 bg-slate-100 rounded-3xl" />
+
+      {/* کارت فرم */}
       <div className="bg-white rounded-2xl ring-1 ring-slate-100 p-6 sm:p-8 space-y-6">
         {[1, 2, 3].map((s) => (
           <div
@@ -305,7 +87,7 @@ function ProfileSkeleton() {
 }
 
 /* ============================================================
-   Page
+   Main
    ============================================================ */
 export default function AdminProfilePage() {
   const { data: session, status } = useSession();
@@ -314,41 +96,50 @@ export default function AdminProfilePage() {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [errors, setErrors] = useState({});
-  const [birthDate, setBirthDate] = useState(null);
+  const [dateValue, setDateValue] = useState(null);
 
   /* ============================================================
-     Load
+     بارگذاری اطلاعات
      ============================================================ */
   useEffect(() => {
     if (!session?.user) return;
 
     axios
-      .get("/api/admin/profile")
-      .then((response) => {
-        const userData = response.data.user || response.data;
+      .get("/api/user/profile")
+      .then((res) => {
+        const userData = res.data.user || res.data;
         setForm(userData);
         setOriginalForm(userData);
 
         if (userData.birth_date) {
-          const d = parseDate(userData.birth_date);
-          if (d) setBirthDate(d);
+          const [y, m, d] = userData.birth_date
+            .split("T")[0]
+            .split("-")
+            .map(Number);
+          setDateValue(new Date(y, m - 1, d));
         }
       })
       .catch((err) => {
-        console.error("خطا در دریافت اطلاعات:", err);
+        if (err.response?.status === 401) {
+          notify.error("لطفاً دوباره وارد شوید");
+        } else {
+          notify.error("خطا در دریافت اطلاعات پروفایل");
+        }
         setForm(session.user);
-        notify.error("خطا در دریافت اطلاعات پروفایل");
       })
       .finally(() => setInitialLoading(false));
   }, [session]);
 
+  /* ============================================================
+     تشخیص تغییرات
+     ============================================================ */
   const isDirty = useMemo(
     () => JSON.stringify(form) !== JSON.stringify(originalForm),
     [form, originalForm]
   );
 
   /* ============================================================
-     Handlers
+     تغییرات فرم
      ============================================================ */
   const changeHandler = (e) => {
     const { name, value } = e.target;
@@ -356,17 +147,42 @@ export default function AdminProfilePage() {
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  const handleBirthDateChange = (date) => {
-    setBirthDate(date);
-    setForm((prev) => ({ ...prev, birth_date: toGregorian(date) }));
+  const handleDateChange = (date) => {
+    if (!date) {
+      setForm((p) => ({ ...p, birth_date: "" }));
+      setDateValue(null);
+      return;
+    }
+
+    const gregorianDate = date.toDate();
+    const today = new Date();
+    let age = today.getFullYear() - gregorianDate.getFullYear();
+    const m = today.getMonth() - gregorianDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < gregorianDate.getDate()))
+      age--;
+
+    if (age < 18) {
+      notify.error("سن باید حداقل ۱۸ سال باشد");
+      return;
+    }
+    if (age > 100) {
+      notify.error("سن نمی‌تواند بیشتر از ۱۰۰ سال باشد");
+      return;
+    }
+
+    const y = gregorianDate.getFullYear();
+    const mm = String(gregorianDate.getMonth() + 1).padStart(2, "0");
+    const dd = String(gregorianDate.getDate()).padStart(2, "0");
+
+    setForm((p) => ({ ...p, birth_date: `${y}-${mm}-${dd}` }));
+    setDateValue(date);
   };
 
   /* ============================================================
-     Validate
+     Validation
      ============================================================ */
   const validate = () => {
     const e = {};
-
     if (!form.full_name?.trim()) {
       e.full_name = "نام و نام خانوادگی الزامی است";
     }
@@ -379,7 +195,6 @@ export default function AdminProfilePage() {
     if (form.national_code && !/^\d{10}$/.test(form.national_code)) {
       e.national_code = "کد ملی باید ۱۰ رقم باشد";
     }
-
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -387,37 +202,31 @@ export default function AdminProfilePage() {
   /* ============================================================
      Submit
      ============================================================ */
-  const submitHandler = async (e) => {
-    e.preventDefault();
-
-    if (!validate()) {
-      notify.error("لطفاً خطاهای فرم را برطرف کنید");
-      return;
-    }
+  const submitHandler = async (ev) => {
+    ev.preventDefault();
+    if (!validate()) return notify.error("خطا در فرم");
 
     setLoading(true);
-    const toastId = toast.loading("در حال ذخیره تغییرات...");
+
+    // ۱. شروع لودینگ
+    const toastId = notify.loading("در حال ذخیره تغییرات...");
 
     try {
-      await axios.put("/api/admin/profile", form, {
-        headers: { "Content-Type": "application/json" },
-      });
-
+      await axios.put("/api/user/profile", form);
       setOriginalForm(form);
 
-      toast.update(toastId, {
-        render: "پروفایل با موفقیت بروزرسانی شد",
+      // ۲. تبدیل به موفقیت
+      notify.update(toastId, {
+        message: "پروفایل با موفقیت به‌روزرسانی شد",
         type: "success",
-        isLoading: false,
-        autoClose: 5000,
+        duration: 10000,
       });
     } catch (error) {
-      console.error("خطا در بروزرسانی:", error);
-      toast.update(toastId, {
-        render: error.response?.data?.message || "خطا در ارتباط با سرور",
+      // ۳. تبدیل به خطا
+      notify.update(toastId, {
+        message: error.response?.data?.message || "خطا در ارتباط با سرور",
         type: "error",
-        isLoading: false,
-        autoClose: 8000,
+        duration: 15000,
       });
     } finally {
       setLoading(false);
@@ -427,10 +236,6 @@ export default function AdminProfilePage() {
   const handleCancel = () => {
     setForm(originalForm);
     setErrors({});
-    if (originalForm.birth_date) {
-      const d = parseDate(originalForm.birth_date);
-      setBirthDate(d);
-    }
     notify.info("تغییرات لغو شد");
   };
 
@@ -465,13 +270,18 @@ export default function AdminProfilePage() {
   return (
     <div dir="rtl" className="w-full">
       {/* ==================== Header ==================== */}
-      <ProfileHeader form={form} isDirty={isDirty} />
+      <ProfileHeader
+        form={form}
+        isDirty={isDirty}
+        roleBadge="ادمین"
+        onAvatarClick={() => notify.info("آپلود آواتار به‌زودی")}
+      />
 
       <form onSubmit={submitHandler} className="space-y-0">
         {/* ==================== اطلاعات اصلی ==================== */}
         <FormSection
           index={0}
-          icon={PiUser}
+          icon={<PiUser className="w-5 h-5" />}
           title="اطلاعات اصلی"
           description="نام، ایمیل و راه‌های ارتباطی"
         >
@@ -499,7 +309,7 @@ export default function AdminProfilePage() {
             type="email"
             dir="ltr"
             className="text-left"
-            placeholder="example@domain.com"
+            placeholder="admin@domain.com"
             value={form.email || ""}
             onChange={changeHandler}
             error={errors.email}
@@ -519,7 +329,7 @@ export default function AdminProfilePage() {
         {/* ==================== اطلاعات هویتی ==================== */}
         <FormSection
           index={1}
-          icon={PiIdentificationCard}
+          icon={<PiIdentificationCard className="w-5 h-5" />}
           title="اطلاعات هویتی"
           description="کد ملی، شناسنامه و تاریخ تولد"
         >
@@ -542,83 +352,40 @@ export default function AdminProfilePage() {
             value={form.birth_certificate || ""}
             onChange={changeHandler}
           />
-
-          {/* تاریخ تولد */}
-          <div>
-            <label className="block text-[13px] font-medium text-slate-700 mb-1.5 flex items-center gap-1.5">
-              <PiCalendarBlank className="w-3.5 h-3.5 text-gold-500" />
-              تاریخ تولد
-            </label>
-            <DatePicker
-              calendar={persian}
-              locale={persian_fa}
-              value={birthDate}
-              onChange={handleBirthDateChange}
-              format="YYYY/MM/DD"
-              placeholder="انتخاب تاریخ تولد"
-              inputClass="
-                w-full px-3.5 py-2.5
-                bg-white border border-slate-200 rounded-xl
-                text-[13.5px] text-slate-900
-                hover:border-gold-300
-                focus:outline-none focus:border-gold-500 focus:ring-4 focus:ring-gold-500/10
-                transition-all duration-200
-              "
-              containerClassName="w-full"
-            />
-            {form.birth_date && (
-              <p className="text-[11px] text-slate-400 mt-1.5">
-                تاریخ:{" "}
-                <span className="font-medium text-slate-600">
-                  {formatDate(form.birth_date)}
-                </span>
-              </p>
-            )}
-          </div>
-
-          {/* جنسیت */}
-          <div>
-            <label className="block text-[13px] font-medium text-slate-700 mb-1.5">
-              جنسیت
-            </label>
-            <select
-              name="gender"
-              value={form.gender || ""}
-              onChange={changeHandler}
-              className="
-                w-full px-3.5 py-2.5
-                bg-white border border-slate-200 rounded-xl
-                text-[13.5px] text-slate-900
-                cursor-pointer
-                hover:border-gold-300
-                focus:outline-none focus:border-gold-500 focus:ring-4 focus:ring-gold-500/10
-                transition-all duration-200
-              "
-            >
-              <option value="">انتخاب کنید</option>
-              <option value="male">مرد</option>
-              <option value="female">زن</option>
-              <option value="other">سایر</option>
-            </select>
-          </div>
+          <BirthDatePicker
+            value={dateValue}
+            onChange={handleDateChange}
+            error={errors.birth_date}
+          />
+          <SelectField
+            label="جنسیت"
+            name="gender"
+            value={form.gender || ""}
+            onChange={changeHandler}
+          >
+            <option value="">انتخاب کنید</option>
+            <option value="male">مرد</option>
+            <option value="female">زن</option>
+            <option value="other">سایر</option>
+          </SelectField>
         </FormSection>
 
-        {/* ==================== اطلاعات فعالیت ==================== */}
+        {/* ==================== اطلاعات شغلی ==================== */}
         <FormSection
           index={2}
-          icon={PiBriefcase}
-          title="اطلاعات فعالیت"
-          description="اطلاعات کسب‌وکار و مجوزها"
+          icon={<PiBriefcase className="w-5 h-5" />}
+          title="اطلاعات شغلی"
+          description="سابقه و اطلاعات سازمانی"
         >
           <InputField
-            label="نام کسب‌وکار"
+            label="عنوان شغلی"
             name="business_name"
-            placeholder="اختیاری"
+            placeholder="مثلاً: مدیر سیستم"
             value={form.business_name || ""}
             onChange={changeHandler}
           />
           <InputField
-            label="شماره مجوز"
+            label="کد پرسنلی"
             name="license_number"
             placeholder="اختیاری"
             value={form.license_number || ""}
@@ -629,21 +396,14 @@ export default function AdminProfilePage() {
         {/* ==================== موقعیت جغرافیایی ==================== */}
         <FormSection
           index={3}
-          icon={PiMapPin}
+          icon={<PiMapPin className="w-5 h-5" />}
           title="موقعیت جغرافیایی"
-          description="استان و شهر محل سکونت"
+          description="استان و شهر محل سکونت خود را انتخاب کنید"
         >
-          <InputField
-            label="استان"
-            name="province"
-            value={form.province || ""}
+          <ProvinceCitySelector
+            form={form}
             onChange={changeHandler}
-          />
-          <InputField
-            label="شهر"
-            name="city"
-            value={form.city || ""}
-            onChange={changeHandler}
+            errors={errors}
           />
         </FormSection>
 
@@ -654,47 +414,20 @@ export default function AdminProfilePage() {
           transition={{ duration: 0.35, delay: 4 * 0.06 }}
           className="py-7 sm:py-8"
         >
-          <div className="flex items-start gap-3 pb-3 border-b border-slate-100 mb-5">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gold-400 to-gold-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm shadow-gold-500/25">
-              <PiFolderOpen className="w-5 h-5" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-[15px] font-bold text-slate-900">
-                مدارک و اسناد
-              </h3>
-              <p className="text-[12px] text-slate-500 mt-0.5">
-                هر خط یک لینک جداگانه وارد کنید
-              </p>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-[13px] font-medium text-slate-700 mb-1.5 flex items-center gap-1.5">
-              <PiNote className="w-3.5 h-3.5 text-gold-500" />
-              لینک مدارک
-            </label>
-            <textarea
-              name="documents"
-              value={form.documents?.join("\n") || ""}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  documents: e.target.value.split("\n"),
-                }))
+          <SectionTitle
+            icon={<PiFolderOpen className="w-5 h-5" />}
+            title="مدارک و اسناد"
+            description="کارت ملی، حکم انتصاب، مدارک تحصیلی و..."
+            badge="Upload"
+          />
+          <div className="mt-6">
+            <DocumentUploader
+              documents={form.documents || []}
+              onChange={(docs) =>
+                setForm((p) => ({ ...p, documents: docs }))
               }
-              dir="ltr"
-              rows={4}
-              placeholder={"https://example.com/doc1.pdf\nhttps://example.com/doc2.jpg"}
-              className="
-                w-full px-3.5 py-3
-                bg-white border border-slate-200 rounded-xl
-                text-[13.5px] text-slate-900 text-left
-                placeholder:text-slate-400
-                resize-none
-                hover:border-gold-300
-                focus:outline-none focus:border-gold-500 focus:ring-4 focus:ring-gold-500/10
-                transition-all duration-200
-              "
+              maxFiles={5}
+              maxSizeMB={5}
             />
           </div>
         </motion.section>
@@ -705,13 +438,15 @@ export default function AdminProfilePage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, delay: 5 * 0.06 }}
           className="
-            relative pt-6 mt-2
+            relative
+            pt-6 mt-2
             border-t border-slate-100
             flex flex-col-reverse sm:flex-row
             items-stretch sm:items-center
             justify-between gap-3
           "
         >
+          {/* نشانگر وضعیت */}
           <p className="text-xs text-center sm:text-right">
             <AnimatePresence mode="wait">
               {isDirty ? (
@@ -731,7 +466,7 @@ export default function AdminProfilePage() {
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -4 }}
-                  className="text-gold-700 inline-flex items-center gap-1.5"
+                  className="text-emerald-600 inline-flex items-center gap-1.5"
                 >
                   <PiCheck className="w-3.5 h-3.5" strokeWidth={3} />
                   همه تغییرات ذخیره شده است
@@ -740,7 +475,9 @@ export default function AdminProfilePage() {
             </AnimatePresence>
           </p>
 
+          {/* دکمه‌ها */}
           <div className="flex items-center gap-3">
+            {/* انصراف */}
             <button
               type="button"
               onClick={handleCancel}
@@ -749,8 +486,9 @@ export default function AdminProfilePage() {
                 flex-1 sm:flex-none
                 inline-flex items-center justify-center gap-2
                 px-5 py-2.5 rounded-xl
-                text-sm font-medium text-slate-700
-                bg-white border border-slate-200
+                text-sm font-medium
+                text-slate-700 bg-white
+                border border-slate-200
                 hover:bg-gold-50 hover:border-gold-300 hover:text-gold-700
                 focus:outline-none focus:ring-4 focus:ring-gold-500/15
                 disabled:opacity-50 disabled:cursor-not-allowed
@@ -762,6 +500,7 @@ export default function AdminProfilePage() {
               انصراف
             </button>
 
+            {/* ذخیره */}
             <button
               type="submit"
               disabled={loading || !isDirty}

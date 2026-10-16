@@ -115,7 +115,7 @@ const AdCard = memo(function AdCard({ ad, index, onDelete, onPause, onResume }) 
                     )}
                     <div className="min-w-0 flex-1">
                         <h3 className="text-[14px] font-bold text-slate-900 mb-1 line-clamp-2 group-hover:text-gold-700 transition-colors">{ad.title}</h3>
-                        <p className="text-[11.5px] text-slate-500 line-clamp-2 leading-relaxed">{ad.description}</p>
+                        <p className="text-[11.5px] text-slate-500 line-clamp-2 leading-relaxed">{ad.description.split(0,30)}...</p>
                     </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2 mb-4">

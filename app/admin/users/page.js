@@ -1,4 +1,4 @@
-// app/admin/users/page.jsx
+// app/admin/users/page.js
 "use client";
 
 import { useEffect, useState, useMemo, useCallback } from "react";
@@ -9,7 +9,6 @@ import {
   PiMapPin,
   PiEnvelopeSimple,
   PiPhone,
-  PiEye,
   PiTrash,
   PiPencilSimple,
   PiWarningCircle,
@@ -388,7 +387,6 @@ function UserCard({ user, index, onToggleClick, onEditClick, onDeleteClick }) {
         transition-all duration-300
       "
     >
-      {/* هدر */}
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -409,7 +407,6 @@ function UserCard({ user, index, onToggleClick, onEditClick, onDeleteClick }) {
         <StatusBadge active={user.is_active} />
       </div>
 
-      {/* اطلاعات */}
       <div className="space-y-2 pt-3 border-t border-slate-100">
         {user.email && (
           <div className="flex items-center gap-2 text-[12.5px] text-slate-600">
@@ -447,7 +444,6 @@ function UserCard({ user, index, onToggleClick, onEditClick, onDeleteClick }) {
         )}
       </div>
 
-      {/* اکشن‌ها */}
       <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-100">
         <button
           type="button"
@@ -632,7 +628,6 @@ export default function AdminUsersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchField, setSearchField] = useState("all");
 
-  /* ============ State مربوط به Modalها ============ */
   const [toggleTarget, setToggleTarget] = useState(null);
   const [toggleLoading, setToggleLoading] = useState(false);
 
@@ -649,6 +644,7 @@ export default function AdminUsersPage() {
     try {
       setLoading(true);
       const res = await axios.get("/api/admin/users", {
+        params: { limit: 1000 },
         withCredentials: true,
       });
       setUsers(res.data.users || []);
@@ -670,7 +666,7 @@ export default function AdminUsersPage() {
   }, [loadUsers]);
 
   /* ============================================================
-     Toggle Active Handlers
+     Toggle Active
      ============================================================ */
   const openToggleModal = (user) => {
     setToggleTarget(user);
@@ -696,7 +692,6 @@ export default function AdminUsersPage() {
         { withCredentials: true }
       );
 
-      // به‌روزرسانی خوش‌بینانه
       setUsers((prev) =>
         prev.map((u) =>
           u._id === toggleTarget._id
@@ -722,7 +717,7 @@ export default function AdminUsersPage() {
   };
 
   /* ============================================================
-     Edit Handlers
+     Edit
      ============================================================ */
   const openEditModal = (user) => {
     setEditTarget(user);
@@ -744,7 +739,6 @@ export default function AdminUsersPage() {
         { withCredentials: true }
       );
 
-      // به‌روزرسانی لیست با اطلاعات جدید
       setUsers((prev) =>
         prev.map((u) =>
           u._id === editTarget._id
@@ -766,7 +760,7 @@ export default function AdminUsersPage() {
   };
 
   /* ============================================================
-     Delete Handlers
+     Delete
      ============================================================ */
   const openDeleteModal = (user) => {
     setDeleteTarget(user);
@@ -787,7 +781,6 @@ export default function AdminUsersPage() {
         { withCredentials: true }
       );
 
-      // حذف از لیست local
       setUsers((prev) =>
         prev.filter((u) => u._id !== deleteTarget._id)
       );
@@ -987,7 +980,6 @@ export default function AdminUsersPage() {
         transition={{ duration: 0.35, delay: 0.05 }}
         className="mb-5 space-y-4"
       >
-        {/* Role Tabs */}
         <div className="flex flex-wrap gap-2">
           {roleButtons.map((btn) => {
             const isActive = roleFilter === btn.key;
@@ -1015,7 +1007,6 @@ export default function AdminUsersPage() {
           })}
         </div>
 
-        {/* Search */}
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
             <PiMagnifyingGlass className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -1083,7 +1074,6 @@ export default function AdminUsersPage() {
         />
       ) : (
         <>
-          {/* Table Controls */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-2 text-[12.5px] text-slate-600">
               <span>نمایش</span>
@@ -1133,7 +1123,7 @@ export default function AdminUsersPage() {
             </p>
           </div>
 
-          {/* ==================== Desktop Table ==================== */}
+          {/* Desktop Table */}
           <div className="hidden md:block bg-white rounded-2xl ring-1 ring-slate-100 shadow-[0_1px_2px_rgba(15,23,42,0.04)] overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[700px]">
@@ -1179,7 +1169,7 @@ export default function AdminUsersPage() {
             </div>
           </div>
 
-          {/* ==================== Mobile Cards ==================== */}
+          {/* Mobile Cards */}
           <div className="md:hidden space-y-3">
             <AnimatePresence>
               {paginatedUsers.map((user, index) => (
@@ -1195,7 +1185,7 @@ export default function AdminUsersPage() {
             </AnimatePresence>
           </div>
 
-          {/* ==================== Pagination ==================== */}
+          {/* Pagination */}
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -1204,7 +1194,7 @@ export default function AdminUsersPage() {
         </>
       )}
 
-      {/* ==================== Modalها ==================== */}
+      {/* Modals */}
       <ConfirmStatusModal
         isOpen={!!toggleTarget}
         onClose={closeToggleModal}

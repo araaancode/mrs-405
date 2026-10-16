@@ -99,11 +99,11 @@ export default function AdDetailPage() {
                             ارسال برای تأیید
                         </button>
                     )}
-                    {canEdit && (
+                    {/* {canEdit && (
                         <Link href={`/hall_owner/ads/${ad._id}/edit`} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-[12.5px] font-bold text-gold-700 bg-gold-50 ring-1 ring-gold-100 hover:bg-gold-500 hover:text-white transition-all">
                             <PiFloppyDisk className="w-4 h-4" /> ویرایش
                         </Link>
-                    )}
+                    )} */}
                 </div>
             </div>
 
@@ -170,10 +170,10 @@ export default function AdDetailPage() {
             <div className="bg-white rounded-2xl ring-1 ring-slate-100 p-5 space-y-4">
                 <h2 className="text-[13px] font-bold text-slate-900">اطلاعات تبلیغ</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[12.5px]">
-                    <div>
+                    {/* <div>
                         <span className="text-slate-500">توضیحات:</span>
-                        <p className="text-slate-800 mt-1 leading-relaxed">{ad.description}</p>
-                    </div>
+                        <p className="text-slate-800 mt-1 leading-relaxed">{ad.description.split(0,50)}</p>
+                    </div> */}
                     <div>
                         <span className="text-slate-500">نوع:</span>
                         <p className="text-slate-800 mt-1 font-bold">{ad.ad_type}</p>

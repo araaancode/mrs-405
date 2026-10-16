@@ -7,6 +7,9 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { PiCamera, PiCircleNotch, PiTrash } from "react-icons/pi";
 
+// ✅ ایمپورت swal
+import { swal } from "@/lib/swal";
+
 /* ============================================================
    Toast Options — یک بار در ماژول
    ============================================================ */
@@ -157,11 +160,50 @@ export function AvatarUploader({ currentAvatar, onUploaded, name = "" }) {
         [handleFile]
     );
 
-    const handleRemove = useCallback(() => {
-        if (!confirm("آواتار حذف شود؟")) return;
+    /* ============================================================
+       ✅ handleRemove — جایگزینی confirm با swal.confirm
+       ============================================================ */
+   const handleRemove = useCallback(async () => {
+    console.log("🗑️ [AvatarUploader] handleRemove called");
+
+    // ۱. تأیید از کاربر
+    const confirmed = await swal.confirm({
+        title: "حذف آواتار؟",
+        text: "آیا مطمئن هستید که می‌خواهید تصویر پروفایل خود را حذف کنید؟",
+        confirmText: "بله، حذف کن",
+        cancelText: "انصراف",
+        icon: "warning",
+    });
+
+    console.log("✅ [AvatarUploader] confirmed:", confirmed);
+
+    if (!confirmed) return;
+
+    try {
+        setUploading(true);
+
+        console.log("📤 [AvatarUploader] Sending DELETE request...");
+
+        const response = await axios.delete("/api/user/avatar");
+
+        console.log("📥 [AvatarUploader] Response:", response.data);
+
+        // ✅ حالا UI را آپدیت کن
         setPreview(null);
         onUploaded?.(null);
-    }, [onUploaded]);
+
+        // swal.success("آواتار با موفقیت حذف شد");
+    } catch (err) {
+        console.error("❌ [AvatarUploader] Error:", err);
+        console.error("❌ [AvatarUploader] Response data:", err.response?.data);
+
+        swal.error(
+            err.response?.data?.message || "خطا در حذف آواتار"
+        );
+    } finally {
+        setUploading(false);
+    }
+}, [onUploaded]);
 
     /* تشخیص نوع پیش‌نمایش برای Image */
     const showImage =

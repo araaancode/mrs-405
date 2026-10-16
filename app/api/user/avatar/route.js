@@ -1,3 +1,4 @@
+// app/api/user/avatar/route.js
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { writeFile, mkdir, unlink } from "fs/promises";
@@ -34,7 +35,6 @@ export async function POST(req) {
         const formData = await req.formData();
         const file = formData.get("avatar");
 
-        /* ---------- اعتبارسنجی ---------- */
         if (!file || typeof file === "string") {
             return Response.json(
                 { message: "فایلی ارسال نشده است" },
@@ -56,7 +56,6 @@ export async function POST(req) {
             );
         }
 
-        /* ---------- ذخیره فایل ---------- */
         await mkdir(UPLOAD_DIR, { recursive: true });
 
         const ext = EXT_MAP[file.type];
@@ -68,7 +67,6 @@ export async function POST(req) {
 
         const avatarUrl = `/uploads/avatars/${filename}`;
 
-        /* ---------- حذف آواتار قبلی ---------- */
         const currentUser = await User.findById(session.user.id)
             .select("avatar")
             .lean();
@@ -78,7 +76,6 @@ export async function POST(req) {
             await unlink(oldPath).catch(() => {});
         }
 
-        /* ---------- ذخیره در دیتابیس ---------- */
         const user = await User.findByIdAndUpdate(
             session.user.id,
             { $set: { avatar: avatarUrl } },
@@ -96,6 +93,74 @@ export async function POST(req) {
         console.error("[POST /api/user/avatar]", err);
         return Response.json(
             { message: "خطا در آپلود آواتار" },
+            { status: 500 }
+        );
+    }
+}
+
+/* ============================================================
+   DELETE — حذف آواتار
+   ============================================================ */
+export async function DELETE(req) {
+    console.log("🗑️ [DELETE /api/user/avatar] Request received");
+
+    try {
+        await dbConnect();
+        console.log("✅ [DELETE] DB connected");
+
+        const session = await getServerSession(authOptions);
+        console.log("👤 [DELETE] Session user id:", session?.user?.id);
+
+        if (!session?.user?.id) {
+            return Response.json({ message: "Unauthorized" }, { status: 401 });
+        }
+
+        const currentUser = await User.findById(session.user.id)
+            .select("avatar")
+            .lean();
+
+        console.log("🖼️ [DELETE] Current avatar:", currentUser?.avatar);
+
+        if (!currentUser) {
+            return Response.json(
+                { message: "کاربر یافت نشد" },
+                { status: 404 }
+            );
+        }
+
+        // حذف فایل فیزیکی
+        if (currentUser?.avatar?.startsWith("/uploads/avatars/")) {
+            const filePath = join(process.cwd(), "public", currentUser.avatar);
+            console.log("🗂️ [DELETE] Deleting file:", filePath);
+
+            await unlink(filePath).catch((err) => {
+                console.warn(
+                    "[DELETE] فایل آواتار پیدا نشد:",
+                    err.message
+                );
+            });
+        }
+
+        // حذف از دیتابیس
+        const user = await User.findByIdAndUpdate(
+            session.user.id,
+            { $set: { avatar: null } },
+            { new: true }
+        )
+            .select("-password -otp_code -otp_expires")
+            .lean();
+
+        console.log("✅ [DELETE] Avatar removed successfully");
+
+        return Response.json({
+            message: "آواتار با موفقیت حذف شد",
+            avatar: null,
+            user,
+        });
+    } catch (err) {
+        console.error("❌ [DELETE /api/user/avatar] error:", err);
+        return Response.json(
+            { message: "خطا در حذف آواتار" },
             { status: 500 }
         );
     }

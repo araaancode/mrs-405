@@ -286,11 +286,7 @@ export default function AdminLayout({ children }) {
                                                     icon: PiListChecks,
                                                     label: "همه تالارها",
                                                 },
-                                                {
-                                                    href: "/admin/halls/create",
-                                                    icon: PiPlusCircle,
-                                                    label: "ثبت تالار جدید",
-                                                },
+                                               
                                             ]}
                                         />
 

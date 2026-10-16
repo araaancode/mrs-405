@@ -25,11 +25,12 @@ import { DocumentUploader } from "@/components/ui/DocumentUploader";
 import { ProfileHeader } from "@/components/ui/ProfileHeader";
 import { ProvinceCitySelector } from "@/components/ui/ProvinceCitySelector";
 import { AvatarUploader } from "@/components/ui/AvatarUploader";
-import { notify } from "@/lib/toast";
+
+// ✅ جایگزینی notify با swal
+import { swal } from "@/lib/swal";
 
 /* ============================================================
-   Whitelist — فیلدهایی که به API فرستاده می‌شوند
-   (آواتار جداگانه آپلود می‌شود)
+   EDITABLE_FIELDS
    ============================================================ */
 const EDITABLE_FIELDS = [
     "full_name",
@@ -137,9 +138,10 @@ export default function UserProfilePage() {
             .catch((err) => {
                 if (cancelled) return;
                 if (err.response?.status === 401) {
-                    notify.error("لطفاً دوباره وارد شوید");
+                    // ✅ استفاده از swal
+                    swal.error("لطفاً دوباره وارد شوید", "دسترسی غیرمجاز");
                 } else {
-                    notify.error("خطا در دریافت اطلاعات پروفایل");
+                    swal.error("خطا در دریافت اطلاعات پروفایل");
                 }
                 setForm(session.user);
             })
@@ -153,7 +155,7 @@ export default function UserProfilePage() {
     }, [session]);
 
     /* ============================================================
-       تشخیص تغییرات — آواتار نادیده گرفته می‌شود
+       isDirty
        ============================================================ */
     const isDirty = useMemo(() => {
         const { avatar: _a, ...rest } = form || {};
@@ -187,11 +189,12 @@ export default function UserProfilePage() {
         }
 
         if (age < 18) {
-            notify.error("سن باید حداقل ۱۸ سال باشد");
+            // ✅ استفاده از swal
+            swal.warning("سن باید حداقل ۱۸ سال باشد", "تاریخ نامعتبر");
             return;
         }
         if (age > 100) {
-            notify.error("سن نمی‌تواند بیشتر از ۱۰۰ سال باشد");
+            swal.warning("سن نمی‌تواند بیشتر از ۱۰۰ سال باشد", "تاریخ نامعتبر");
             return;
         }
 
@@ -233,12 +236,14 @@ export default function UserProfilePage() {
         async (ev) => {
             ev.preventDefault();
             if (!validate()) {
-                notify.error("خطا در فرم");
+                // ✅ استفاده از swal
+                swal.error("لطفاً خطاهای فرم را برطرف کنید", "فرم نامعتبر");
                 return;
             }
 
             setLoading(true);
-            const toastId = notify.loading("در حال ذخیره تغییرات...");
+            // ✅ استفاده از swal برای لودینگ
+            swal.loading("در حال ذخیره تغییرات...");
 
             try {
                 const payload = {};
@@ -255,23 +260,19 @@ export default function UserProfilePage() {
                 setForm(merged);
                 setOriginalForm(merged);
 
-                notify.update(toastId, {
-                    message: "پروفایل با موفقیت به‌روزرسانی شد",
-                    type: "success",
-                    duration: 10000,
-                });
+                // ✅ بستن لودینگ + نمایش موفقیت
+                swal.close();
+                swal.success("پروفایل با موفقیت به‌روزرسانی شد");
             } catch (error) {
                 const fieldErrors = error.response?.data?.errors;
                 if (fieldErrors && typeof fieldErrors === "object") {
                     setErrors((prev) => ({ ...prev, ...fieldErrors }));
                 }
-                notify.update(toastId, {
-                    message:
-                        error.response?.data?.message ||
-                        "خطا در ارتباط با سرور",
-                    type: "error",
-                    duration: 15000,
-                });
+                // ✅ بستن لودینگ + نمایش خطا
+                swal.close();
+                swal.error(
+                    error.response?.data?.message || "خطا در ارتباط با سرور"
+                );
             } finally {
                 setLoading(false);
             }
@@ -279,7 +280,21 @@ export default function UserProfilePage() {
         [form, validate]
     );
 
-    const handleCancel = useCallback(() => {
+    /* ============================================================
+       Cancel — با تأییدیه زیبا
+       ============================================================ */
+    const handleCancel = useCallback(async () => {
+        // ✅ نمایش دیالوگ تأیید زیبا
+        const confirmed = await swal.confirm({
+            title: "لغو تغییرات؟",
+            text: "تمام تغییرات ذخیره نشده از بین خواهند رفت",
+            confirmText: "بله، لغو کن",
+            cancelText: "انصراف",
+            icon: "warning",
+        });
+
+        if (!confirmed) return;
+
         setForm(originalForm);
         setErrors({});
 
@@ -293,11 +308,11 @@ export default function UserProfilePage() {
             setDateValue(null);
         }
 
-        notify.info("تغییرات لغو شد");
+        swal.info("تغییرات لغو شد");
     }, [originalForm]);
 
     /* ============================================================
-       آپلود آواتار — همگام‌سازی form و originalForm
+       آپلود آواتار
        ============================================================ */
     const handleAvatarUploaded = useCallback((url) => {
         setForm((p) => ({ ...p, avatar: url }));
@@ -334,14 +349,9 @@ export default function UserProfilePage() {
        ============================================================ */
     return (
         <div dir="rtl" className="w-full">
-            {/* ==================== Header ==================== */}
             <ProfileHeader form={form} isDirty={isDirty} />
 
-            <form
-                onSubmit={submitHandler}
-                className="space-y-0"
-                noValidate
-            >
+            <form onSubmit={submitHandler} className="space-y-0" noValidate>
                 {/* ==================== آواتار ==================== */}
                 <FormSection
                     index={0}
@@ -543,10 +553,7 @@ export default function UserProfilePage() {
                                     exit={{ opacity: 0, y: -4 }}
                                     className="text-emerald-600 inline-flex items-center gap-1.5"
                                 >
-                                    <PiCheck
-                                        className="w-3.5 h-3.5"
-                                        strokeWidth={3}
-                                    />
+                                    <PiCheck className="w-3.5 h-3.5" strokeWidth={3} />
                                     همه تغییرات ذخیره شده است
                                 </motion.span>
                             )}
