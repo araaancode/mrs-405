@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 // app/api/auth/user/register/route.js
 import connectDB from "@/lib/db";
 import User from "@/models/User";

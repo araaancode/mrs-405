@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 // app/api/hall_owner/tickets/[id]/route.js
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";

@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 // app/api/ads/[id]/track/route.js
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";

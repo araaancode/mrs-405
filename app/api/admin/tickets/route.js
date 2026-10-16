@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 // app/api/admin/tickets/route.js
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";

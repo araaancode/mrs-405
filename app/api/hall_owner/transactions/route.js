@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 // app/api/hall_owner/transactions/route.js
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";

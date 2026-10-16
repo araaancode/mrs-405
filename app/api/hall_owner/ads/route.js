@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 // app/api/hall_owner/ads/route.js
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";

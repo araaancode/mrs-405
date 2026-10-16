@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 // app/api/user/hall_reservations/route.js
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";

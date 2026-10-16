@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 // app/api/halls/search/route.js (یا هر مسیری که داری)
 import { NextResponse } from 'next/server'
 import connectDB from '@/lib/db'

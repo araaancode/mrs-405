@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 // app/api/upload/property-images/route.js
 
 import { NextResponse } from 'next/server';

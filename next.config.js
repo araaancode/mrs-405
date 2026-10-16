@@ -1,6 +1,8 @@
 // next.config.js
 /** @type {import('next').NextConfig} */
 
+const isProd = process.env.NODE_ENV === "production";
+
 const nextConfig = {
     /* ============================================================
        1. بهینه‌سازی باندل
@@ -18,6 +20,8 @@ const nextConfig = {
             "@headlessui/react",
             "@heroicons/react",
         ],
+        // ⚠️ نیاز به نصب پکیج critters دارد:
+        // npm i -D critters
         optimizeCss: true,
     },
 
@@ -28,34 +32,58 @@ const nextConfig = {
         formats: ["image/avif", "image/webp"],
         deviceSizes: [360, 480, 640, 768, 1024, 1280, 1536, 1920],
         imageSizes: [16, 32, 48, 64, 96, 128, 180, 256, 384],
-        minimumCacheTTL: 60 * 60 * 24 * 30,
+        minimumCacheTTL: 60 * 60 * 24 * 30, // 30 روز
 
-        // 🔥 برای SVG و data URLs
+        // برای SVG و data URLs
         dangerouslyAllowSVG: true,
         contentDispositionType: "attachment",
-        contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+        contentSecurityPolicy:
+            "default-src 'self'; script-src 'none'; sandbox;",
 
-        // 🔥 دامنه‌های مجاز
+        // دامنه‌های مجاز برای تصاویر ریموت
         remotePatterns: [
             // Vercel Blob
-            { protocol: "https", hostname: "*.public.blob.vercel-storage.com" },
+            {
+                protocol: "https",
+                hostname: "*.public.blob.vercel-storage.com",
+            },
             // Cloudinary
-            { protocol: "https", hostname: "res.cloudinary.com" },
+            {
+                protocol: "https",
+                hostname: "res.cloudinary.com",
+            },
             // AWS S3
-            { protocol: "https", hostname: "*.s3.amazonaws.com" },
-            { protocol: "https", hostname: "*.s3.*.amazonaws.com" },
+            {
+                protocol: "https",
+                hostname: "*.s3.amazonaws.com",
+            },
+            {
+                protocol: "https",
+                hostname: "*.s3.*.amazonaws.com",
+            },
             // Supabase Storage
-            { protocol: "https", hostname: "*.supabase.co" },
-            // 🔥 توسعه محلی — برای بک‌اند روی localhost
-            { protocol: "http", hostname: "localhost" },
-            { protocol: "http", hostname: "127.0.0.1" },
-            // 🔥 اگه روی شبکه محلی تسته
-            { protocol: "http", hostname: "192.168.*.*" },
-            // 🔥 اگه بک‌اند از IP مستقیم استفاده می‌کنه
-            { protocol: "https", hostname: "**" }, // موقت — برای پروداکشن حذف کن
+            {
+                protocol: "https",
+                hostname: "*.supabase.co",
+            },
+
+            // 🔥 فقط در محیط توسعه — برای بک‌اند روی localhost
+            ...(!isProd
+                ? [
+                      {
+                          protocol: "http",
+                          hostname: "localhost",
+                      },
+                      {
+                          protocol: "http",
+                          hostname: "127.0.0.1",
+                      },
+                      // اگر روی شبکه محلی تست می‌کنی، IP واقعی خودت را اینجا بگذار:
+                      // { protocol: "http", hostname: "192.168.1.10" },
+                  ]
+                : []),
         ],
 
-        // 🔥 برای تصاویری که از بک‌اند میان و ممکنه مشکل داشته باشن
         unoptimized: false,
     },
 
@@ -63,10 +91,9 @@ const nextConfig = {
        3. کامپایلر
        ============================================================ */
     compiler: {
-        removeConsole:
-            process.env.NODE_ENV === "production"
-                ? { exclude: ["error", "warn"] }
-                : false,
+        removeConsole: isProd
+            ? { exclude: ["error", "warn"] }
+            : false,
     },
 
     /* ============================================================
@@ -100,15 +127,7 @@ const nextConfig = {
                     },
                 ],
             },
-            {
-                source: "/_next/static/:path*",
-                headers: [
-                    {
-                        key: "Cache-Control",
-                        value: "public, max-age=31536000, immutable",
-                    },
-                ],
-            },
+          
         ];
     },
 
