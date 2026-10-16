@@ -747,9 +747,10 @@
 }
 
 /* ============================================
-   React Toastify
+   React Toastify — راه‌حل قطعی با toastClassName
    ============================================ */
 
+/* ۱. حذف کامل حاشیه و سایه از کانتینر اصلی */
 .Toastify__toast-container {
   font-family: 'IranianSans', system-ui, sans-serif !important;
   direction: rtl !important;
@@ -767,29 +768,31 @@
   bottom: auto !important;
 }
 
-.Toastify__toast,
-.Toastify__toast-theme--light,
-.Toastify__toast-theme--dark,
-.Toastify__toast-theme--colored {
-  font-family: 'IranianSans', system-ui, sans-serif !important;
-  direction: rtl !important;
-  text-align: right !important;
+/* ۲. کلاس سفارشی که به toastClassName داده شده است */
+/* این کلاس با !important تمام استایل‌های اینلاین کتابخانه را بازنویسی می‌کند */
+.custom-toast-no-border {
+  border: none !important;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -moz-box-shadow: none !important;
+  outline: none !important;
+  filter: none !important;
+  text-shadow: none !important;
+  background: #ffffff !important;
   border-radius: 14px !important;
   padding: 14px 18px !important;
   min-height: 56px !important;
   font-size: 13.5px !important;
   font-weight: 500 !important;
   margin-bottom: 10px !important;
-  background: #ffffff !important;
-  color: #1e293b !important;
   overflow: hidden !important;
-  box-shadow: none !important;
-  -webkit-box-shadow: none !important;
-  -moz-box-shadow: none !important;
-  filter: none !important;
-  text-shadow: none !important;
+  font-family: 'IranianSans', system-ui, sans-serif !important;
+  direction: rtl !important;
+  text-align: right !important;
+  color: #1e293b !important;
 }
 
+/* ۳. حذف سایه از بدنه توست */
 .Toastify__toast-body {
   font-family: 'IranianSans', system-ui, sans-serif !important;
   direction: rtl !important;
@@ -803,14 +806,16 @@
   box-shadow: none !important;
   filter: none !important;
   text-shadow: none !important;
+  border: none !important;
+  outline: none !important;
 }
 
+/* ۴. استایل‌های اختصاصی هر نوع توست (با حفظ عدم وجود سایه) */
 .Toastify__toast--success {
   background: #ffffff !important;
   color: #065f46 !important;
   border: 2px solid #10b981 !important;
   box-shadow: none !important;
-  filter: none !important;
 }
 
 .Toastify__toast--error {
@@ -818,7 +823,6 @@
   color: #991b1b !important;
   border: 2px solid #ef4444 !important;
   box-shadow: none !important;
-  filter: none !important;
 }
 
 .Toastify__toast--info {
@@ -826,7 +830,6 @@
   color: #1e40af !important;
   border: 2px solid #3b82f6 !important;
   box-shadow: none !important;
-  filter: none !important;
 }
 
 .Toastify__toast--warning {
@@ -834,7 +837,6 @@
   color: #92400e !important;
   border: 2px solid #f59e0b !important;
   box-shadow: none !important;
-  filter: none !important;
 }
 
 .Toastify__toast--loading {
@@ -842,7 +844,6 @@
   color: #475569 !important;
   border: 2px solid #cbd5e1 !important;
   box-shadow: none !important;
-  filter: none !important;
 }
 
 .Toastify__toast--default {
@@ -850,9 +851,9 @@
   color: #1e293b !important;
   border: 2px solid #e2e8f0 !important;
   box-shadow: none !important;
-  filter: none !important;
 }
 
+/* ۵. آیکون‌ها و نوار پیشرفت */
 .Toastify__toast-icon {
   margin-left: 10px !important;
   margin-right: 0 !important;
@@ -887,6 +888,7 @@
 .Toastify__progress-bar--warning { background: linear-gradient(to left, #f59e0b, #d97706) !important; }
 .Toastify__progress-bar--default { background: linear-gradient(to left, #94a3b8, #64748b) !important; }
 
+/* ۶. دکمه بستن */
 .Toastify__close-button {
   color: currentColor !important;
   opacity: 0.45 !important;
@@ -894,28 +896,16 @@
   align-self: center !important;
   margin-inline-start: 4px !important;
   margin-inline-end: 0 !important;
+  border: none !important;
+  outline: none !important;
 }
 .Toastify__close-button:hover { opacity: 1 !important; }
 
+/* ۷. انیمیشن‌ها */
 .Toastify__slide-enter--top-left,
 .Toastify__slide-exit--top-left { animation-duration: 0.3s !important; }
 
-.custom-toast {
-  box-shadow: none !important;
-  -webkit-box-shadow: none !important;
-  filter: none !important;
-  background: #ffffff !important;
-  border: 2px solid #e2e8f0 !important;
-}
-
-.custom-toast-body {
-  font-family: 'IranianSans', system-ui, sans-serif !important;
-  direction: rtl !important;
-  text-align: right !important;
-  font-size: 13.5px !important;
-  font-weight: 500 !important;
-}
-
+/* ۸. واکنش‌گرایی (Responsive) */
 @media (max-width: 480px) {
   .Toastify__toast-container,
   .Toastify__toast-container--top-left {
@@ -924,7 +914,7 @@
     right: 12px !important;
     top: 12px !important;
   }
-  .Toastify__toast {
+  .custom-toast-no-border {
     padding: 12px 14px !important;
     font-size: 13px !important;
     border-radius: 12px !important;

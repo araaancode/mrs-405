@@ -18,11 +18,14 @@ export default function ToastProvider() {
             pauseOnHover={true}
             theme="light"
             limit={5}
-            toastClassName="custom-toast"
+            // ✅ استفاده از کلاس سفارشی برای حذف قاب و سایه
+            toastClassName="custom-toast-no-border"
             bodyClassName="custom-toast-body"
-            // ✅ حذف سایه به‌صورت inline
+            // ✅ حذف سایه، حاشیه و خط دور به صورت inline
             style={{
                 boxShadow: "none",
+                border: "none",
+                outline: "none",
             }}
         />
     );

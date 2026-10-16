@@ -8,8 +8,7 @@ import DatePicker from "react-multi-date-picker";
 import persian from "react-date-object/calendars/persian";
 import persian_fa from "react-date-object/locales/persian_fa";
 import "react-multi-date-picker/styles/colors/green.css";
-import { toast, ToastContainer } from "react-toastify";
-// import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-toastify"; // ✅ ToastContainer حذف شد
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
@@ -60,8 +59,8 @@ function isRemote(url) {
 }
 
 /* ============================================================
-   Toast Options — یک بار در ماژول
-   موقعیت: چپ-بالا | RTL | فونت IranianSans
+   Toast Options — ساده‌شده
+   استایل‌دهی در ToastProvider سراسری انجام می‌شود
    ============================================================ */
 const TOAST_OPTIONS = {
     position: "top-left",
@@ -73,20 +72,6 @@ const TOAST_OPTIONS = {
     progress: undefined,
     rtl: true,
     theme: "light",
-    style: {
-        fontFamily: "'IranianSans', system-ui, sans-serif",
-        direction: "rtl",
-        textAlign: "right",
-        borderRadius: "14px",
-        padding: "14px 18px",
-        minHeight: "56px",
-        fontSize: "13.5px",
-        fontWeight: 500,
-        background: "#ffffff",
-        color: "#1e293b",
-        boxShadow:
-            "0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.06)",
-    },
 };
 
 /* ============================================================
@@ -567,7 +552,7 @@ export default function HallDetailsPage({ params }) {
         const gregorianEnd = convertToGregorian(endDate);
 
         if (!gregorianStart || !gregorianEnd || !guests) {
-            toast.error("لطفاً تمام فیلدهای الزامی را پر کنید", TOAST_OPTIONS);
+            toast.error("لطفا تمام فیلدهای الزامی را پر کنید", TOAST_OPTIONS);
             return;
         }
 
@@ -661,44 +646,37 @@ export default function HallDetailsPage({ params }) {
        Loading / Not Found
        ============================================================ */
     if (loading || isLoadingSession) {
-        return (
-            <>
-                <ToastContainer {...TOAST_OPTIONS} />
-                <Loading />
-            </>
-        );
+        // ✅ ToastContainer حذف شد
+        return <Loading />;
     }
 
     if (!hall) {
+        // ✅ ToastContainer حذف شد
         return (
-            <>
-                <ToastContainer {...TOAST_OPTIONS} />
-                <div className="flex flex-col items-center justify-center min-h-[60vh] py-20 px-4 text-center">
-                    <div className="w-24 h-24 bg-gradient-to-br from-gold-50 to-gold-100 rounded-3xl flex items-center justify-center mb-6 ring-1 ring-gold-100">
-                        <PiBuildings className="w-12 h-12 text-gold-500" />
-                    </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-2">
-                        تالار یافت نشد
-                    </h3>
-                    <p className="text-slate-500 text-sm mb-6">
-                        تالار مورد نظر وجود ندارد یا حذف شده است
-                    </p>
-                    <Link
-                        href="/halls"
-                        className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-b from-gold-400 to-gold-600 hover:from-gold-500 hover:to-gold-700 shadow-md shadow-gold-500/25 hover:shadow-lg hover:shadow-gold-500/40 transition-all duration-300"
-                    >
-                        <PiArrowLeft className="w-4 h-4" />
-                        بازگشت به لیست تالارها
-                    </Link>
+            <div className="flex flex-col items-center justify-center min-h-[60vh] py-20 px-4 text-center">
+                <div className="w-24 h-24 bg-gradient-to-br from-gold-50 to-gold-100 rounded-3xl flex items-center justify-center mb-6 ring-1 ring-gold-100">
+                    <PiBuildings className="w-12 h-12 text-gold-500" />
                 </div>
-            </>
+                <h3 className="text-xl font-bold text-slate-900 mb-2">
+                    تالار یافت نشد
+                </h3>
+                <p className="text-slate-500 text-sm mb-6">
+                    تالار مورد نظر وجود ندارد یا حذف شده است
+                </p>
+                <Link
+                    href="/halls"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-b from-gold-400 to-gold-600 hover:from-gold-500 hover:to-gold-700 shadow-md shadow-gold-500/25 hover:shadow-lg hover:shadow-gold-500/40 transition-all duration-300"
+                >
+                    <PiArrowLeft className="w-4 h-4" />
+                    بازگشت به لیست تالارها
+                </Link>
+            </div>
         );
     }
 
     return (
         <>
-            <ToastContainer {...TOAST_OPTIONS} />
-
+            {/* ✅ ToastContainer حذف شد */}
             <div className="min-h-screen bg-gradient-to-br from-[#FDFCF9] via-[#FAF8F2] to-[#F7F3E8] pt-24 pb-12">
                 <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
                     {/* Breadcrumb */}
