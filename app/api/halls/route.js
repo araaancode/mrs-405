@@ -4,6 +4,39 @@ import connectDB from '@/lib/db'
 import Hall from '@/models/Hall'
 
 /* ============================================================
+   نقشه slug → نام فارسی شهر
+   ============================================================ */
+const CITY_SLUG_MAP = {
+    tehran: "تهران",
+    isfahan: "اصفهان",
+    shiraz: "شیراز",
+    mashhad: "مشهد",
+    tabriz: "تبریز",
+    kish: "کیش",
+    rasht: "رشت",
+    kerman: "کرمان",
+    kashan: "کاشان",
+    ramsar: "رامسر",
+    anzali: "بندر انزلی",
+    qeshm: "قشم",
+    ahvaz: "اهواز",
+    babol: "بابل",
+    chalus: "چالوس",
+    karaj: "کرج",
+    savadkoh: "سوادکوه",
+};
+
+/**
+ * اگر ورودی slug بود، به نام فارسی تبدیل کن
+ * در غیر این صورت، همان مقدار را برگردان
+ */
+function resolveCityInput(input) {
+    if (!input) return input;
+    const normalized = String(input).trim().toLowerCase();
+    return CITY_SLUG_MAP[normalized] || input;
+}
+
+/* ============================================================
    Helpers
    ============================================================ */
 function escapeRegex(str) {
@@ -102,9 +135,10 @@ export async function GET(req) {
             if (cond) conditions.push(cond)
         }
 
-        // city — این مهم‌ترین فیلتره که قبلاً کار نمی‌کرد
+        // city — پشتیبانی از slug و نام فارسی
         if (city && city.trim()) {
-            const cond = buildFieldCondition('city', city)
+            const resolvedCity = resolveCityInput(city)
+            const cond = buildFieldCondition('city', resolvedCity)
             if (cond) conditions.push(cond)
         }
 

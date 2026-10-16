@@ -77,7 +77,7 @@ const CityCard = memo(function CityCard({ city, index }) {
 
     return (
         <Link
-            href={`/halls/city/${city.slug}`}
+            href={`/halls?city=${encodeURIComponent(city.name)}`}
             aria-label={`مشاهده ${faNum(city.propertyCount)} تالار در ${city.name}`}
             className="
                 group relative block
