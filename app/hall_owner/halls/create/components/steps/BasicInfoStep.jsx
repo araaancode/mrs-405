@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import dynamic from "next/dynamic";
 import { useFormContext } from "react-hook-form";
 import {
     PiBuildings,
@@ -8,19 +9,39 @@ import {
     PiPhone,
     PiEnvelopeSimple,
 } from "react-icons/pi";
+
 import FormSection from "../ui/FormSection";
 import InputField from "../ui/InputField";
 import SearchableSelect from "../ui/SearchableSelect";
-import LocationPicker from "@/components/ui/LocationPicker";
 import { IRAN_PROVINCES } from "@/lib/iranProvinces";
+
+/* ============================================================
+   ✅ LocationPicker فقط سمت کلاینت لود می‌شه — بدون SSR
+   این کار:
+   - از hydration mismatch جلوگیری می‌کنه
+   - از خطای "Map container is already initialized" جلوگیری می‌کنه
+   ============================================================ */
+const LocationPicker = dynamic(
+    () => import("@/components/ui/LocationPicker"),
+    {
+        ssr: false,
+        loading: () => (
+            <div className="h-[320px] w-full rounded-xl bg-slate-100 ring-1 ring-slate-200 flex flex-col items-center justify-center gap-2">
+                <span className="w-6 h-6 border-2 border-gold-500 border-t-transparent rounded-full animate-spin" />
+                <span className="text-sm text-slate-400">
+                    در حال بارگذاری نقشه…
+                </span>
+            </div>
+        ),
+    }
+);
 
 /* ============================================================
    BasicInfoStep
    ============================================================ */
 export default function BasicInfoStep() {
     const { setValue, watch } = useFormContext();
-    console.log("🔵 BasicInfoStep RENDERED — with LocationPicker");
-console.log("   lat:", watch("lat"), "lng:", watch("lng"));
+
     const selectedProvince = watch("province") || "";
 
     /** لیست استان‌ها — فقط یک بار محاسبه */
@@ -129,9 +150,8 @@ console.log("   lat:", watch("lat"), "lng:", watch("lng"));
                         </div>
                     </div>
 
-                <div id="map" className="bg-red">
-                  <LocationPicker />
-                </div>
+                    {/* ✅ LocationPicker خودش container می‌سازه — بدون wrapper اضافی */}
+                    <LocationPicker />
                 </div>
             </div>
         </FormSection>

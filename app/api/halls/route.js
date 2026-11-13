@@ -73,29 +73,58 @@ function flexibleRegex(input) {
 }
 
 /* ============================================================
-   ساخت شرط برای فیلدهایی که ممکنه string یا array باشن
+   ✅ شرط برای فیلدهای string (province, city)
+   ساده، بهینه و بدون $elemMatch
    ============================================================ */
-function buildFieldCondition(fieldName, value) {
+function buildStringFieldCondition(fieldName, value) {
+    const rx = flexibleRegex(value)
+    if (!rx) return null
+    return { [fieldName]: rx }
+}
+
+/* ============================================================
+   ✅ شرط برای فیلدهایی که ممکنه string یا array باشن
+   (event_type, hall_type)
+   با استفاده از $type برای جدا کردن رفتار string و array
+   ============================================================ */
+function buildFlexibleFieldCondition(fieldName, value) {
     const normalized = normalizeText(value)
     if (!normalized) return null
 
     const rx = flexibleRegex(value)
     if (!rx) return null
 
-    // پوشش همه حالت‌ها:
-    // 1. فیلد string دقیقاً برابر
-    // 2. فیلد string که شامل مقدار هست (partial)
-    // 3. فیلد array که شامل مقدار هست
-    // 4. فیلد array که شامل یه آیتم partial
     return {
         $or: [
+            // --- حالت string: تطابق دقیق ---
             { [fieldName]: normalized },
-            { [fieldName]: rx },
-            { [fieldName]: { $in: [normalized] } },
+
+            // --- حالت string: تطابق partial ---
             {
-                [fieldName]: {
-                    $elemMatch: { $regex: rx.$regex, $options: 'i' },
-                },
+                $and: [
+                    { [fieldName]: { $type: 'string' } },
+                    { [fieldName]: rx },
+                ],
+            },
+
+            // --- حالت array: شامل آیتم دقیق ---
+            {
+                $and: [
+                    { [fieldName]: { $type: 'array' } },
+                    { [fieldName]: { $in: [normalized] } },
+                ],
+            },
+
+            // --- حالت array: شامل آیتم partial ---
+            {
+                $and: [
+                    { [fieldName]: { $type: 'array' } },
+                    {
+                        [fieldName]: {
+                            $elemMatch: { $regex: rx.$regex, $options: 'i' },
+                        },
+                    },
+                ],
             },
         ],
     }
@@ -131,28 +160,28 @@ export async function GET(req) {
            🔥 هر فیلتر **فقط** روی فیلد خودش اعمال می‌شه
            ------------------------------------------------------------ */
 
-        // province
+        // province — همیشه string
         if (province && province.trim()) {
-            const cond = buildFieldCondition('province', province)
+            const cond = buildStringFieldCondition('province', province)
             if (cond) conditions.push(cond)
         }
 
-        // city — پشتیبانی از slug و نام فارسی
+        // city — همیشه string، با پشتیبانی از slug و نام فارسی
         if (city && city.trim()) {
             const resolvedCity = resolveCityInput(city)
-            const cond = buildFieldCondition('city', resolvedCity)
+            const cond = buildStringFieldCondition('city', resolvedCity)
             if (cond) conditions.push(cond)
         }
 
-        // event_type
+        // event_type — ممکنه string یا array باشه
         if (event_type && event_type.trim()) {
-            const cond = buildFieldCondition('event_type', event_type)
+            const cond = buildFlexibleFieldCondition('event_type', event_type)
             if (cond) conditions.push(cond)
         }
 
-        // hall_type
+        // hall_type — ممکنه string یا array باشه
         if (hall_type && hall_type.trim()) {
-            const cond = buildFieldCondition('hall_type', hall_type)
+            const cond = buildFlexibleFieldCondition('hall_type', hall_type)
             if (cond) conditions.push(cond)
         }
 
