@@ -53,7 +53,7 @@ const iranLocations = {
     "یزد": ["یزد", "میبد", "اردکان", "بافق"]
 };
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/mrsapp";
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://araaancode_db_user:F8wuumuoZuZ1mRQ3@cluster0.p8pl5r4.mongodb.net/";
 
 function generateValidNationalCode() {
     const digits = [];
