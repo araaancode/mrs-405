@@ -19,11 +19,19 @@ const nextConfig = {
             "framer-motion",
             "@headlessui/react",
             "@heroicons/react",
+            "lucide-react",          // ← اضافه شد
         ],
-        // ⚠️ نیاز به نصب پکیج critters دارد:
-        // npm i -D critters
-        optimizeCss: true,
+        // ⚠️ optimizeCss حذف شد:
+        // این گزینه فقط در Pages Router کار می‌کند و با App Router بی‌تأثیر است.
+        // اگر Pages Router دارید و می‌خواهید استفاده کنید، critters را نصب کنید
+        // و این خط را از کامنت خارج کنید:
+        // optimizeCss: true,
     },
+
+    /* ============================================================
+       اگر Next.js 16+ دارید، این خط را فعال کنید:
+       ============================================================ */
+    // cacheComponents: true,
 
     /* ============================================================
        2. بهینه‌سازی تصاویر
@@ -34,25 +42,20 @@ const nextConfig = {
         imageSizes: [16, 32, 48, 64, 96, 128, 180, 256, 384],
         minimumCacheTTL: 60 * 60 * 24 * 30, // 30 روز
 
-        // برای SVG و data URLs
         dangerouslyAllowSVG: true,
         contentDispositionType: "attachment",
         contentSecurityPolicy:
             "default-src 'self'; script-src 'none'; sandbox;",
 
-        // دامنه‌های مجاز برای تصاویر ریموت
         remotePatterns: [
-            // Vercel Blob
             {
                 protocol: "https",
                 hostname: "*.public.blob.vercel-storage.com",
             },
-            // Cloudinary
             {
                 protocol: "https",
                 hostname: "res.cloudinary.com",
             },
-            // AWS S3
             {
                 protocol: "https",
                 hostname: "*.s3.amazonaws.com",
@@ -61,13 +64,11 @@ const nextConfig = {
                 protocol: "https",
                 hostname: "*.s3.*.amazonaws.com",
             },
-            // Supabase Storage
             {
                 protocol: "https",
                 hostname: "*.supabase.co",
             },
 
-            // 🔥 فقط در محیط توسعه — برای بک‌اند روی localhost
             ...(!isProd
                 ? [
                       {
@@ -78,8 +79,6 @@ const nextConfig = {
                           protocol: "http",
                           hostname: "127.0.0.1",
                       },
-                      // اگر روی شبکه محلی تست می‌کنی، IP واقعی خودت را اینجا بگذار:
-                      // { protocol: "http", hostname: "192.168.1.10" },
                   ]
                 : []),
         ],
@@ -109,6 +108,7 @@ const nextConfig = {
        ============================================================ */
     async headers() {
         return [
+            /* ---- فایل‌های استاتیک ---- */
             {
                 source: "/images/:path*",
                 headers: [
@@ -127,7 +127,30 @@ const nextConfig = {
                     },
                 ],
             },
-          
+
+            /* ---- API Routeهای تالارها (کش CDN) ---- */
+            {
+                source: "/api/halls/:path*",
+                headers: [
+                    {
+                        key: "Cache-Control",
+                        value: "public, s-maxage=60, stale-while-revalidate=120",
+                    },
+                ],
+            },
+
+            /* ---- API Routeهای عمومی دیگر (اختیاری) ---- */
+            // اگر API دیگری دارید که داده‌های آن می‌تواند کمی قدیمی باشد،
+            // همان الگو را برای آن تکرار کنید. مثال:
+            // {
+            //     source: "/api/locations/:path*",
+            //     headers: [
+            //         {
+            //             key: "Cache-Control",
+            //             value: "public, s-maxage=300, stale-while-revalidate=600",
+            //         },
+            //     ],
+            // },
         ];
     },
 
